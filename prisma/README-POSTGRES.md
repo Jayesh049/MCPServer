@@ -1,11 +1,15 @@
-# PostgreSQL (optional production)
+# PostgreSQL migrations
 
-Default in this repo is **SQLite** (`DATABASE_URL=file:./prisma/rag.sqlite`) so you can run migrate/seed/enrich **without Docker**.
+SQL migrations live in [`prisma/migrations/`](migrations/).
 
-To use Postgres again:
+- **Fresh cloud DB:** set `DATABASE_URL` in `.env`, then:
 
-1. Copy `postgresql-archive-migrations` back to `migrations`, or recreate from SQL.
-2. Point `DATABASE_URL` at your Postgres instance.
-3. In `schema.prisma`, set `provider = "postgresql"` and run `prisma migrate deploy`.
+  ```bash
+  npx prisma migrate deploy
+  npm run db:seed
+  npm run db:enrich
+  ```
 
-The archived migrations live in `postgresql-archive-migrations/`.
+  Or one shot: `npm run setup:all`.
+
+- **Local SQLite (optional):** use a separate checkout or temporarily set `provider = "sqlite"` in `schema.prisma` and `file:./prisma/rag.sqlite` — not officially dual-supported in one schema file.

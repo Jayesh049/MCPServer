@@ -3,7 +3,7 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -19,9 +19,8 @@ model CorpusEntry {
   id         String   @id @default(cuid())
   questionId String
   question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
-  content    String
+  content    String   @db.Text
   meta       Json?
-  /// Embedding floats stored as JSON array (local Xenova dims or OpenAI).
   embedding  Json?
   createdAt  DateTime @default(now())
 

@@ -8,6 +8,7 @@ import { runDiseasePipeline } from "../diseases/registry.js";
 import { buildCarePlan } from "../care/carePlan.js";
 import { extractTextFromPdfBase64 } from "../report/pdfText.js";
 import { analyzeReportText } from "../report/analyzeReport.js";
+import { invokeRagQuestion } from "../rag/invokeQuestion.js";
 
 export type ToolCallInput = {
   toolName: string;
@@ -46,6 +47,13 @@ export async function handleToolCall(input: ToolCallInput) {
   const args = tool.inputZod.parse(input.toolArguments ?? {});
 
   try {
+    if (tool.domain === "rag-question" && tool.ragSlug) {
+      const result = await invokeRagQuestion(tool.ragSlug, args);
+      return {
+        content: [{ type: "text", text: JSON.stringify(result, null, 2) }]
+      };
+    }
+
     // ---------- Care-gap tools ----------
     if (input.toolName === "get_patient_facts") {
       const facts = await getPatientFacts(fhirContext!, args as any);

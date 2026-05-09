@@ -4,6 +4,8 @@ import { buildCarePlan, shouldAttachCarePlan } from "../care/carePlan.js";
 import { extractTextFromPdfBase64 } from "../report/pdfText.js";
 import { analyzeReportText } from "../report/analyzeReport.js";
 import { extractTextFromCsvText, extractTextFromXlsxBase64 } from "../report/tabularText.js";
+import { listRagQuestions, isRegisteredRagSlug } from "../questions/registry.js";
+import { invokeRagQuestion } from "../rag/invokeQuestion.js";
 
 function setCors(res: ServerResponse) {
   res.setHeader("Access-Control-Allow-Origin", "*");
@@ -54,6 +56,35 @@ export async function handleApiRequest(
 
   if (req.method === "GET" && url.pathname === "/api/diseases") {
     sendJson(res, 200, { diseases: listDiseases() });
+    return true;
+  }
+
+  if (req.method === "GET" && url.pathname === "/api/questions") {
+    sendJson(res, 200, { questions: listRagQuestions() });
+    return true;
+  }
+
+  const ragInvokeMatch = url.pathname.match(/^\/api\/questions\/([^/]+)\/invoke$/);
+  if (req.method === "POST" && ragInvokeMatch) {
+    const slug = ragInvokeMatch[1]!;
+    if (!isRegisteredRagSlug(slug)) {
+      sendJson(res, 404, { error: `Unknown question slug: ${slug}` });
+      return true;
+    }
+    const body = (await readJsonBody<Record<string, unknown>>(req)) ?? {};
+    try {
+      const result = await invokeRagQuestion(slug, body);
+      sendJson(res, 200, result);
+    } catch (e: any) {
+      const msg = e?.message ? String(e.message) : "RAG invoke failed.";
+      const status =
+        typeof e?.status === "number"
+          ? e.status
+          : msg.includes("not found")
+            ? 404
+            : 400;
+      sendJson(res, status, { error: msg });
+    }
     return true;
   }
 

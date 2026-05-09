@@ -8,8 +8,12 @@ out/
 # Build output (rebuild with npm run build)
 dist/
 
-# Env and secrets
+# Env and secrets (local SQLite path may be checked in optionally)
 .env
+prisma/rag.sqlite
+prisma/rag.sqlite-journal
+prisma/**/*.sqlite
+prisma/**/*.sqlite-journal
 .env.*
 !.env.example
 

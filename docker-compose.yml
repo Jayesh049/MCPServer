@@ -1,0 +1,14 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: mcpuser
+      POSTGRES_PASSWORD: mcppass
+      POSTGRES_DB: mcprag
+    ports:
+      - "5434:5432"
+    volumes:
+      - mcpserver_pg:/var/lib/postgresql/data
+
+volumes:
+  mcpserver_pg:

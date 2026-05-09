@@ -1,5 +1,11 @@
 import { z } from "zod";
 import { listDiseases } from "../diseases/registry.js";
+import { ragToolNameFromSlug } from "../questions/registry.js";
+import { ReportAbnormalLabsInput } from "../questions/report-abnormal-labs-overview/schema.js";
+import { ReportDifferentialInput } from "../questions/report-differential-diagnoses/schema.js";
+import { ReportFollowUpInput } from "../questions/report-follow-up-plan/schema.js";
+import { ReportMedicationSafetyInput } from "../questions/report-medication-safety-review/schema.js";
+import { ReportCounselingInput } from "../questions/report-counseling-red-flags/schema.js";
 
 export type ToolDef = {
   name: string;
@@ -8,8 +14,9 @@ export type ToolDef = {
   inputSchema: Record<string, unknown>;
   inputZod: z.ZodTypeAny;
   requiresFhirContext?: boolean;
-  domain?: "care-gap" | "disease" | "care-plan";
+  domain?: "care-gap" | "disease" | "care-plan" | "rag-question";
   diseaseSlug?: string;
+  ragSlug?: string;
 };
 
 const GetPatientFactsInput = z.object({
@@ -168,6 +175,99 @@ const carePlanTools: ToolDef[] = [
   }
 ];
 
+const ragQuestionTools: ToolDef[] = [
+  {
+    name: ragToolNameFromSlug("report-abnormal-labs-overview"),
+    title: "RAG: Resolve — labs & imaging synthesis",
+    description:
+      "Clinician resolution check: synthesize what's abnormal or trending in labs/imaging. Indexes text; top 5 similar demo snippets. Not diagnostic advice.",
+    inputZod: ReportAbnormalLabsInput,
+    inputSchema: {
+      type: "object",
+      properties: {
+        labsImpressionText: { type: "string", description: "Labs/impression excerpt (synthetic/demo)." },
+        clinicalNotes: { type: "string", description: "Optional extra clinical context (synthetic)." }
+      },
+      required: ["labsImpressionText"]
+    },
+    requiresFhirContext: false,
+    domain: "rag-question",
+    ragSlug: "report-abnormal-labs-overview"
+  },
+  {
+    name: ragToolNameFromSlug("report-differential-diagnoses"),
+    title: "RAG: Resolve — working diagnosis & differentials",
+    description:
+      "Clinician resolution check: anchor impression and differentials to the report. Retrieves similar demo snippets; not a classifier.",
+    inputZod: ReportDifferentialInput,
+    inputSchema: {
+      type: "object",
+      properties: {
+        reportExcerpt: { type: "string" },
+        chiefConcern: { type: "string" }
+      },
+      required: ["reportExcerpt"]
+    },
+    requiresFhirContext: false,
+    domain: "rag-question",
+    ragSlug: "report-differential-diagnoses"
+  },
+  {
+    name: ragToolNameFromSlug("report-follow-up-plan"),
+    title: "RAG: Resolve — follow-up, tests & referrals",
+    description:
+      "Clinician resolution check: concrete next steps and timing. Top 5 similar planning snippets (demo).",
+    inputZod: ReportFollowUpInput,
+    inputSchema: {
+      type: "object",
+      properties: {
+        reportExcerpt: { type: "string" },
+        specialtyContext: { type: "string" }
+      },
+      required: ["reportExcerpt"]
+    },
+    requiresFhirContext: false,
+    domain: "rag-question",
+    ragSlug: "report-follow-up-plan"
+  },
+  {
+    name: ragToolNameFromSlug("report-medication-safety-review"),
+    title: "RAG: Resolve — meds & patient safety",
+    description:
+      "Clinician resolution check: meds vs organ function, allergies, risk context. Demo retrieval only—not a drug database.",
+    inputZod: ReportMedicationSafetyInput,
+    inputSchema: {
+      type: "object",
+      properties: {
+        medicationsAndLabsText: { type: "string" },
+        allergiesAndRenalNotes: { type: "string" }
+      },
+      required: ["medicationsAndLabsText"]
+    },
+    requiresFhirContext: false,
+    domain: "rag-question",
+    ragSlug: "report-medication-safety-review"
+  },
+  {
+    name: ragToolNameFromSlug("report-counseling-red-flags"),
+    title: "RAG: Resolve — counseling & escalation",
+    description:
+      "Clinician resolution check: what to communicate and when to escalate. Top 5 similar demo snippets; not individualized advice.",
+    inputZod: ReportCounselingInput,
+    inputSchema: {
+      type: "object",
+      properties: {
+        reportExcerpt: { type: "string" },
+        audienceNote: { type: "string" }
+      },
+      required: ["reportExcerpt"]
+    },
+    requiresFhirContext: false,
+    domain: "rag-question",
+    ragSlug: "report-counseling-red-flags"
+  }
+];
+
 const reportTools: ToolDef[] = [
   {
     name: "analyze_patient_report_pdf",
@@ -190,6 +290,12 @@ const reportTools: ToolDef[] = [
   }
 ];
 
-export const tools: ToolDef[] = [...careGapTools, ...diseaseTools, ...carePlanTools, ...reportTools];
+export const tools: ToolDef[] = [
+  ...careGapTools,
+  ...diseaseTools,
+  ...carePlanTools,
+  ...reportTools,
+  ...ragQuestionTools
+];
 
 export { diseaseSlugToToolName };

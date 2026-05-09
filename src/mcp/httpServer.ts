@@ -1,8 +1,16 @@
 import http from "node:http";
+import type { ServerResponse } from "node:http";
 import { randomUUID } from "node:crypto";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import type { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { handleApiRequest } from "../api/httpApi.js";
+
+function setMcpPathCors(res: ServerResponse) {
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Methods", "GET,POST,OPTIONS");
+  // MCP Streamable HTTP may send SDK-specific headers; allow all requested headers on preflight.
+  res.setHeader("Access-Control-Allow-Headers", "*");
+}
 
 export async function startHttpTransport(server: Server, opts?: { port?: number; path?: string }) {
   const port = opts?.port ?? Number(process.env.PORT ?? process.env.MCP_HTTP_PORT ?? 3333);
@@ -29,6 +37,13 @@ export async function startHttpTransport(server: Server, opts?: { port?: number;
       if (url.pathname !== mcpPath) {
         res.statusCode = 404;
         res.end("Not Found");
+        return;
+      }
+
+      if (req.method === "OPTIONS") {
+        setMcpPathCors(res);
+        res.statusCode = 204;
+        res.end();
         return;
       }
 

@@ -1,0 +1,34 @@
+{
+  "name": "agents-assemble-sharp-mcp",
+  "version": "0.1.0",
+  "private": true,
+  "description": "SHARP-on-MCP compliant healthcare MCP server (synthetic data only) for the Agents Assemble hackathon.",
+  "license": "MIT",
+  "type": "module",
+  "engines": {
+    "node": ">=18.18"
+  },
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "start": "node dist/index.js",
+    "build": "tsc -p tsconfig.json",
+    "demo": "tsx demo/run_demo.ts",
+    "integration": "npm run build && tsx demo/mcp_integration.ts",
+    "train:diabetes": "tsx src/training/trainDiabetes.ts",
+    "lint": "eslint ."
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "pdf-parse": "^2.4.5",
+    "xlsx": "^0.18.5",
+    "zod": "^3.25.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.0.0",
+    "@types/node": "^22.0.0",
+    "eslint": "^9.0.0",
+    "tsx": "^4.0.0",
+    "typescript": "^5.6.0",
+    "typescript-eslint": "^8.0.0"
+  }
+}

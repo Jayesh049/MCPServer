@@ -1,0 +1,40 @@
+{
+  "resourceType": "Bundle",
+  "type": "collection",
+  "entry": [
+    {
+      "resource": {
+        "resourceType": "Observation",
+        "id": "o-a1c-2025-10",
+        "status": "final",
+        "code": { "text": "Hemoglobin A1c" },
+        "effectiveDateTime": "2025-10-03",
+        "valueQuantity": { "value": 9.2, "unit": "%" }
+      }
+    },
+    {
+      "resource": {
+        "resourceType": "Observation",
+        "id": "o-bp-2026-01",
+        "status": "final",
+        "code": { "text": "Blood pressure panel" },
+        "effectiveDateTime": "2026-01-18",
+        "component": [
+          { "code": { "text": "Systolic" }, "valueQuantity": { "value": 154, "unit": "mmHg" } },
+          { "code": { "text": "Diastolic" }, "valueQuantity": { "value": 96, "unit": "mmHg" } }
+        ]
+      }
+    },
+    {
+      "resource": {
+        "resourceType": "Observation",
+        "id": "o-ldl-2025-12",
+        "status": "final",
+        "code": { "text": "LDL cholesterol" },
+        "effectiveDateTime": "2025-12-10",
+        "valueQuantity": { "value": 152, "unit": "mg/dL" }
+      }
+    }
+  ]
+}
+

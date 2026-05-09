@@ -1,0 +1,17 @@
+{
+  "resourceType": "Bundle",
+  "type": "collection",
+  "entry": [
+    {
+      "resource": {
+        "resourceType": "Encounter",
+        "id": "e-2025-06",
+        "status": "finished",
+        "class": { "code": "AMB" },
+        "period": { "start": "2025-06-20" },
+        "reasonCode": [{ "text": "Primary care follow-up" }]
+      }
+    }
+  ]
+}
+

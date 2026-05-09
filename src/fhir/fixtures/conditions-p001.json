@@ -1,0 +1,25 @@
+{
+  "resourceType": "Bundle",
+  "type": "collection",
+  "entry": [
+    {
+      "resource": {
+        "resourceType": "Condition",
+        "id": "c-diabetes2",
+        "clinicalStatus": { "coding": [{ "code": "active" }] },
+        "code": { "text": "Type 2 diabetes mellitus" },
+        "onsetDateTime": "2016-04-01"
+      }
+    },
+    {
+      "resource": {
+        "resourceType": "Condition",
+        "id": "c-htn",
+        "clinicalStatus": { "coding": [{ "code": "active" }] },
+        "code": { "text": "Hypertension" },
+        "onsetDateTime": "2018-09-12"
+      }
+    }
+  ]
+}
+

@@ -1,0 +1,14 @@
+{
+  "resourceType": "Patient",
+  "id": "p001",
+  "name": [
+    {
+      "use": "official",
+      "family": "Synthetic",
+      "given": ["Pat"]
+    }
+  ],
+  "gender": "female",
+  "birthDate": "1979-02-10"
+}
+

@@ -1,0 +1,27 @@
+{
+  "resourceType": "Bundle",
+  "type": "collection",
+  "entry": [
+    {
+      "resource": {
+        "resourceType": "MedicationRequest",
+        "id": "m-metformin",
+        "status": "active",
+        "intent": "order",
+        "medicationCodeableConcept": { "text": "Metformin 1000 mg BID" },
+        "authoredOn": "2025-05-15"
+      }
+    },
+    {
+      "resource": {
+        "resourceType": "MedicationRequest",
+        "id": "m-lisinopril",
+        "status": "active",
+        "intent": "order",
+        "medicationCodeableConcept": { "text": "Lisinopril 20 mg daily" },
+        "authoredOn": "2025-05-15"
+      }
+    }
+  ]
+}
+

@@ -1,0 +1,24 @@
+# Dependencies
+node_modules/
+
+# Next.js
+.next/
+out/
+
+# Build output (rebuild with npm run build)
+dist/
+
+# Env and secrets
+.env
+.env.*
+!.env.example
+
+# Logs and caches
+*.log
+npm-debug.log*
+.turbo/
+.cache/
+
+# OS / editor
+.DS_Store
+Thumbs.db

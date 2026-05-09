@@ -1,0 +1,7 @@
+{
+  "fhirUrl": "mock://synthetic-fhir",
+  "fhirToken": "synthetic-demo-token",
+  "patientId": "p001",
+  "noteText": "Synthetic note: Patient reports missing two follow-up appointments due to transportation issues. Reports headaches after starting lisinopril. Denies chest pain. Diet has been inconsistent. No tobacco use."
+}
+

@@ -4,8 +4,17 @@ import { buildCarePlan, shouldAttachCarePlan } from "../care/carePlan.js";
 import { extractTextFromPdfBase64 } from "../report/pdfText.js";
 import { analyzeReportText } from "../report/analyzeReport.js";
 import { extractTextFromCsvText, extractTextFromXlsxBase64 } from "../report/tabularText.js";
-import { listRagQuestions, isRegisteredRagSlug } from "../questions/registry.js";
-import { invokeRagQuestion } from "../rag/invokeQuestion.js";
+import { prisma } from "../lib/prisma.js";
+import { answerQuestionByBankSlug, answerQuestionWithWebRag } from "../rag/dynamicWebRag.js";
+import { getFullRagCatalog } from "../rag/fullCatalog.js";
+import { AnswerSource, persistAnswerSafe } from "../answers/persist.js";
+import { MANUAL_QUESTIONS } from "../questions/catalogManual.js";
+import {
+  answerQ2HomeRemediesThenDoctors,
+  answerQ3DoctorsForStage,
+  answerQ4HealthReportDiseaseCureSolution
+} from "../answers/manualFlows.js";
+import { executeUnifiedAsk, getUnifiedAskApiInfo } from "./qaAsk.js";
 
 function setCors(res: ServerResponse) {
   res.setHeader("Access-Control-Allow-Origin", "*");
@@ -59,31 +68,159 @@ export async function handleApiRequest(
     return true;
   }
 
-  if (req.method === "GET" && url.pathname === "/api/questions") {
-    sendJson(res, 200, { questions: listRagQuestions() });
+  if (req.method === "GET" && url.pathname === "/api/health") {
+    sendJson(res, 200, {
+      ok: true,
+      service: "agents-assemble-sharp-mcp",
+      time: new Date().toISOString()
+    });
     return true;
   }
 
-  const ragInvokeMatch = url.pathname.match(/^\/api\/questions\/([^/]+)\/invoke$/);
-  if (req.method === "POST" && ragInvokeMatch) {
-    const slug = ragInvokeMatch[1]!;
-    if (!isRegisteredRagSlug(slug)) {
-      sendJson(res, 404, { error: `Unknown question slug: ${slug}` });
-      return true;
-    }
-    const body = (await readJsonBody<Record<string, unknown>>(req)) ?? {};
+  if (req.method === "GET" && url.pathname === "/api/qa/info") {
+    sendJson(res, 200, getUnifiedAskApiInfo());
+    return true;
+  }
+
+  if (req.method === "POST" && (url.pathname === "/api/qa/ask" || url.pathname === "/api/v1/ask")) {
+    const raw = await readJsonBody(req);
+    const result = await executeUnifiedAsk(raw ?? {});
+    sendJson(res, result.success ? 200 : 400, result);
+    return true;
+  }
+
+  if (req.method === "GET" && url.pathname === "/api/rag/catalog") {
+    sendJson(res, 200, getFullRagCatalog());
+    return true;
+  }
+
+  if (req.method === "GET" && url.pathname === "/api/answers") {
+    const limit = Math.min(
+      100,
+      Math.max(1, Number.parseInt(url.searchParams.get("limit") ?? "40", 10) || 40)
+    );
+    const rows = await prisma.answer.findMany({
+      orderBy: { createdAt: "desc" },
+      take: limit,
+      select: {
+        id: true,
+        questionId: true,
+        source: true,
+        createdAt: true,
+        payload: true
+      }
+    });
+    sendJson(res, 200, { answers: rows });
+    return true;
+  }
+
+  if (req.method === "GET" && url.pathname === "/api/questions") {
+    const rows = await prisma.question.findMany({
+      orderBy: { createdAt: "desc" },
+      take: 100,
+      select: {
+        slug: true,
+        title: true,
+        promptText: true,
+        kind: true,
+        createdAt: true
+      }
+    });
+    sendJson(res, 200, { questions: rows });
+    return true;
+  }
+
+  if (req.method === "POST" && url.pathname === "/api/rag/ask-bank") {
+    const body =
+      (await readJsonBody<{ slug?: string; refresh?: boolean }>(req)) ?? {};
     try {
-      const result = await invokeRagQuestion(slug, body);
+      const slug = body.slug?.trim();
+      if (!slug) {
+        sendJson(res, 400, { error: "Missing slug (e.g. qb_001)." });
+        return true;
+      }
+      const result = await answerQuestionByBankSlug(slug, {
+        refresh: body.refresh === true
+      });
       sendJson(res, 200, result);
     } catch (e: any) {
-      const msg = e?.message ? String(e.message) : "RAG invoke failed.";
-      const status =
-        typeof e?.status === "number"
-          ? e.status
-          : msg.includes("not found")
-            ? 404
-            : 400;
-      sendJson(res, status, { error: msg });
+      sendJson(res, 400, { error: e?.message ? String(e.message) : "RAG bank ask failed." });
+    }
+    return true;
+  }
+
+  if (req.method === "POST" && url.pathname === "/api/rag/ask") {
+    const body =
+      (await readJsonBody<{ question?: string; refresh?: boolean }>(req)) ?? {};
+    try {
+      const q = body.question?.trim();
+      if (!q) {
+        sendJson(res, 400, { error: "Missing question." });
+        return true;
+      }
+      const result = await answerQuestionWithWebRag(q, { refresh: body.refresh === true });
+      sendJson(res, 200, result);
+    } catch (e: any) {
+      const msg = e?.message ? String(e.message) : "RAG failed.";
+      sendJson(res, 400, { error: msg });
+    }
+    return true;
+  }
+
+  if (req.method === "GET" && url.pathname === "/api/manual/questions") {
+    sendJson(res, 200, { questions: MANUAL_QUESTIONS });
+    return true;
+  }
+
+  if (req.method === "POST" && url.pathname === "/api/manual/q2") {
+    const body = (await readJsonBody<{ diseaseSlug?: string }>(req)) ?? {};
+    try {
+      const slug = body.diseaseSlug?.trim();
+      if (!slug) {
+        sendJson(res, 400, { error: "Missing diseaseSlug." });
+        return true;
+      }
+      const out = answerQ2HomeRemediesThenDoctors(slug);
+      persistAnswerSafe({ source: AnswerSource.MANUAL_Q2, payload: out });
+      sendJson(res, 200, out);
+    } catch (e: any) {
+      sendJson(res, 400, { error: e?.message ? String(e.message) : "Q2 failed." });
+    }
+    return true;
+  }
+
+  if (req.method === "POST" && url.pathname === "/api/manual/q3") {
+    const body =
+      (await readJsonBody<{ diseaseSlug?: string; stage?: number }>(req)) ?? {};
+    try {
+      const slug = body.diseaseSlug?.trim();
+      const st = body.stage;
+      if (!slug) {
+        sendJson(res, 400, { error: "Missing diseaseSlug." });
+        return true;
+      }
+      if (st !== 1 && st !== 2 && st !== 3) {
+        sendJson(res, 400, { error: "stage must be 1, 2, or 3." });
+        return true;
+      }
+      const out = answerQ3DoctorsForStage(slug, st as 1 | 2 | 3);
+      persistAnswerSafe({ source: AnswerSource.MANUAL_Q3, payload: out });
+      sendJson(res, 200, out);
+    } catch (e: any) {
+      sendJson(res, 400, { error: e?.message ? String(e.message) : "Q3 failed." });
+    }
+    return true;
+  }
+
+  if (req.method === "POST" && url.pathname === "/api/manual/q4") {
+    const body =
+      (await readJsonBody<{ pdfText?: string; pdfBase64?: string }>(req)) ?? {};
+    try {
+      const result = await answerQ4HealthReportDiseaseCureSolution(body);
+      persistAnswerSafe({ source: AnswerSource.MANUAL_Q4, payload: result });
+      sendJson(res, 200, result);
+    } catch (e: any) {
+      sendJson(res, 400, { error: e?.message ? String(e.message) : "Q4 failed." });
     }
     return true;
   }

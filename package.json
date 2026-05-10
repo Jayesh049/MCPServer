@@ -17,7 +17,7 @@
     "db:migrate": "node scripts/run-env-cmd.mjs npx prisma migrate dev",
     "db:migrate:deploy": "node scripts/run-env-cmd.mjs npx prisma migrate deploy",
     "db:seed": "node scripts/run-env-cmd.mjs npx tsx prisma/seed.ts",
-    "db:enrich": "node scripts/run-env-cmd.mjs npx tsx prisma/enrichCorpus.ts",
+    "db:train-bank": "node scripts/run-env-cmd.mjs npx tsx prisma/seedQuestionBank.ts",
     "setup:all": "node scripts/setup-all.mjs",
     "demo": "tsx demo/run_demo.ts",
     "integration": "npm run build && tsx demo/mcp_integration.ts",

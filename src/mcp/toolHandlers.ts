@@ -8,7 +8,13 @@ import { runDiseasePipeline } from "../diseases/registry.js";
 import { buildCarePlan } from "../care/carePlan.js";
 import { extractTextFromPdfBase64 } from "../report/pdfText.js";
 import { analyzeReportText } from "../report/analyzeReport.js";
-import { invokeRagQuestion } from "../rag/invokeQuestion.js";
+import { answerQuestionByBankSlug, answerQuestionWithWebRag } from "../rag/dynamicWebRag.js";
+import {
+  answerQ2HomeRemediesThenDoctors,
+  answerQ3DoctorsForStage,
+  answerQ4HealthReportDiseaseCureSolution
+} from "../answers/manualFlows.js";
+import { AnswerSource, persistAnswerSafe } from "../answers/persist.js";
 
 export type ToolCallInput = {
   toolName: string;
@@ -47,8 +53,37 @@ export async function handleToolCall(input: ToolCallInput) {
   const args = tool.inputZod.parse(input.toolArguments ?? {});
 
   try {
-    if (tool.domain === "rag-question" && tool.ragSlug) {
-      const result = await invokeRagQuestion(tool.ragSlug, args);
+    if (tool.domain === "manual-question") {
+      if (input.toolName === "manual_q2_home_remedies_doctors") {
+        const { diseaseSlug } = args as { diseaseSlug: string };
+        const result = answerQ2HomeRemediesThenDoctors(diseaseSlug);
+        persistAnswerSafe({ source: AnswerSource.MANUAL_Q2, payload: result });
+        return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
+      }
+      if (input.toolName === "manual_q3_stage_doctors") {
+        const { diseaseSlug, stage } = args as { diseaseSlug: string; stage: 1 | 2 | 3 };
+        const result = answerQ3DoctorsForStage(diseaseSlug, stage);
+        persistAnswerSafe({ source: AnswerSource.MANUAL_Q3, payload: result });
+        return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
+      }
+      if (input.toolName === "manual_q4_health_report_outline") {
+        const body = args as { pdfText?: string; pdfBase64?: string };
+        const result = await answerQ4HealthReportDiseaseCureSolution(body);
+        persistAnswerSafe({ source: AnswerSource.MANUAL_Q4, payload: result });
+        return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
+      }
+    }
+
+    if (tool.domain === "rag-web") {
+      if (input.toolName === "ask_bank_rag") {
+        const { slug, refresh } = args as { slug: string; refresh?: boolean };
+        const result = await answerQuestionByBankSlug(slug, { refresh });
+        return {
+          content: [{ type: "text", text: JSON.stringify(result, null, 2) }]
+        };
+      }
+      const { question, refresh } = args as { question: string; refresh?: boolean };
+      const result = await answerQuestionWithWebRag(question, { refresh });
       return {
         content: [{ type: "text", text: JSON.stringify(result, null, 2) }]
       };

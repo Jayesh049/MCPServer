@@ -1,11 +1,5 @@
 import { z } from "zod";
 import { listDiseases } from "../diseases/registry.js";
-import { ragToolNameFromSlug } from "../questions/registry.js";
-import { ReportAbnormalLabsInput } from "../questions/report-abnormal-labs-overview/schema.js";
-import { ReportDifferentialInput } from "../questions/report-differential-diagnoses/schema.js";
-import { ReportFollowUpInput } from "../questions/report-follow-up-plan/schema.js";
-import { ReportMedicationSafetyInput } from "../questions/report-medication-safety-review/schema.js";
-import { ReportCounselingInput } from "../questions/report-counseling-red-flags/schema.js";
 
 export type ToolDef = {
   name: string;
@@ -14,9 +8,9 @@ export type ToolDef = {
   inputSchema: Record<string, unknown>;
   inputZod: z.ZodTypeAny;
   requiresFhirContext?: boolean;
-  domain?: "care-gap" | "disease" | "care-plan" | "rag-question";
+  domain?: "care-gap" | "disease" | "care-plan" | "rag-web" | "manual-question";
   diseaseSlug?: string;
-  ragSlug?: string;
+  manualQuestionId?: "q2" | "q3" | "q4";
 };
 
 const GetPatientFactsInput = z.object({
@@ -58,6 +52,25 @@ const ReportAnalyzeInputZod = z.object({
   pdfFilename: z.string().optional(),
   pdfText: z.string().min(1).optional()
 });
+
+const ManualQ2InputZod = z.object({
+  diseaseSlug: z.string().min(1).describe("Known disease slug (e.g. diabetes, lung-cancer).")
+});
+
+const ManualQ3InputZod = z.object({
+  diseaseSlug: z.string().min(1),
+  stage: z.union([z.literal(1), z.literal(2), z.literal(3)]).describe("Clinical stage band (demo buckets 1–3).")
+});
+
+const ManualQ4InputZod = z
+  .object({
+    pdfText: z.string().optional(),
+    pdfBase64: z.string().optional(),
+    pdfFilename: z.string().optional()
+  })
+  .refine((d) => !!(d.pdfText?.trim() || d.pdfBase64?.trim()), {
+    message: "Provide pdfText or pdfBase64."
+  });
 
 function diseaseSlugToToolName(slug: string): string {
   return `disease_${slug.replace(/-/g, "_")}_pipeline`;
@@ -175,96 +188,116 @@ const carePlanTools: ToolDef[] = [
   }
 ];
 
-const ragQuestionTools: ToolDef[] = [
+const AskWebRagInputZod = z.object({
+  question: z
+    .string()
+    .min(3)
+    .describe("Natural-language question. Wikipedia is searched, chunks are embedded (free local model by default) and stored."),
+  refresh: z
+    .boolean()
+    .optional()
+    .describe("If true, re-fetch Wikipedia and rebuild the corpus for this question even if data already exists.")
+});
+
+const AskBankRagInputZod = z.object({
+  slug: z
+    .string()
+    .regex(/^qb_\d{3}$/)
+    .describe("Bank slug from the 100-question list (e.g. qb_001). Run db:train-bank first to index."),
+  refresh: z.boolean().optional()
+});
+
+const manualQuestionTools: ToolDef[] = [
   {
-    name: ragToolNameFromSlug("report-abnormal-labs-overview"),
-    title: "RAG: Resolve — labs & imaging synthesis",
+    name: "manual_q2_home_remedies_doctors",
+    title: "Manual Q2 — Home remedies then top doctors",
     description:
-      "Clinician resolution check: synthesize what's abnormal or trending in labs/imaging. Indexes text; top 5 similar demo snippets. Not diagnostic advice.",
-    inputZod: ReportAbnormalLabsInput,
+      "Demo flow: for a disease slug, returns education-only home/lifestyle remedies (exercises + affirmations), then the synthetic top 5 doctors from the care plan. Not clinical advice.",
+    inputZod: ManualQ2InputZod,
     inputSchema: {
       type: "object",
       properties: {
-        labsImpressionText: { type: "string", description: "Labs/impression excerpt (synthetic/demo)." },
-        clinicalNotes: { type: "string", description: "Optional extra clinical context (synthetic)." }
+        diseaseSlug: { type: "string", description: "Disease slug from the disease catalog." }
       },
-      required: ["labsImpressionText"]
+      required: ["diseaseSlug"]
     },
     requiresFhirContext: false,
-    domain: "rag-question",
-    ragSlug: "report-abnormal-labs-overview"
+    domain: "manual-question",
+    manualQuestionId: "q2"
   },
   {
-    name: ragToolNameFromSlug("report-differential-diagnoses"),
-    title: "RAG: Resolve — working diagnosis & differentials",
+    name: "manual_q3_stage_doctors",
+    title: "Manual Q3 — Doctors ranked by stage (1 / 2 / 3)",
     description:
-      "Clinician resolution check: anchor impression and differentials to the report. Retrieves similar demo snippets; not a classifier.",
-    inputZod: ReportDifferentialInput,
+      "Demo flow: same synthetic specialists as the care plan, re-ordered by stage (early vs intermediate vs advanced framing). All personas fictional.",
+    inputZod: ManualQ3InputZod,
     inputSchema: {
       type: "object",
       properties: {
-        reportExcerpt: { type: "string" },
-        chiefConcern: { type: "string" }
+        diseaseSlug: { type: "string" },
+        stage: { type: "integer", enum: [1, 2, 3], description: "Stage bucket." }
       },
-      required: ["reportExcerpt"]
+      required: ["diseaseSlug", "stage"]
     },
     requiresFhirContext: false,
-    domain: "rag-question",
-    ragSlug: "report-differential-diagnoses"
+    domain: "manual-question",
+    manualQuestionId: "q3"
   },
   {
-    name: ragToolNameFromSlug("report-follow-up-plan"),
-    title: "RAG: Resolve — follow-up, tests & referrals",
+    name: "manual_q4_health_report_outline",
+    title: "Manual Q4 — Health report → disease, cure, solution",
     description:
-      "Clinician resolution check: concrete next steps and timing. Top 5 similar planning snippets (demo).",
-    inputZod: ReportFollowUpInput,
+      "Demo flow: parses PDF or raw report text, detects diseases via keywords, returns structured disease + supportive cure excerpt + specialist solution block (synthetic). Do not upload PHI.",
+    inputZod: ManualQ4InputZod,
     inputSchema: {
       type: "object",
       properties: {
-        reportExcerpt: { type: "string" },
-        specialtyContext: { type: "string" }
-      },
-      required: ["reportExcerpt"]
+        pdfText: { type: "string", description: "Extracted report text." },
+        pdfBase64: { type: "string", description: "Base64 PDF bytes." },
+        pdfFilename: { type: "string" }
+      }
     },
     requiresFhirContext: false,
-    domain: "rag-question",
-    ragSlug: "report-follow-up-plan"
+    domain: "manual-question",
+    manualQuestionId: "q4"
+  }
+];
+
+const ragWebTools: ToolDef[] = [
+  {
+    name: "ask_bank_rag",
+    title: "Ask RAG by bank slug (qb_001 … qb_100)",
+    description:
+      "Runs retrieval for a pre-seeded bank question slug after `npm run db:train-bank`. Uses stored Wikipedia chunks and embeddings; optional refresh rebuilds from Wikipedia.",
+    inputZod: AskBankRagInputZod,
+    inputSchema: {
+      type: "object",
+      properties: {
+        slug: { type: "string", pattern: "^qb_[0-9]{3}$" },
+        refresh: { type: "boolean" }
+      },
+      required: ["slug"]
+    },
+    requiresFhirContext: false,
+    domain: "rag-web"
   },
   {
-    name: ragToolNameFromSlug("report-medication-safety-review"),
-    title: "RAG: Resolve — meds & patient safety",
+    name: "ask_web_rag",
+    title: "Ask Web RAG (Wikipedia + free embeddings)",
     description:
-      "Clinician resolution check: meds vs organ function, allergies, risk context. Demo retrieval only—not a drug database.",
-    inputZod: ReportMedicationSafetyInput,
+      "Searches Wikipedia for the question, downloads article intros, chunks and embeds them into Postgres (Transformers.js when no OpenAI key), " +
+      "then returns the top similar passages. First call indexes; repeat calls reuse the index unless refresh=true. Educational demo—not medical advice.",
+    inputZod: AskWebRagInputZod,
     inputSchema: {
       type: "object",
       properties: {
-        medicationsAndLabsText: { type: "string" },
-        allergiesAndRenalNotes: { type: "string" }
+        question: { type: "string", description: "Your question (any topic Wikipedia can answer)." },
+        refresh: { type: "boolean", description: "Rebuild corpus from Wikipedia." }
       },
-      required: ["medicationsAndLabsText"]
+      required: ["question"]
     },
     requiresFhirContext: false,
-    domain: "rag-question",
-    ragSlug: "report-medication-safety-review"
-  },
-  {
-    name: ragToolNameFromSlug("report-counseling-red-flags"),
-    title: "RAG: Resolve — counseling & escalation",
-    description:
-      "Clinician resolution check: what to communicate and when to escalate. Top 5 similar demo snippets; not individualized advice.",
-    inputZod: ReportCounselingInput,
-    inputSchema: {
-      type: "object",
-      properties: {
-        reportExcerpt: { type: "string" },
-        audienceNote: { type: "string" }
-      },
-      required: ["reportExcerpt"]
-    },
-    requiresFhirContext: false,
-    domain: "rag-question",
-    ragSlug: "report-counseling-red-flags"
+    domain: "rag-web"
   }
 ];
 
@@ -295,7 +328,8 @@ export const tools: ToolDef[] = [
   ...diseaseTools,
   ...carePlanTools,
   ...reportTools,
-  ...ragQuestionTools
+  ...ragWebTools,
+  ...manualQuestionTools
 ];
 
 export { diseaseSlugToToolName };

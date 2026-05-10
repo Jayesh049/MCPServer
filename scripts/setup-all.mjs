@@ -9,5 +9,4 @@ function run(parts) {
 run(["npx", "prisma", "migrate", "deploy"]);
 run(["npx", "prisma", "generate"]);
 run(["npx", "tsx", "prisma/seed.ts"]);
-run(["npx", "tsx", "prisma/enrichCorpus.ts"]);
 process.stderr.write("[setup-all] Done.\n");

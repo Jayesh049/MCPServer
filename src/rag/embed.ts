@@ -1,4 +1,5 @@
 import { pipeline, type FeatureExtractionPipeline } from "@xenova/transformers";
+import { geminiEmbedText, hasGeminiApiKey } from "./gemini.js";
 
 const OPENAI_EMBED_URL = "https://api.openai.com/v1/embeddings";
 const DEFAULT_OPENAI_MODEL = "text-embedding-3-small";
@@ -6,16 +7,25 @@ const LOCAL_MODEL =
   process.env.RAG_LOCAL_EMBED_MODEL?.trim() || "Xenova/all-MiniLM-L6-v2";
 const MAX_INPUT_CHARS = 12_000;
 
-export type EmbedProvider = "openai" | "local";
+export type EmbedProvider = "openai" | "local" | "gemini";
+
+export type EmbedTextOptions = {
+  /** For Gemini only: corpus chunks vs user query (different task types). Ignored for OpenAI/local. */
+  purpose?: "corpus" | "query";
+};
 
 function resolveProvider(): EmbedProvider {
   const mode = (process.env.RAG_EMBEDDING_PROVIDER ?? "auto").toLowerCase();
+  if (mode === "gemini") return "gemini";
   if (mode === "openai") return "openai";
   if (mode === "local") return "local";
-  if (mode === "auto")
-    return process.env.OPENAI_API_KEY?.trim() ? "openai" : "local";
+  if (mode === "auto") {
+    if (hasGeminiApiKey()) return "gemini";
+    if (process.env.OPENAI_API_KEY?.trim()) return "openai";
+    return "local";
+  }
   throw new Error(
-    `Invalid RAG_EMBEDDING_PROVIDER "${process.env.RAG_EMBEDDING_PROVIDER}". Use auto, openai, or local.`
+    `Invalid RAG_EMBEDDING_PROVIDER "${process.env.RAG_EMBEDDING_PROVIDER}". Use auto, gemini, openai, or local.`
   );
 }
 
@@ -71,10 +81,19 @@ async function embedLocal(text: string): Promise<number[]> {
   return Array.from(data as Float32Array | number[]);
 }
 
-/** Embeds text. Default: local Transformers.js (free). Set OPENAI_API_KEY + RAG_EMBEDDING_PROVIDER=auto to prefer OpenAI when a key exists. */
-export async function embedText(text: string): Promise<number[]> {
+/**
+ * Embeds text.
+ * - **auto:** Gemini key → Gemini; else OpenAI key → OpenAI; else local Transformers.js.
+ * - Use `purpose: "corpus"` when indexing chunks, `purpose: "query"` for the user question (Gemini only).
+ */
+export async function embedText(
+  text: string,
+  options?: EmbedTextOptions
+): Promise<number[]> {
   const provider = resolveProvider();
+  const purpose = options?.purpose ?? "corpus";
   if (provider === "openai") return embedOpenAI(text);
+  if (provider === "gemini") return geminiEmbedText(text, purpose);
   return embedLocal(text);
 }
 

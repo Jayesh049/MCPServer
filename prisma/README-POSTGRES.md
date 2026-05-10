@@ -7,7 +7,6 @@ SQL migrations live in [`prisma/migrations/`](migrations/).
   ```bash
   npx prisma migrate deploy
   npm run db:seed
-  npm run db:enrich
   ```
 
   Or one shot: `npm run setup:all`.

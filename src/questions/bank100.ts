@@ -1,0 +1,122 @@
+/**
+ * Question bank (100 prompts) — used by RAG training (`src/rag/training/trainQuestionBank.ts`).
+ * Stable slugs `qb_001` … `qb_100`.
+ */
+export type BankQuestion = {
+  slug: string;
+  /** Natural-language query used for Wikipedia search + embeddings. */
+  prompt: string;
+};
+
+function qb(n: number, prompt: string): BankQuestion {
+  const slug = `qb_${String(n).padStart(3, "0")}`;
+  return { slug, prompt };
+}
+
+/** Exactly 100 entries — keep length stable for seeds/tests. */
+export const RAG_QUESTION_BANK_100: BankQuestion[] = [
+  qb(1, "What is blood pressure and what do systolic and diastolic numbers mean?"),
+  qb(2, "What is hypertension and what lifestyle changes help manage it?"),
+  qb(3, "What is diabetes mellitus type 2 and how does insulin resistance develop?"),
+  qb(4, "What is hemoglobin A1c and why is it used in diabetes care?"),
+  qb(5, "What is coronary artery disease and what are typical risk factors?"),
+  qb(6, "What is a myocardial infarction and what are warning signs?"),
+  qb(7, "What is heart failure and how is it different from a heart attack?"),
+  qb(8, "What is atrial fibrillation and why does stroke risk matter?"),
+  qb(9, "What is cholesterol and what is LDL versus HDL?"),
+  qb(10, "What is chronic kidney disease and how is eGFR used?"),
+  qb(11, "What is diabetic kidney disease and why does albuminuria matter?"),
+  qb(12, "What is liver cirrhosis and what causes chronic liver injury?"),
+  qb(13, "What is hepatitis B and how is it transmitted?"),
+  qb(14, "What is hepatitis C and how is it diagnosed?"),
+  qb(15, "What is fatty liver disease and how is NAFLD related to metabolism?"),
+  qb(16, "What is stroke and what is the difference between ischemic and hemorrhagic stroke?"),
+  qb(17, "What is a transient ischemic attack and why is it urgent?"),
+  qb(18, "What is epilepsy and what are common seizure types?"),
+  qb(19, "What is Parkinson disease and what motor symptoms are typical?"),
+  qb(20, "What is Alzheimer disease and how does mild cognitive impairment relate?"),
+  qb(21, "What is migraine and how is it distinguished from tension headache?"),
+  qb(22, "What is depression and what are evidence-based treatments?"),
+  qb(23, "What is generalized anxiety disorder and how is it diagnosed?"),
+  qb(24, "What is asthma and what triggers bronchospasm?"),
+  qb(25, "What is chronic obstructive pulmonary disease and what is emphysema?"),
+  qb(26, "What is pneumonia and what are community-acquired pneumonia basics?"),
+  qb(27, "What is tuberculosis and how does latent infection differ from active disease?"),
+  qb(28, "What is influenza and why is seasonal vaccination recommended for high-risk groups?"),
+  qb(29, "What is COVID-19 and what are long COVID symptoms as described in public health literature?"),
+  qb(30, "What is pulmonary embolism and what are classic warning signs?"),
+  qb(31, "What is sleep apnea and how is CPAP used?"),
+  qb(32, "What is gastroesophageal reflux disease and what lifestyle measures help?"),
+  qb(33, "What is peptic ulcer disease and what is H pylori?"),
+  qb(34, "What is inflammatory bowel disease and how do Crohn disease and ulcerative colitis differ?"),
+  qb(35, "What is celiac disease and how does gluten trigger injury?"),
+  qb(36, "What is irritable bowel syndrome and what are common management strategies?"),
+  qb(37, "What is hypothyroidism and what is levothyroxine used for?"),
+  qb(38, "What is hyperthyroidism and what is Graves disease?"),
+  qb(39, "What is osteoporosis and why does fracture prevention matter in older adults?"),
+  qb(40, "What is rheumatoid arthritis and what autoantibodies are commonly discussed?"),
+  qb(41, "What is osteoarthritis and what joints are commonly affected?"),
+  qb(42, "What is systemic lupus erythematosus and what organs can be involved?"),
+  qb(43, "What is gout and why does uric acid matter?"),
+  qb(44, "What is anemia and what are iron deficiency anemia basics?"),
+  qb(45, "What is vitamin B12 deficiency and what neurological symptoms are described?"),
+  qb(46, "What is vitamin D deficiency and why is bone health discussed?"),
+  qb(47, "What is dehydration and what electrolyte disturbances are dangerous?"),
+  qb(48, "What is malnutrition and what is protein-energy undernutrition?"),
+  qb(49, "What is obesity and how is BMI defined in epidemiology?"),
+  qb(50, "What is metabolic syndrome and how are waist circumference and triglycerides used?"),
+  qb(51, "What is polycystic ovary syndrome and what hormonal patterns are discussed?"),
+  qb(52, "What is endometriosis and why does chronic pelvic pain occur?"),
+  qb(53, "What is menopause and what vasomotor symptoms are common?"),
+  qb(54, "What is pregnancy hypertension and what is preeclampsia?"),
+  qb(55, "What is gestational diabetes and why is glucose screening done?"),
+  qb(56, "What is urinary tract infection and what are uncomplicated versus complicated UTIs?"),
+  qb(57, "What is kidney stone disease and what are calcium oxalate stones?"),
+  qb(58, "What is benign prostatic hyperplasia and what urinary symptoms occur?"),
+  qb(59, "What is erectile dysfunction and what cardiovascular risk links are discussed?"),
+  qb(60, "What is sexually transmitted infection screening and what is HIV testing?"),
+  qb(61, "What is human papillomavirus and why is vaccination discussed?"),
+  qb(62, "What is cervical cancer screening and what is Pap test testing for?"),
+  qb(63, "What is breast cancer screening and what is mammography used for?"),
+  qb(64, "What is colorectal cancer screening and what is colonoscopy?"),
+  qb(65, "What is lung cancer and what are smoking-related risks?"),
+  qb(66, "What is skin melanoma and what ABCDE rule is used in skin checks?"),
+  qb(67, "What is basal cell carcinoma and how does sun exposure contribute?"),
+  qb(68, "What is lymphoma and how do Hodgkin and non-Hodgkin lymphomas differ at a high level?"),
+  qb(69, "What is leukemia and what are acute versus chronic forms?"),
+  qb(70, "What is prostate cancer screening controversy and what is PSA testing?"),
+  qb(71, "What is vaccination and how do herd immunity concepts work?"),
+  qb(72, "What is antibiotic resistance and why is stewardship important?"),
+  qb(73, "What is pain management and what is multimodal analgesia?"),
+  qb(74, "What is opioid use disorder and what is medication-assisted treatment?"),
+  qb(75, "What is alcohol use disorder and what are withdrawal risks?"),
+  qb(76, "What is smoking cessation and what pharmacologic aids are commonly discussed?"),
+  qb(77, "What is first aid for burns and when is emergency care needed?"),
+  qb(78, "What is cardiopulmonary resuscitation and what is basic life support?"),
+  qb(79, "What is anaphylaxis and why is epinephrine emphasized?"),
+  qb(80, "What is food allergy versus food intolerance?"),
+  qb(81, "What is lactose intolerance and how does lactase deficiency present?"),
+  qb(82, "What is celiac disease versus non-celiac gluten sensitivity in popular descriptions?"),
+  qb(83, "What is Mediterranean diet and what cardiovascular outcomes are studied?"),
+  qb(84, "What is dietary fiber and why is it linked to cardiovascular and gut health?"),
+  qb(85, "What is sodium intake and how is it related to hypertension in guidelines?"),
+  qb(86, "What is physical activity guideline for adults and why is moderate intensity discussed?"),
+  qb(87, "What is resistance training and how does muscle strength relate to healthy aging?"),
+  qb(88, "What is sleep hygiene and how much sleep do public health sources recommend for adults?"),
+  qb(89, "What is circadian rhythm and how does shift work affect health?"),
+  qb(90, "What is occupational health and what are ergonomic injury basics?"),
+  qb(91, "What is air pollution health effects and what is particulate matter?"),
+  qb(92, "What is heat stroke versus heat exhaustion in emergency descriptions?"),
+  qb(93, "What is hypothermia and how is cold exposure dangerous?"),
+  qb(94, "What is drowning prevention and what is dry drowning myth versus facts?"),
+  qb(95, "What is mental health stigma and what is parity of care?"),
+  qb(96, "What is telemedicine and how did telehealth expand in healthcare delivery?"),
+  qb(97, "What is patient-centered care and what is shared decision making?"),
+  qb(98, "What is health literacy and why is teach-back used in clinics?"),
+  qb(99, "What is clinical trial randomization and why is placebo control used?"),
+  qb(100, "What is public health surveillance and what is outbreak investigation?")
+];
+
+if (RAG_QUESTION_BANK_100.length !== 100) {
+  throw new Error(`RAG_QUESTION_BANK_100 must have length 100, got ${RAG_QUESTION_BANK_100.length}`);
+}

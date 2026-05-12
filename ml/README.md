@@ -37,6 +37,21 @@ pip install -r requirements.txt
 
 If `scikit-learn` still tries to compile, stay on **`requirements-etl.txt`** for `fetch_and_insert.py`, and run training on Linux/CI or after installing [Build Tools for Visual Studio](https://visualstudio.microsoft.com/visual-cpp-build-tools/) with the C++ workload.
 
+## Where the disease data lives
+
+1. **Database (source of truth)** — After `fetch_and_insert.py`, rows are in Postgres:
+   - `DiseaseWebInfo` (one row per `slug`: Wikipedia summary + metadata)
+   - `DiseaseSpecialistInfo`, `DiseaseYogaPranayamInfo` (many rows per `slug`)
+   - `DiseaseCriticalityProfile` (one row per `slug`)
+
+2. **Optional files on disk** — Folder [`diseases/`](diseases/) can hold JSON exports (not committed by default). Generate with:
+
+```bash
+python ml/scripts/export_diseases_to_json.py
+```
+
+This writes `ml/diseases/{slug}.json` for every slug in `config/diseases.json` plus `ml/diseases/index.json`.
+
 ## Run ETL (fetch + insert)
 
 From repo root (so `.env` resolves):

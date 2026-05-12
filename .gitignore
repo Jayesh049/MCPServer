@@ -32,3 +32,6 @@ Thumbs.db
 # Python ML generated artifacts (see ml/README.md)
 ml/artifacts/
 ml/scripts/__pycache__/
+
+# Optional JSON export from DB (see ml/scripts/export_diseases_to_json.py)
+ml/diseases/*.json

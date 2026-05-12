@@ -1,0 +1,4 @@
+{
+  "note": "Optional slug → Wikipedia title overrides merged on top of diseases.json. Empty object = use only diseases.json titles.",
+  "overrides": {}
+}

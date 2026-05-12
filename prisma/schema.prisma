@@ -73,3 +73,55 @@ model RagTrainingRun {
 
   @@index([startedAt])
 }
+
+/// Wikipedia-fetched summary + metadata per disease slug (aligns with `src/diseases/registry.ts`).
+model DiseaseWebInfo {
+  id               String   @id @default(cuid())
+  slug             String   @unique
+  displayName      String
+  wikipediaTitle   String?
+  summary          String   @db.Text
+  sourceUrl        String?
+  sectionsJson     Json?
+  fetchedAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
+
+/// Specialist / referral-style bullets derived from Wikipedia sections (educational only).
+model DiseaseSpecialistInfo {
+  id               String  @id @default(cuid())
+  diseaseSlug      String
+  specialistType   String
+  roleDescription  String  @db.Text
+  whenToSee        String? @db.Text
+  sourceExcerpt    String? @db.Text
+  sourceSection    String?
+  createdAt        DateTime @default(now())
+
+  @@index([diseaseSlug])
+}
+
+/// Yoga / pranayama / breathwork notes (section-derived or conservative templates).
+model DiseaseYogaPranayamInfo {
+  id            String   @id @default(cuid())
+  diseaseSlug   String
+  practiceName  String
+  description   String   @db.Text
+  cautionNote   String?  @db.Text
+  sourceExcerpt String?  @db.Text
+  sourceSection String?
+  createdAt     DateTime @default(now())
+
+  @@index([diseaseSlug])
+}
+
+/// Demo criticality score (0–100) from heuristics — not a validated clinical metric.
+model DiseaseCriticalityProfile {
+  id                   String   @id @default(cuid())
+  diseaseSlug          String   @unique
+  criticalityPercent   Float
+  rationale            String   @db.Text
+  method               String
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+}

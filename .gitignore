@@ -28,3 +28,7 @@ npm-debug.log*
 .DS_Store
 Thumbs.db
 .cursor/
+
+# Python ML generated artifacts (see ml/README.md)
+ml/artifacts/
+ml/scripts/__pycache__/

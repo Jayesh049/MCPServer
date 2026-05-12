@@ -1,0 +1,146 @@
+{
+  "version": 1,
+  "note": "Slugs and displayName align with src/diseases/registry.ts. wikipediaTitle is the English Wikipedia page title (underscores).",
+  "diseases": [
+    {
+      "slug": "brain-tumor",
+      "displayName": "Brain tumor (MRI)",
+      "category": "imaging",
+      "modality": "imaging",
+      "wikipediaTitle": "Brain_tumor"
+    },
+    {
+      "slug": "pneumonia",
+      "displayName": "Pneumonia (chest X-ray)",
+      "category": "imaging",
+      "modality": "imaging",
+      "wikipediaTitle": "Pneumonia"
+    },
+    {
+      "slug": "tuberculosis",
+      "displayName": "Tuberculosis (chest X-ray)",
+      "category": "imaging",
+      "modality": "imaging",
+      "wikipediaTitle": "Tuberculosis"
+    },
+    {
+      "slug": "covid-19",
+      "displayName": "COVID-19 (chest X-ray)",
+      "category": "imaging",
+      "modality": "imaging",
+      "wikipediaTitle": "Coronavirus_disease_2019"
+    },
+    {
+      "slug": "skin-cancer",
+      "displayName": "Skin lesion (dermatology image)",
+      "category": "imaging",
+      "modality": "imaging",
+      "wikipediaTitle": "Melanoma"
+    },
+    {
+      "slug": "diabetic-retinopathy",
+      "displayName": "Diabetic retinopathy (retina image)",
+      "category": "imaging",
+      "modality": "imaging",
+      "wikipediaTitle": "Diabetic_retinopathy"
+    },
+    {
+      "slug": "glaucoma",
+      "displayName": "Glaucoma (retina image)",
+      "category": "imaging",
+      "modality": "imaging",
+      "wikipediaTitle": "Glaucoma"
+    },
+    {
+      "slug": "cataract",
+      "displayName": "Cataract (eye image)",
+      "category": "imaging",
+      "modality": "imaging",
+      "wikipediaTitle": "Cataract"
+    },
+    {
+      "slug": "breast-cancer",
+      "displayName": "Breast cancer (mammogram)",
+      "category": "imaging",
+      "modality": "imaging",
+      "wikipediaTitle": "Breast_cancer"
+    },
+    {
+      "slug": "lung-cancer",
+      "displayName": "Lung cancer (CT)",
+      "category": "imaging",
+      "modality": "imaging",
+      "wikipediaTitle": "Lung_cancer"
+    },
+    {
+      "slug": "bone-fracture",
+      "displayName": "Bone fracture (X-ray)",
+      "category": "imaging",
+      "modality": "imaging",
+      "wikipediaTitle": "Bone_fracture"
+    },
+    {
+      "slug": "alzheimers",
+      "displayName": "Alzheimer's (brain MRI)",
+      "category": "imaging",
+      "modality": "imaging",
+      "wikipediaTitle": "Alzheimer's_disease"
+    },
+    {
+      "slug": "diabetes",
+      "displayName": "Diabetes risk (clinical)",
+      "category": "clinical",
+      "modality": "clinical",
+      "wikipediaTitle": "Diabetes"
+    },
+    {
+      "slug": "heart-disease",
+      "displayName": "Heart disease risk (clinical)",
+      "category": "clinical",
+      "modality": "clinical",
+      "wikipediaTitle": "Cardiovascular_disease"
+    },
+    {
+      "slug": "kidney-disease",
+      "displayName": "Chronic kidney disease (clinical)",
+      "category": "clinical",
+      "modality": "clinical",
+      "wikipediaTitle": "Chronic_kidney_disease"
+    },
+    {
+      "slug": "liver-disease",
+      "displayName": "Liver disease (clinical)",
+      "category": "clinical",
+      "modality": "clinical",
+      "wikipediaTitle": "Liver_disease"
+    },
+    {
+      "slug": "stroke",
+      "displayName": "Stroke risk (clinical)",
+      "category": "clinical",
+      "modality": "clinical",
+      "wikipediaTitle": "Stroke"
+    },
+    {
+      "slug": "hypertension",
+      "displayName": "Hypertension risk (clinical)",
+      "category": "clinical",
+      "modality": "clinical",
+      "wikipediaTitle": "Hypertension"
+    },
+    {
+      "slug": "parkinsons",
+      "displayName": "Parkinson's (clinical)",
+      "category": "clinical",
+      "modality": "clinical",
+      "wikipediaTitle": "Parkinson's_disease"
+    },
+    {
+      "slug": "sleep-apnea",
+      "displayName": "Sleep apnea risk (questionnaire)",
+      "category": "signal",
+      "modality": "signal",
+      "wikipediaTitle": "Obstructive_sleep_apnea"
+    }
+  ]
+}

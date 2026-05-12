@@ -20,3 +20,5 @@ SQL migrations live in [`prisma/migrations/`](migrations/).
   Or one shot: `npm run setup:all`.
 
 - **Local SQLite (optional):** use a separate checkout or temporarily set `provider = "sqlite"` in `schema.prisma` and `file:./prisma/rag.sqlite` — not officially dual-supported in one schema file.
+
+- **Disease Wikipedia ETL (optional):** models `DiseaseWebInfo`, `DiseaseSpecialistInfo`, `DiseaseYogaPranayamInfo`, `DiseaseCriticalityProfile` store fetched/educational content keyed by the same **`slug`** values as [`src/diseases/registry.ts`](../src/diseases/registry.ts). Populate with [`../ml/README.md`](../ml/README.md) after `npx prisma migrate deploy`.

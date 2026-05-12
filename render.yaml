@@ -13,4 +13,8 @@ services:
         value: production
       - key: MCP_TRANSPORT
         value: http
-      # Add in dashboard: DATABASE_URL from Neon / Supabase / Prisma Cloud Postgres
+      - key: PORT
+        value: "3333"
+      # Set in Render dashboard (secret): Neon / Supabase / Prisma Postgres connection string
+      - key: DATABASE_URL
+        sync: false

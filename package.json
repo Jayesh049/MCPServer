@@ -22,7 +22,8 @@
     "demo": "tsx demo/run_demo.ts",
     "integration": "npm run build && tsx demo/mcp_integration.ts",
     "train:diabetes": "tsx src/training/trainDiabetes.ts",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "smoke:health": "node scripts/smoke-http-health.mjs"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.29.0",

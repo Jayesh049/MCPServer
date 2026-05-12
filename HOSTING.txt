@@ -55,6 +55,7 @@ Health:
 Verify (terminal, Node 18+):
   set BASE_URL=https://<render-app-name>.onrender.com
   npm run smoke:health
+  (Linux/mac: export BASE_URL=https://<render-app-name>.onrender.com && npm run smoke:health)
 
 Free tier: kuch der baad idle sleep hota hai; pehla request thoda slow ho sakta hai.
 

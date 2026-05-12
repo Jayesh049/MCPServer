@@ -21,4 +21,6 @@ SQL migrations live in [`prisma/migrations/`](migrations/).
 
 - **Local SQLite (optional):** use a separate checkout or temporarily set `provider = "sqlite"` in `schema.prisma` and `file:./prisma/rag.sqlite` — not officially dual-supported in one schema file.
 
-- **Disease Wikipedia ETL (optional):** models `DiseaseWebInfo`, `DiseaseSpecialistInfo`, `DiseaseYogaPranayamInfo`, `DiseaseCriticalityProfile` store fetched/educational content keyed by the same **`slug`** values as [`src/diseases/registry.ts`](../src/diseases/registry.ts). Populate with [`../ml/README.md`](../ml/README.md) after `npx prisma migrate deploy`.
+- **Disease Wikipedia ETL (optional):** models `DiseaseWebInfo`, `DiseaseSpecialistInfo`, `DiseaseYogaPranayamInfo`, `DiseaseCriticalityProfile` store fetched/educational content keyed by the same **`slug`** values as [`src/diseases/registry.ts`](../src/diseases/registry.ts). Populate with [`../ml/README.md`](../ml/README.md) after migrations are applied.
+
+- **Prisma CLI version:** This repo pins **Prisma 6.18.x** (`schema.prisma` uses `url = env("DATABASE_URL")`). If bare `npx prisma` on your machine resolves to **Prisma 7**, it will error on `url`. Prefer **`npm run db:migrate:deploy`** (uses the local `prisma` binary) or **`.\node_modules\.bin\prisma migrate deploy`** after `npm ci`.

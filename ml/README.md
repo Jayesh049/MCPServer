@@ -6,7 +6,7 @@ Educational pipeline: fetches English Wikipedia summaries and selected sections 
 
 ## Prerequisites
 
-- Python **3.11–3.13** recommended on **Windows** (so `scikit-learn` installs from a wheel). Python 3.14+ may fall back to compiling and require Visual Studio C++ build tools.
+- Python **3.11–3.13** recommended on **Windows** for `scikit-learn` wheels. Python **3.14** is OK for the **ETL** stack (`psycopg[binary]` needs **≥3.2.10** for wheels — see `requirements-etl.txt`).
 - `DATABASE_URL` pointing at Postgres (same as Prisma), e.g. in repo-root `.env`
 - Applied migration: `npm run db:migrate:deploy` (includes `20260512120000_disease_web_knowledge`)
 

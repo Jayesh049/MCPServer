@@ -1,4 +1,5 @@
 # Wikipedia fetch + Postgres insert only (pure wheels — no C compiler).
 httpx==0.28.1
 python-dotenv==1.0.1
-psycopg[binary]==3.2.3
+# 3.2.3 has no psycopg-binary wheel for Python 3.14; use 3.2.10+ (see PyPI).
+psycopg[binary]>=3.2.10,<4

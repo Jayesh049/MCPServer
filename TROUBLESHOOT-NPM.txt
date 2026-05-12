@@ -1,0 +1,64 @@
+WHY "Select an app to open 'npm'" APPEARS
+======================================
+
+PowerShell/cmd resolve `npm` to this file FIRST:
+  C:\Windows\System32\npm
+
+On your PC that file is 0 bytes (not the real CLI). Same problem can exist with:
+  C:\Windows\System32\node
+
+Real tools live here:
+  C:\Program Files\nodejs\npm.cmd
+  C:\Program Files\nodejs\node.exe
+
+
+FIX A — PERMANENT (recommended, needs Administrator)
+----------------------------------------------------
+
+1. Close all terminals.
+
+2. Open CMD or PowerShell as Administrator (right-click → Run as administrator).
+
+3. Remove the bogus files:
+
+   del C:\Windows\System32\npm
+   del C:\Windows\System32\node
+
+4. Close the admin window, open a NEW terminal in your project, run:
+
+   npm --version
+   npm start
+
+If Node was installed to a different path, adjust—but do NOT recreate empty files in System32.
+
+
+FIX B — WORKAROUND (no admin, use this repo)
+--------------------------------------------
+
+From the MCPServer folder in CMD:
+
+  run-npm.cmd start
+  run-npm.cmd run build
+
+Or call npm.cmd directly:
+
+  "%ProgramFiles%\nodejs\npm.cmd" start
+
+
+FIX C — Start without npm
+-------------------------
+
+After `npx tsc -p tsconfig.json` or `npm run build` via run-npm.cmd:
+
+  "%ProgramFiles%\nodejs\node.exe" dist\index.js
+
+Set PORT before that if needed:
+
+  set PORT=3333
+
+
+NOTE
+----
+
+Deleting node_modules does NOT fix this. The conflict is Windows System32 shadows, not your project.
+

@@ -1,0 +1,16 @@
+# Render.com Blueprint (optional — you can configure the same in the dashboard)
+# Docs: https://render.com/docs/blueprint-spec
+services:
+  - type: web
+    name: mcp-server
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: MCP_TRANSPORT
+        value: http
+      # Add in dashboard: DATABASE_URL from Neon / Supabase / Prisma Cloud Postgres

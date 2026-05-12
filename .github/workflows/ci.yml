@@ -1,0 +1,22 @@
+# Push / PR par build check — Render pe deploy se pehle yeh green hona chahiye.
+name: CI
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+        env:
+          # Prisma generate only — real DB connect build time pe nahi chahiye
+          DATABASE_URL: postgresql://ci:ci@localhost:5432/ci?sslmode=disable

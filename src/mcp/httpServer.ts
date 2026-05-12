@@ -3,24 +3,37 @@ import type { ServerResponse } from "node:http";
 import { randomUUID } from "node:crypto";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import type { Server } from "@modelcontextprotocol/sdk/server/index.js";
+import { createMcpServer } from "./server.js";
 import { handleApiRequest } from "../api/httpApi.js";
 
 function setMcpPathCors(res: ServerResponse) {
   res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Access-Control-Allow-Methods", "GET,POST,OPTIONS");
-  // MCP Streamable HTTP may send SDK-specific headers; allow all requested headers on preflight.
+  res.setHeader("Access-Control-Allow-Methods", "GET,POST,DELETE,OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "*");
+  res.setHeader("Access-Control-Expose-Headers", "Mcp-Session-Id");
 }
 
-export async function startHttpTransport(server: Server, opts?: { port?: number; path?: string }) {
+function isInitializeRequest(body: unknown): boolean {
+  if (!body || typeof body !== "object") return false;
+  if (Array.isArray(body)) return body.some(isInitializeRequest);
+  return (body as { method?: unknown }).method === "initialize";
+}
+
+/**
+ * Streamable HTTP MCP server with per-session transports.
+ *
+ * The MCP Streamable HTTP spec requires one transport per client session, keyed by
+ * the `Mcp-Session-Id` header. A single shared transport throws
+ * "Server already initialized" whenever a second client tries to handshake.
+ */
+export async function startHttpTransport(
+  _unusedServer: Server,
+  opts?: { port?: number; path?: string }
+) {
   const port = opts?.port ?? Number(process.env.PORT ?? process.env.MCP_HTTP_PORT ?? 3333);
   const mcpPath = opts?.path ?? "/mcp";
 
-  const transport = new StreamableHTTPServerTransport({
-    sessionIdGenerator: () => randomUUID()
-  });
-
-  await server.connect(transport);
+  const transports = new Map<string, StreamableHTTPServerTransport>();
 
   const httpServer = http.createServer(async (req, res) => {
     try {
@@ -47,25 +60,71 @@ export async function startHttpTransport(server: Server, opts?: { port?: number;
         return;
       }
 
+      setMcpPathCors(res);
+
+      const sessionHeader = req.headers["mcp-session-id"];
+      const sessionId =
+        typeof sessionHeader === "string"
+          ? sessionHeader
+          : Array.isArray(sessionHeader)
+            ? sessionHeader[0]
+            : undefined;
+
+      let body: unknown = undefined;
       if (req.method === "POST") {
         const chunks: Buffer[] = [];
         for await (const chunk of req) chunks.push(Buffer.from(chunk));
         const raw = Buffer.concat(chunks).toString("utf8");
-        const parsedBody = raw.length ? JSON.parse(raw) : undefined;
-        await transport.handleRequest(req as any, res as any, parsedBody);
+        body = raw.length ? JSON.parse(raw) : undefined;
+      }
+
+      let transport: StreamableHTTPServerTransport | undefined;
+
+      if (sessionId && transports.has(sessionId)) {
+        transport = transports.get(sessionId);
+      } else if (req.method === "POST" && isInitializeRequest(body)) {
+        const created = new StreamableHTTPServerTransport({
+          sessionIdGenerator: () => randomUUID(),
+          onsessioninitialized: (newId: string) => {
+            transports.set(newId, created);
+          }
+        });
+        created.onclose = () => {
+          const id = created.sessionId;
+          if (id) transports.delete(id);
+        };
+        const server = createMcpServer();
+        await server.connect(created);
+        transport = created;
+      } else {
+        res.statusCode = 400;
+        res.setHeader("Content-Type", "application/json");
+        res.end(
+          JSON.stringify({
+            jsonrpc: "2.0",
+            error: {
+              code: -32000,
+              message: "Bad Request: No valid session id (send initialize first)."
+            },
+            id: null
+          })
+        );
         return;
       }
 
-      await transport.handleRequest(req as any, res as any);
+      await transport!.handleRequest(req as any, res as any, body);
     } catch (e: any) {
-      res.statusCode = 500;
-      res.setHeader("content-type", "text/plain; charset=utf-8");
+      if (!res.headersSent) {
+        res.statusCode = 500;
+        res.setHeader("content-type", "text/plain; charset=utf-8");
+      }
       res.end(e?.message ? String(e.message) : "Server error");
     }
   });
 
-  await new Promise<void>((resolve) => httpServer.listen(port, resolve));
+  const host = process.env.HOST ?? "0.0.0.0";
+  await new Promise<void>((resolve) => httpServer.listen(port, host, resolve));
   process.stderr.write(
-    `MCP Streamable HTTP + REST API listening on http://localhost:${port} (mcp at ${mcpPath}, api at /api/*)\n`
+    `MCP Streamable HTTP + REST API listening on http://${host}:${port} (mcp at ${mcpPath}, api at /api/*)\n`
   );
 }

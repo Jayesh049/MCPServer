@@ -1,0 +1,107 @@
+About this project
+===================
+
+What inspired us
+----------------
+
+Healthcare agents need grounded context—labs, problems, medications—without every integration becoming a bespoke ETL job. FHIR is the natural lingua franca, but many hackathon demos stop at "we have a JSON file." We wanted something closer to real life: an MCP server that tools can call, with optional SMART-on-FHIR-style context passed in by hosts like Prompt Opinion, while staying demo-safe (synthetic / mock FHIR by default so we never accidentally ship a silent PHI bridge).
+
+Separately, we cared about explainability: not only "the model said so," but structured signals and tables (care gaps, risk-style summaries) that a clinician—or a judge of a demo—can skim.
+
+
+What we learned
+---------------
+
+- MCP over HTTP is subtle. The Streamable HTTP transport in the official SDK distinguishes stateless vs stateful behavior; reusing a stateless transport across HTTP requests throws, which surfaced to clients as a generic 500. Stateful sessions plus a deliberate reset on initialize matched how web apps reconnect.
+
+- Platforms matter. Prompt Opinion expects a specific initialize capability extension (ai.promptopinion/fhir-context with SMART scopes)—not a generic "FHIR required" flag—so interoperability is partly contract discovery, not only "we read FHIR headers."
+
+- Tunnels are operational glue, not configuration. ngrok authtokens, reserved domains (ERR_NGROK_334), and ephemeral Cloudflare quick tunnels taught us that "public URL" is a moving part: one running agent, one account session, and clear runbooks beat "it worked yesterday."
+
+- RAG without a big budget is possible if you accept Wikipedia-scale grounding, local embeddings, and async indexing jobs—then measure latency honestly.
+
+
+How we built it
+---------------
+
+We used Node.js + TypeScript, the @modelcontextprotocol/sdk, and a small HTTP entry (PORT selects HTTP vs stdio). The MCP server advertises tools for:
+
+- Care-gap style flows (facts -> extraction -> deterministic tables), gated on FHIR context headers when enabled.
+- Disease pipelines (registry-driven, modality-specific inputs).
+- Education-only care plans and manual question flows (explicitly synthetic personas).
+- Web RAG paths backed by Prisma + Postgres for chunks/embeddings, with training hooks for batch jobs.
+
+We normalized FHIR-ish context from headers (X-FHIR-Server-URL, token, patient id, optional refresh fields) into tool _meta, then validated with Zod-shaped helpers.
+
+For math-heavy intuition (not production scoring claims), a toy view of a bounded contribution from a normalized signal x to a score s is:
+
+  s = sum_{i=1}^{n} w_i * phi(x_i)
+
+  phi(x) = clip(alpha * x + beta, 0, 1)
+
+where clip(u,0,1) keeps partial scores interpretable in [0,1] before weights w_i combine them—useful when you want demos to separate "directionally worse" from "catastrophic."
+
+(LaTeX-style equivalents: s = \sum_{i=1}^{n} w_i \,\phi(x_i), \quad \phi(x)=\mathrm{clip}(\alpha x+\beta,0,1).)
+
+
+Challenges we faced
+-------------------
+
+1. "500" that wasn't business logic — double initialization + transport lifecycle issues looked like "Prompt Opinion is broken," but the root cause was protocol transport reuse and error handling around partially streamed responses.
+
+2. Interoperability headers — hosts send FHIR context as HTTP headers; bridging that into MCP tool extras has to be consistent across Streamable HTTP and local tests.
+
+3. Tunneling footguns — invalid / rotated authtokens (ERR_NGROK_105 / 107), and reserved endpoints still online (ERR_NGROK_334) are classic "works on my machine" traps when teammates each start an agent.
+
+4. Safety posture vs demo sparkle — the product wants impressive autonomy; engineering wants mock-only FHIR defaults, explicit consent scopes, and loud disclaimers. Keeping those aligned is a feature, not polish.
+
+
+Built with
+----------
+
+Languages & runtime
+  - TypeScript (strict), Node.js (ES modules), JavaScript on the wire (JSON-RPC / MCP).
+
+Core protocol & HTTP
+  - @modelcontextprotocol/sdk — MCP server, tools, Streamable HTTP transport (Node adapter uses Web Standard Request/Response via @hono/node-server).
+  - Node.js built-in `http` — single server for `/mcp` and `/api/*`.
+
+Data & validation
+  - Prisma ORM + PostgreSQL (schema migrations; DATABASE_URL often Prisma Postgres / pooled in demos).
+  - Zod — tool inputs and context parsing.
+
+RAG, embeddings & documents
+  - @xenova/transformers — local embedding model (Transformers.js / ONNX WASM) when no cloud key.
+  - Optional: Google Gemini API (embeddings + optional RAG answer synthesis via env).
+  - Optional: Hugging Face Inference API for embeddings (env-driven).
+  - Wikipedia HTTP API — article intros / corpus for dynamic web RAG.
+  - pdf-parse — PDF text extraction for report-style tools.
+  - xlsx — spreadsheet ingestion helpers.
+
+Healthcare / demo
+  - FHIR-shaped JSON fixtures + in-process “mock FHIR” adapter (synthetic-only demo paths).
+  - Prompt Opinion–style MCP extension: ai.promptopinion/fhir-context (scopes) + FHIR context headers on tool calls.
+
+Dev tooling
+  - tsx — dev/watch and scripts.
+  - TypeScript compiler, ESLint 9 + typescript-eslint.
+  - dotenv — load .env for Prisma/scripts.
+
+Platforms & ops (not pinned in package.json)
+  - MCP over stdio or HTTP (PORT / MCP_TRANSPORT).
+  - Public demos: ngrok to expose localhost.
+
+
+Where we'd take it next
+-----------------------
+
+- A real SMART backend adapter behind the same tool surface (replace mock gate with audited fetch + caching).
+
+- Session observability (structured logs per Mcp-Session-Id) and golden tests for initialize / tools/list / tools/call.
+
+- Evaluation: offline datasets + calibration checks instead of only live demos.
+1min(intro + technologies)
+1.5min(concepts)
+0.5 min(tata gud bye)
+
+creation for the 5 minutes , cut , crop and do upload 

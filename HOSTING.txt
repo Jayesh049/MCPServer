@@ -1,0 +1,75 @@
+NETLIFY JAISA "PUBLISH" — YEH STATIC NAHI, NODE SERVER HAI
+=========================================================
+
+AI / Cursor tumhari jagah Render pe LOGIN nahi kar sakta — tumhein ek baar browser se
+Neon + Render par account + "Deploy" dabana padega. Neeche exact steps + tumhara GitHub.
+
+Tumhara repo (push yahan se karo):
+  https://github.com/Jayesh049/MCPServer
+
+Push ke baad GitHub par "Actions" tab mein CI build green dikhe — matlab Render/Docker
+ke liye code theek build ho raha hai.
+
+---
+
+Netlify / Vercel (free) = mostly static sites ya chhote serverless functions.
+Is project mein: MCP + HTTP + Postgres (Prisma) = pura server chalana padta hai.
+
+Sabse aasaan FREE combo (hackathon / demo):
+1) Postgres: Neon (free) — https://neon.tech
+2) Host: Render (free Docker web) — https://render.com
+
+Public URL milega jaise: https://mcp-server-xxxx.onrender.com
+Prompt Opinion mein MCP:    https://...onrender.com/mcp
+
+
+STEP A — DATABASE (5 min)
+-------------------------
+1. Neon par account → "Create project" → region pass.
+2. Connection string copy karo (postgresql://... sslmode=require jaise).
+   Isko baad mein Render mein DATABASE_URL naam se paste karoge.
+
+
+STEP B — CODE GITHUB PAR
+------------------------
+1. Repo GitHub par push karo (is project ka root jahan Dockerfile hai).
+2. .env commit mat karo (secrets). Sirf code + Dockerfile + render.yaml.
+
+
+STEP C — RENDER PAR DEPLOY
+--------------------------
+1. render.com → Sign up → New + → Web Service.
+2. GitHub repo connect → branch select.
+3. Environment: Docker (Dockerfile detect ho jayega agar root mein hai).
+4. Environment variables (Important):
+   DATABASE_URL = Neon wala pura string
+   (optional) MCP_INGRESS_SECRET = agar Po se API-key gate chaho
+5. Create Web Service → build + deploy dekho (~5–15 min first time).
+
+MCP endpoint:
+  https://<render-app-name>.onrender.com/mcp
+
+Health:
+  https://<render-app-name>.onrender.com/api/health
+
+Free tier: kuch der baad idle sleep hota hai; pehla request thoda slow ho sakta hai.
+
+
+LOCAL DOCKER TEST (optional)
+----------------------------
+DATABASE_URL set karke:
+
+  docker build -t mcpserver .
+  docker run -p 3333:3333 -e DATABASE_URL="postgresql://..." mcpserver
+
+
+NETLIFY KYON NAHI?
+------------------
+Netlify Functions = short HTTP, cold start limits; MCP Streamable HTTP + lambi streams
+normally proper Node server jaise Render/Railway par zyada theek hai.
+
+
+SHORTCUT (ABHI DEMO)
+--------------------
+Tumhari machine par `npm start` + `ngrok http 3333` = turant public URL,
+lekin tumhara PC on rehna chahiye. Cloud deploy = PC band, phir bhi URL chalti hai.

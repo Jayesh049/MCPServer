@@ -1,4 +1,4 @@
-# Render.com Blueprint (optional — you can configure the same in the dashboard)
+# Render.com Blueprint — optional. Combined app (Dockerfile) + split MCP + Python RAG agent.
 # Docs: https://render.com/docs/blueprint-spec
 services:
   - type: web
@@ -15,6 +15,39 @@ services:
         value: http
       - key: PORT
         value: "3333"
-      # Set in Render dashboard (secret): Neon / Supabase / Prisma Postgres connection string
       - key: DATABASE_URL
+        sync: false
+
+  - type: web
+    name: rag-agent
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile.agent
+    dockerContext: .
+    healthCheckPath: /health
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: AGENT_RAG_SECRET
+        sync: false
+
+  - type: web
+    name: mcp-gateway
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile.mcp
+    dockerContext: .
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: MCP_TRANSPORT
+        value: http
+      - key: PORT
+        value: "3333"
+      - key: DATABASE_URL
+        sync: false
+      - key: AGENT_RAG_URL
+        sync: false
+      - key: AGENT_RAG_SECRET
         sync: false

@@ -6,6 +6,13 @@ import type { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { createMcpServer } from "./server.js";
 import { handleApiRequest } from "../api/httpApi.js";
 
+export type HttpTransportOptions = {
+  port?: number;
+  path?: string;
+  /** When false, only `/mcp` and `/health` are served (no REST `/api/*`). */
+  includeRestApi?: boolean;
+};
+
 function setMcpPathCors(res: ServerResponse) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET,POST,DELETE,OPTIONS");
@@ -28,10 +35,11 @@ function isInitializeRequest(body: unknown): boolean {
  */
 export async function startHttpTransport(
   _unusedServer: Server,
-  opts?: { port?: number; path?: string }
+  opts?: HttpTransportOptions
 ) {
   const port = opts?.port ?? Number(process.env.PORT ?? process.env.MCP_HTTP_PORT ?? 3333);
   const mcpPath = opts?.path ?? "/mcp";
+  const includeRestApi = opts?.includeRestApi !== false;
 
   const transports = new Map<string, StreamableHTTPServerTransport>();
 
@@ -45,7 +53,14 @@ export async function startHttpTransport(
 
       const url = new URL(req.url, `http://${req.headers.host ?? "localhost"}`);
 
-      if (await handleApiRequest(req, res)) return;
+      if (!includeRestApi && req.method === "GET" && url.pathname === "/health") {
+        res.setHeader("Content-Type", "application/json; charset=utf-8");
+        res.statusCode = 200;
+        res.end(JSON.stringify({ ok: true, role: "mcp-only", time: new Date().toISOString() }));
+        return;
+      }
+
+      if (includeRestApi && (await handleApiRequest(req, res))) return;
 
       if (url.pathname !== mcpPath) {
         res.statusCode = 404;
@@ -124,7 +139,9 @@ export async function startHttpTransport(
 
   const host = process.env.HOST ?? "0.0.0.0";
   await new Promise<void>((resolve) => httpServer.listen(port, host, resolve));
-  process.stderr.write(
-    `MCP Streamable HTTP + REST API listening on http://${host}:${port} (mcp at ${mcpPath}, api at /api/*)\n`
-  );
+  const mode = includeRestApi ? "MCP Streamable HTTP + REST API" : "MCP Streamable HTTP only";
+  const paths = includeRestApi
+    ? `(mcp at ${mcpPath}, api at /api/*)`
+    : `(mcp at ${mcpPath}, GET /health for probes)`;
+  process.stderr.write(`${mode} listening on http://${host}:${port} ${paths}\n`);
 }

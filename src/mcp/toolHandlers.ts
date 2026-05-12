@@ -14,13 +14,33 @@ import {
   answerQ3DoctorsForStage,
   answerQ4HealthReportDiseaseCureSolution
 } from "../answers/manualFlows.js";
-import { AnswerSource, persistAnswerSafe } from "../answers/persist.js";
+import { AnswerSource, persistAnswer, persistAnswerSafe } from "../answers/persist.js";
+import { prisma } from "../lib/prisma.js";
+import { callAgentBankRag, callAgentWebRag, isAgentRagEnabled } from "./agentRagClient.js";
 
 export type ToolCallInput = {
   toolName: string;
   toolArguments: unknown;
   meta: unknown;
 };
+
+async function persistRagPayloadFromAgent(result: unknown) {
+  if (!result || typeof result !== "object") return;
+  const r = result as Record<string, unknown>;
+  const slug = typeof r.slug === "string" ? r.slug : "";
+  if (!slug) return;
+  const row = await prisma.question.findUnique({ where: { slug }, select: { id: true } });
+  if (!row) return;
+  try {
+    await persistAnswer({
+      questionId: row.id,
+      source: /^qb_/.test(slug) ? AnswerSource.BANK_RAG : AnswerSource.WEB_RAG,
+      payload: result
+    });
+  } catch (e) {
+    console.warn("[persistRagPayloadFromAgent]", e);
+  }
+}
 
 export async function handleToolCall(input: ToolCallInput) {
   const tool = tools.find((t) => t.name === input.toolName);
@@ -77,13 +97,25 @@ export async function handleToolCall(input: ToolCallInput) {
     if (tool.domain === "rag-web") {
       if (input.toolName === "ask_bank_rag") {
         const { slug, refresh } = args as { slug: string; refresh?: boolean };
-        const result = await answerQuestionByBankSlug(slug, { refresh });
+        let result: unknown;
+        if (isAgentRagEnabled()) {
+          result = await callAgentBankRag(slug, refresh);
+          await persistRagPayloadFromAgent(result);
+        } else {
+          result = await answerQuestionByBankSlug(slug, { refresh });
+        }
         return {
           content: [{ type: "text", text: JSON.stringify(result, null, 2) }]
         };
       }
       const { question, refresh } = args as { question: string; refresh?: boolean };
-      const result = await answerQuestionWithWebRag(question, { refresh });
+      let result: unknown;
+      if (isAgentRagEnabled()) {
+        result = await callAgentWebRag(question, refresh);
+        await persistRagPayloadFromAgent(result);
+      } else {
+        result = await answerQuestionWithWebRag(question, { refresh });
+      }
       return {
         content: [{ type: "text", text: JSON.stringify(result, null, 2) }]
       };

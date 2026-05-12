@@ -1,0 +1,6 @@
+# Demo sklearn pipeline (needs a prebuilt wheel for your Python/OS).
+# On Windows, use Python 3.11–3.13 if install still tries to compile (install "Build Tools for VS" only as last resort).
+numpy>=2.0,<3
+pandas>=2.2,<3
+joblib>=1.4,<2
+scikit-learn>=1.6.1,<2

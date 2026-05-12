@@ -6,9 +6,9 @@ Educational pipeline: fetches English Wikipedia summaries and selected sections 
 
 ## Prerequisites
 
-- Python 3.11+
+- Python **3.11–3.13** recommended on **Windows** (so `scikit-learn` installs from a wheel). Python 3.14+ may fall back to compiling and require Visual Studio C++ build tools.
 - `DATABASE_URL` pointing at Postgres (same as Prisma), e.g. in repo-root `.env`
-- Applied migration: `npx prisma migrate deploy` (includes `20260512120000_disease_web_knowledge`)
+- Applied migration: `npm run db:migrate:deploy` (includes `20260512120000_disease_web_knowledge`)
 
 ## Wikimedia policy
 
@@ -21,8 +21,21 @@ cd ml
 python -m venv .venv
 .venv\Scripts\activate   # Windows
 # source .venv/bin/activate  # Linux/macOS
+```
+
+**ETL only** (no `scikit-learn` — avoids Windows compile errors):
+
+```bash
+pip install -r requirements-etl.txt
+```
+
+**Full stack** (ETL + training; needs compatible wheels for your Python):
+
+```bash
 pip install -r requirements.txt
 ```
+
+If `scikit-learn` still tries to compile, stay on **`requirements-etl.txt`** for `fetch_and_insert.py`, and run training on Linux/CI or after installing [Build Tools for Visual Studio](https://visualstudio.microsoft.com/visual-cpp-build-tools/) with the C++ workload.
 
 ## Run ETL (fetch + insert)
 

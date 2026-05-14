@@ -31,8 +31,13 @@ Thumbs.db
 
 # Python ML generated artifacts (see ml/README.md)
 ml/artifacts/
+**/__pycache__/
+*.py[cod]
 ml/scripts/__pycache__/
-agent/**/__pycache__/
+ml/flask_disease/**/__pycache__/
 
 # Optional JSON export from DB (see ml/scripts/export_diseases_to_json.py)
 ml/diseases/*.json
+
+# Flask disease ML local artifacts (also under ml/artifacts/)
+ml/artifacts/disease_ml/

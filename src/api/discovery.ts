@@ -15,6 +15,12 @@ export function getApiDiscovery() {
       { method: "GET", path: "/api/qa/info", description: "Examples for unified ask." },
       { method: "POST", path: "/api/qa/ask", description: "Unified ask→answer." },
       { method: "POST", path: "/api/v1/ask", description: "Alias of /api/qa/ask." },
+      {
+        method: "POST",
+        path: "/api/chat/patient",
+        description:
+          "Patient-style plain English: { message, language?, pdfBase64?, imageBase64?, includeRawRag? }. No external LLM; no image vision."
+      },
       { method: "GET", path: "/api/rag/catalog", description: "Manual q2–q4 + bank qb_*." },
       { method: "GET", path: "/api/questions", description: "DB Question rows." },
       { method: "GET", path: "/api/answers", description: "?limit= Recent Answer rows." },

@@ -2,11 +2,16 @@ import Link from "next/link";
 import type { DiseaseSummary } from "../lib/types";
 
 async function getDiseases(): Promise<DiseaseSummary[]> {
-  const base = process.env.MCP_API_BASE_URL ?? "http://localhost:3333";
-  const res = await fetch(`${base}/api/diseases`, { cache: "no-store" });
-  if (!res.ok) return [];
-  const data = (await res.json()) as { diseases: DiseaseSummary[] };
-  return data.diseases;
+  const base = (process.env.MCP_API_BASE_URL ?? "http://127.0.0.1:3333").replace(/\/$/, "");
+  try {
+    const res = await fetch(`${base}/api/diseases`, { cache: "no-store" });
+    if (!res.ok) return [];
+    const data = (await res.json()) as { diseases: DiseaseSummary[] };
+    return data.diseases;
+  } catch {
+    // Backend not running, wrong port, or Windows localhost quirks — page still loads.
+    return [];
+  }
 }
 
 export default async function HomePage() {

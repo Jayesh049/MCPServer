@@ -4,11 +4,15 @@ Educational pipeline: fetches English Wikipedia summaries and selected sections 
 
 **Not for clinical decisions.** Content is from Wikipedia and heuristics; verify with qualified professionals.
 
+## Flask disease corpus ML (sidecar)
+
+Per-disease PDF/image ingest, DB-backed `formulaKey` (sklearn pipeline), train/predict over HTTP — see [`flask_disease/README.md`](flask_disease/README.md). Node MCP tools `disease_corpus_ml_*` require `DISEASE_ML_URL`.
+
 ## Prerequisites
 
 - Python **3.11–3.13** recommended on **Windows** for `scikit-learn` wheels. Python **3.14** is OK for the **ETL** stack (`psycopg[binary]` needs **≥3.2.10** for wheels — see `requirements-etl.txt`).
 - `DATABASE_URL` pointing at Postgres (same as Prisma), e.g. in repo-root `.env`
-- Applied migration: `npm run db:migrate:deploy` (includes `20260512120000_disease_web_knowledge`)
+- Applied migration: `npm run db:migrate:deploy` (includes `20260512120000_disease_web_knowledge` and `20260512140000_disease_corpus_ml`)
 
 ## Wikimedia policy
 
@@ -83,3 +87,6 @@ Writes `ml/artifacts/criticality_model.joblib` and `ml/artifacts/metrics.json` (
 | `DiseaseSpecialistInfo` | Care-pathway bullets from Treatment/Management-style sections |
 | `DiseaseYogaPranayamInfo` | Lifestyle/yoga/pranayama snippets or conservative templates |
 | `DiseaseCriticalityProfile` | Single heuristic score 0–100 per slug + rationale |
+| `DiseaseTrainingAsset` | Ingested PDF/image metadata + `extractedText` + optional `trainingLabel` |
+| `DiseaseFunctionalityConfig` | `formulaKey` + `hyperparams` per `(diseaseSlug, functionality)` |
+| `DiseaseTrainedModel` | Versioned joblib pointer + metrics |

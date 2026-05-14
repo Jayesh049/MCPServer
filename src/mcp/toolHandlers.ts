@@ -17,6 +17,13 @@ import {
 import { AnswerSource, persistAnswer, persistAnswerSafe } from "../answers/persist.js";
 import { prisma } from "../lib/prisma.js";
 import { callAgentBankRag, callAgentWebRag, isAgentRagEnabled } from "./agentRagClient.js";
+import {
+  diseaseCorpusIngest,
+  diseaseCorpusModels,
+  diseaseCorpusPredict,
+  diseaseCorpusTrain,
+  isDiseaseMlEnabled
+} from "../ml/flaskDiseaseClient.js";
 
 export type ToolCallInput = {
   toolName: string;
@@ -73,6 +80,76 @@ export async function handleToolCall(input: ToolCallInput) {
   const args = tool.inputZod.parse(input.toolArguments ?? {});
 
   try {
+    if (tool.domain === "disease-ml") {
+      if (!isDiseaseMlEnabled()) {
+        return {
+          isError: true,
+          content: [
+            {
+              type: "text",
+              text: "DISEASE_ML_URL is not set; disease corpus ML tools are disabled. Deploy ml/flask_disease and set the URL (see ml/flask_disease/README.md)."
+            }
+          ]
+        };
+      }
+      if (input.toolName === "disease_corpus_ml_ingest") {
+        const { diseaseSlug, functionality, files, trainingLabel } = args as {
+          diseaseSlug: string;
+          functionality?: string;
+          files: Array<{
+            filename: string;
+            mimeType: string;
+            dataBase64: string;
+            trainingLabel?: 0 | 1;
+          }>;
+          trainingLabel?: 0 | 1;
+        };
+        const result = await diseaseCorpusIngest(diseaseSlug, {
+          functionality,
+          files: files.map((f) => ({
+            filename: f.filename,
+            mimeType: f.mimeType,
+            dataBase64: f.dataBase64,
+            trainingLabel: f.trainingLabel ?? trainingLabel
+          })),
+          trainingLabel
+        });
+        return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
+      }
+      if (input.toolName === "disease_corpus_ml_train") {
+        const { diseaseSlug, functionality, formulaKey, hyperparams } = args as {
+          diseaseSlug: string;
+          functionality?: string;
+          formulaKey?: string;
+          hyperparams?: Record<string, unknown>;
+        };
+        const result = await diseaseCorpusTrain(diseaseSlug, {
+          functionality,
+          formulaKey,
+          hyperparams
+        });
+        return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
+      }
+      if (input.toolName === "disease_corpus_ml_models") {
+        const { diseaseSlug, functionality } = args as { diseaseSlug: string; functionality?: string };
+        const result = await diseaseCorpusModels(diseaseSlug, functionality);
+        return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
+      }
+      if (input.toolName === "disease_corpus_ml_predict") {
+        const { diseaseSlug, functionality, text } = args as {
+          diseaseSlug: string;
+          functionality?: string;
+          text: string;
+        };
+        const result = await diseaseCorpusPredict(diseaseSlug, { functionality, text });
+        return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
+      }
+      return {
+        isError: true,
+        content: [{ type: "text", text: `Unhandled disease-ml tool: ${input.toolName}` }]
+      };
+    }
+
     if (tool.domain === "manual-question") {
       if (input.toolName === "manual_q2_home_remedies_doctors") {
         const { diseaseSlug } = args as { diseaseSlug: string };

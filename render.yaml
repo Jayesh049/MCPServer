@@ -1,4 +1,4 @@
-# Render.com Blueprint — optional. Combined app (Dockerfile) + split MCP + Python RAG agent.
+# Render.com Blueprint — optional. Combined app (Dockerfile) + split MCP + Python RAG agent + Flask disease ML.
 # Docs: https://render.com/docs/blueprint-spec
 services:
   - type: web
@@ -32,6 +32,26 @@ services:
         sync: false
 
   - type: web
+    name: disease-ml
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile.disease-ml
+    dockerContext: .
+    healthCheckPath: /health
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: DISEASE_ML_SECRET
+        sync: false
+      - key: PORT
+        value: "8090"
+      - key: DISEASE_ML_STORAGE
+        value: local
+      # Ephemeral disk: use S3 for production artifacts (see ml/flask_disease/README.md).
+      - key: DISEASE_ML_STORAGE_ROOT
+        value: /var/disease_ml
+
+  - type: web
     name: mcp-gateway
     runtime: docker
     plan: free
@@ -50,4 +70,8 @@ services:
       - key: AGENT_RAG_URL
         sync: false
       - key: AGENT_RAG_SECRET
+        sync: false
+      - key: DISEASE_ML_URL
+        sync: false
+      - key: DISEASE_ML_SECRET
         sync: false

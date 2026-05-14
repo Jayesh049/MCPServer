@@ -49,7 +49,13 @@ function embeddingFromJson(value: Prisma.JsonValue | null): number[] | undefined
  */
 export async function answerQuestionWithWebRag(
   questionRaw: string,
-  options?: { refresh?: boolean; /** Use an existing Question slug (e.g. qb_001 from the bank) instead of hashing the text. */ useSlug?: string }
+  options?: {
+    refresh?: boolean;
+    /** Use an existing Question slug (e.g. qb_001 from the bank) instead of hashing the text. */
+    useSlug?: string;
+    /** When true, do not call Gemini synthesis (e.g. patient plain-English path without external LLM). */
+    skipGeminiSynthesis?: boolean;
+  }
 ): Promise<DynamicWebRagResult> {
   const question = normalizeQuestionText(questionRaw);
   if (question.length < 3) {
@@ -120,7 +126,11 @@ export async function answerQuestionWithWebRag(
     .join("\n\n");
 
   let geminiAnswer: string | undefined;
-  if (isRagGeminiSynthesisEnabled() && topMatches.length > 0) {
+  if (
+    !options?.skipGeminiSynthesis &&
+    isRagGeminiSynthesisEnabled() &&
+    topMatches.length > 0
+  ) {
     try {
       geminiAnswer = await geminiSynthesizeRagAnswer(
         question,

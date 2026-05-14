@@ -16,6 +16,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
           <div className="brand">Agents Assemble — 20-Disease MCP Tester</div>
           <nav className="nav">
             <Link href="/">Diseases</Link>
+            <Link href="/chat">Simple chat</Link>
             <Link href="/report">Report</Link>
             <Link href="/history">History</Link>
             <Link href="/about">About</Link>

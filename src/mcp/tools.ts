@@ -8,7 +8,7 @@ export type ToolDef = {
   inputSchema: Record<string, unknown>;
   inputZod: z.ZodTypeAny;
   requiresFhirContext?: boolean;
-  domain?: "care-gap" | "disease" | "care-plan" | "rag-web" | "manual-question";
+  domain?: "care-gap" | "disease" | "care-plan" | "rag-web" | "manual-question" | "disease-ml";
   diseaseSlug?: string;
   manualQuestionId?: "q2" | "q3" | "q4";
 };
@@ -199,6 +199,38 @@ const AskWebRagInputZod = z.object({
     .describe("If true, re-fetch Wikipedia and rebuild the corpus for this question even if data already exists.")
 });
 
+const CorpusMlFileZod = z.object({
+  filename: z.string().min(1),
+  mimeType: z.string().min(1),
+  dataBase64: z.string().min(1),
+  trainingLabel: z.union([z.literal(0), z.literal(1)]).optional()
+});
+
+const DiseaseCorpusMlIngestInputZod = z.object({
+  diseaseSlug: z.string().min(1),
+  functionality: z.string().optional(),
+  files: z.array(CorpusMlFileZod).min(1).max(25),
+  trainingLabel: z.union([z.literal(0), z.literal(1)]).optional()
+});
+
+const DiseaseCorpusMlTrainInputZod = z.object({
+  diseaseSlug: z.string().min(1),
+  functionality: z.string().optional(),
+  formulaKey: z.string().optional().describe("e.g. tfidf_lr, tfidf_svd_lr, hashing_svc — creates config if missing."),
+  hyperparams: z.record(z.string(), z.unknown()).optional()
+});
+
+const DiseaseCorpusMlModelsInputZod = z.object({
+  diseaseSlug: z.string().min(1),
+  functionality: z.string().optional()
+});
+
+const DiseaseCorpusMlPredictInputZod = z.object({
+  diseaseSlug: z.string().min(1),
+  functionality: z.string().optional(),
+  text: z.string().min(1).describe("Free text to classify with the latest trained model for this slug/functionality.")
+});
+
 const AskBankRagInputZod = z.object({
   slug: z
     .string()
@@ -260,6 +292,95 @@ const manualQuestionTools: ToolDef[] = [
     requiresFhirContext: false,
     domain: "manual-question",
     manualQuestionId: "q4"
+  }
+];
+
+const diseaseMlTools: ToolDef[] = [
+  {
+    name: "disease_corpus_ml_ingest",
+    title: "Disease corpus ML — ingest PDFs/images (Flask sidecar)",
+    description:
+      "Uploads base64-encoded files to the disease ML service: extracts PDF text, stores rows in Postgres, " +
+      "and saves binaries to configured storage (local or S3). Requires DISEASE_ML_URL. Educational demo only.",
+    inputZod: DiseaseCorpusMlIngestInputZod,
+    inputSchema: {
+      type: "object",
+      properties: {
+        diseaseSlug: { type: "string" },
+        functionality: { type: "string" },
+        trainingLabel: { type: "integer", enum: [0, 1] },
+        files: {
+          type: "array",
+          items: {
+            type: "object",
+            properties: {
+              filename: { type: "string" },
+              mimeType: { type: "string" },
+              dataBase64: { type: "string" },
+              trainingLabel: { type: "integer", enum: [0, 1] }
+            },
+            required: ["filename", "mimeType", "dataBase64"]
+          }
+        }
+      },
+      required: ["diseaseSlug", "files"]
+    },
+    requiresFhirContext: false,
+    domain: "disease-ml"
+  },
+  {
+    name: "disease_corpus_ml_train",
+    title: "Disease corpus ML — train sklearn pipeline",
+    description:
+      "Trains the pipeline selected by DiseaseFunctionalityConfig.formulaKey (e.g. tfidf_lr for Alzheimer demo seed). " +
+      "Uses extractedText from ingested assets; pseudo-labels when trainingLabel not set. Requires DISEASE_ML_URL.",
+    inputZod: DiseaseCorpusMlTrainInputZod,
+    inputSchema: {
+      type: "object",
+      properties: {
+        diseaseSlug: { type: "string" },
+        functionality: { type: "string" },
+        formulaKey: { type: "string" },
+        hyperparams: { type: "object" }
+      },
+      required: ["diseaseSlug"]
+    },
+    requiresFhirContext: false,
+    domain: "disease-ml"
+  },
+  {
+    name: "disease_corpus_ml_models",
+    title: "Disease corpus ML — list trained models",
+    description: "Returns recent DiseaseTrainedModel rows and metrics for a disease slug and functionality.",
+    inputZod: DiseaseCorpusMlModelsInputZod,
+    inputSchema: {
+      type: "object",
+      properties: {
+        diseaseSlug: { type: "string" },
+        functionality: { type: "string" }
+      },
+      required: ["diseaseSlug"]
+    },
+    requiresFhirContext: false,
+    domain: "disease-ml"
+  },
+  {
+    name: "disease_corpus_ml_predict",
+    title: "Disease corpus ML — predict from text",
+    description:
+      "Runs the latest saved sklearn model on input text (binary demo class). Not for clinical use.",
+    inputZod: DiseaseCorpusMlPredictInputZod,
+    inputSchema: {
+      type: "object",
+      properties: {
+        diseaseSlug: { type: "string" },
+        functionality: { type: "string" },
+        text: { type: "string" }
+      },
+      required: ["diseaseSlug", "text"]
+    },
+    requiresFhirContext: false,
+    domain: "disease-ml"
   }
 ];
 
@@ -328,6 +449,7 @@ export const tools: ToolDef[] = [
   ...diseaseTools,
   ...carePlanTools,
   ...reportTools,
+  ...diseaseMlTools,
   ...ragWebTools,
   ...manualQuestionTools
 ];

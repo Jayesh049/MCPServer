@@ -15,6 +15,7 @@ import {
   answerQ4HealthReportDiseaseCureSolution
 } from "../answers/manualFlows.js";
 import { executeUnifiedAsk, getUnifiedAskApiInfo } from "./qaAsk.js";
+import { executePatientChat } from "./patientChat.js";
 
 function setCors(res: ServerResponse) {
   res.setHeader("Access-Control-Allow-Origin", "*");
@@ -86,6 +87,13 @@ export async function handleApiRequest(
     const raw = await readJsonBody(req);
     const result = await executeUnifiedAsk(raw ?? {});
     sendJson(res, result.success ? 200 : 400, result);
+    return true;
+  }
+
+  if (req.method === "POST" && url.pathname === "/api/chat/patient") {
+    const raw = await readJsonBody(req);
+    const result = await executePatientChat(raw ?? {});
+    sendJson(res, result.ok ? 200 : 400, result);
     return true;
   }
 

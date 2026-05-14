@@ -125,3 +125,58 @@ model DiseaseCriticalityProfile {
   createdAt            DateTime @default(now())
   updatedAt            DateTime @updatedAt
 }
+
+/// Ingested PDF/image (or placeholder) for per-disease corpus ML. Not for clinical use.
+enum DiseaseTrainingAssetKind {
+  PDF
+  IMAGE
+}
+
+model DiseaseTrainingAsset {
+  id              String                 @id @default(cuid())
+  diseaseSlug     String
+  functionality   String                 @default("educational_triage_text")
+  kind            DiseaseTrainingAssetKind
+  mimeType        String
+  sha256          String
+  storageKey      String
+  extractedText   String?                @db.Text
+  /// Optional 0/1 for supervised training; if null, pseudo-labels are derived (demo only).
+  trainingLabel   Int?
+  meta            Json?
+  createdAt       DateTime               @default(now())
+  updatedAt       DateTime               @updatedAt
+
+  @@unique([diseaseSlug, functionality, sha256])
+  @@index([diseaseSlug, functionality])
+}
+
+/// Which sklearn pipeline ("formula") applies for a disease + functionality (data-driven).
+model DiseaseFunctionalityConfig {
+  id              String                @id @default(cuid())
+  diseaseSlug     String
+  functionality   String
+  formulaKey      String
+  hyperparams     Json?
+  isActive        Boolean               @default(true)
+  createdAt       DateTime              @default(now())
+  updatedAt       DateTime              @updatedAt
+  trainedModels   DiseaseTrainedModel[]
+
+  @@unique([diseaseSlug, functionality])
+  @@index([diseaseSlug])
+}
+
+/// Versioned trained artifact pointer + metrics (artifact bytes in object storage or local path).
+model DiseaseTrainedModel {
+  id                 String                   @id @default(cuid())
+  configId           String
+  config             DiseaseFunctionalityConfig @relation(fields: [configId], references: [id], onDelete: Cascade)
+  version            Int                      @default(1)
+  artifactStorageKey String
+  metrics            Json?
+  trainedAt          DateTime                 @default(now())
+  nSamples           Int
+
+  @@index([configId, trainedAt])
+}

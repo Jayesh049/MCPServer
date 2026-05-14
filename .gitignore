@@ -8,6 +8,7 @@ out/
 # Build output (rebuild with npm run build)
 dist/
 dist.zip
+*.zip
 
 # Env and secrets (local SQLite path may be checked in optionally)
 .env
@@ -17,6 +18,9 @@ prisma/**/*.sqlite
 prisma/**/*.sqlite-journal
 .env.*
 !.env.example
+
+# Frontend local overrides (API base URL); do not commit machine-specific URLs
+frontend/.env.local
 
 # Logs and caches
 *.log

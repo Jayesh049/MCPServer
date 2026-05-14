@@ -91,143 +91,131 @@ export default function PatientChatPage() {
   }, [message, language, pdfFile, imageFile, includeRaw]);
 
   return (
-    <div>
-      <div style={{ marginBottom: 14 }}>
-        <Link href="/" className="subtle">
-          ← All diseases
-        </Link>
+    <div className="chat-layout">
+      <div className="chat-messages">
+        <div className="chat-bubble assistant">
+          <div className="bubble-src">🏥 Agents Assemble — Patient Chat</div>
+          Ask in your own words. You can add a PDF (text is read) or attach an image (we{" "}
+          <strong>cannot</strong> read the picture in this mode — describe it if it matters). Answers use{" "}
+          <strong>very simple English</strong> from Wikipedia-style notes. <em>Not medical advice.</em>
+        </div>
+
+        {error ? (
+          <div className="chat-bubble assistant" role="alert">
+            <div className="bubble-src">Error</div>
+            {error}
+          </div>
+        ) : null}
+
+        {reply?.patientText ? (
+          <div className="chat-bubble assistant">
+            <div className="bubble-src">Plain answer</div>
+            <div style={{ whiteSpace: "pre-wrap" }}>{reply.patientText}</div>
+            {reply.languageNote ? <p className="muted" style={{ marginTop: 12 }}>{reply.languageNote}</p> : null}
+            {reply.sourcesUsed?.length ? (
+              <p className="muted" style={{ marginTop: 8 }}>
+                Sources: {reply.sourcesUsed.join(", ")}
+              </p>
+            ) : null}
+            <p className="muted" style={{ marginTop: 12, fontWeight: 600 }}>
+              {reply.disclaimer}
+            </p>
+            {reply.rawRag ? (
+              <details style={{ marginTop: 16 }}>
+                <summary className="muted">Raw RAG payload</summary>
+                <pre
+                  style={{
+                    whiteSpace: "pre-wrap",
+                    fontSize: 12,
+                    maxHeight: 320,
+                    overflow: "auto",
+                    marginTop: 8,
+                    fontFamily: "var(--font-mono), ui-monospace, monospace"
+                  }}
+                >
+                  {JSON.stringify(reply.rawRag, null, 2)}
+                </pre>
+              </details>
+            ) : null}
+          </div>
+        ) : null}
       </div>
 
-      <section className="hero">
-        <h1>Simple patient chat</h1>
-        <p className="muted">
-          Ask in your own words. You can add a PDF (text is read) or attach an image (we{" "}
-          <strong>cannot</strong> read the picture in this mode — describe it if it matters).
-          Answers use <strong>very simple English</strong> from Wikipedia-style notes. Not
-          medical advice.
-        </p>
-      </section>
-
-      <div className="panel" style={{ marginBottom: 20 }}>
-        <label className="label">Language you use (for our records only)</label>
-        <select
-          className="input"
-          value={language}
-          onChange={(e) => setLanguage(e.target.value)}
-          style={{ maxWidth: 420, marginBottom: 16 }}
-        >
-          {LANGUAGES.map((o) => (
-            <option key={o.value} value={o.value}>
-              {o.label}
-            </option>
-          ))}
-        </select>
-
-        <label className="label">Your question</label>
-        <textarea
-          className="input"
-          rows={5}
-          value={message}
-          onChange={(e) => setMessage(e.target.value)}
-          placeholder="Example: What is high blood pressure? Should I worry about salt?"
-          style={{ width: "100%", marginBottom: 16, resize: "vertical" }}
-        />
-
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 20, marginBottom: 16 }}>
-          <div>
-            <label className="label">PDF (optional)</label>
+      <div className="chat-footer">
+        <div style={{ marginBottom: 10 }}>
+          <Link href="/" className="subtle">
+            ← Disease hub
+          </Link>
+        </div>
+        <div style={{ display: "flex", gap: 12, marginBottom: 10, flexWrap: "wrap", alignItems: "center" }}>
+          <label className="muted" style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12 }}>
+            Language:
+            <select
+              className="form-select"
+              style={{ width: "auto", minWidth: 200, padding: "6px 10px", fontSize: 12 }}
+              value={language}
+              onChange={(e) => setLanguage(e.target.value)}
+            >
+              {LANGUAGES.map((o) => (
+                <option key={o.value} value={o.value}>
+                  {o.label}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="muted" style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12 }}>
+            PDF (optional)
             <input
               type="file"
               accept="application/pdf,.pdf"
               onChange={(e) => setPdfFile(e.target.files?.[0] ?? null)}
             />
-            {pdfFile ? (
-              <div className="muted" style={{ marginTop: 6 }}>
-                Selected: {pdfFile.name}
-              </div>
-            ) : null}
-          </div>
-          <div>
-            <label className="label">Image (optional — not analyzed visually)</label>
+          </label>
+          <label className="muted" style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12 }}>
+            Image (optional)
             <input
               type="file"
               accept="image/jpeg,image/png,image/webp"
               onChange={(e) => setImageFile(e.target.files?.[0] ?? null)}
             />
-            {imageFile ? (
-              <div className="muted" style={{ marginTop: 6 }}>
-                Selected: {imageFile.name} (name only; add a text description in your question if
-                needed)
-              </div>
-            ) : null}
-          </div>
+          </label>
         </div>
+        {(pdfFile || imageFile) && (
+          <p className="muted" style={{ fontSize: 12, marginBottom: 10 }}>
+            {pdfFile ? `PDF: ${pdfFile.name}` : null}
+            {pdfFile && imageFile ? " · " : null}
+            {imageFile ? `Image: ${imageFile.name} (not analyzed visually)` : null}
+          </p>
+        )}
 
-        <label style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}>
-          <input
-            type="checkbox"
-            checked={includeRaw}
-            onChange={(e) => setIncludeRaw(e.target.checked)}
-          />
-          <span className="muted">Include raw RAG JSON (large; for debugging)</span>
+        <label style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }} className="muted">
+          <input type="checkbox" checked={includeRaw} onChange={(e) => setIncludeRaw(e.target.checked)} />
+          <span style={{ fontSize: 12 }}>Include raw RAG JSON (large; for debugging)</span>
         </label>
 
-        <button type="button" className="btn" onClick={onSubmit} disabled={loading}>
-          {loading ? "Working…" : "Get simple answer"}
-        </button>
+        <div className="chat-input-wrap">
+          <textarea
+            className="chat-textarea"
+            rows={3}
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+            placeholder="Ask in your own words, e.g. 'What is high blood pressure?'"
+          />
+          <button type="button" className="chat-send" onClick={onSubmit} disabled={loading} aria-label="Send">
+            {loading ? (
+              <span className="spinner" style={{ width: 16, height: 16, borderWidth: 2 }} />
+            ) : (
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="16" height="16" aria-hidden>
+                <line x1="22" y1="2" x2="11" y2="13" />
+                <polygon points="22 2 15 22 11 13 2 9 22 2" />
+              </svg>
+            )}
+          </button>
+        </div>
+        <p style={{ fontSize: 11, color: "var(--faint)", marginTop: 8 }}>
+          Uses RAG over Wikipedia-style disease notes. Not medical advice.
+        </p>
       </div>
-
-      {error ? (
-        <div className="panel" style={{ borderColor: "var(--bad)" }}>
-          <strong>Error:</strong> {error}
-        </div>
-      ) : null}
-
-      {reply?.patientText ? (
-        <div className="panel" style={{ marginTop: 16 }}>
-          <h2 style={{ marginTop: 0 }}>Plain answer</h2>
-          <pre
-            style={{
-              whiteSpace: "pre-wrap",
-              fontFamily: "inherit",
-              fontSize: 15,
-              lineHeight: 1.55,
-              margin: 0
-            }}
-          >
-            {reply.patientText}
-          </pre>
-          {reply.languageNote ? (
-            <p className="muted" style={{ marginTop: 14 }}>
-              {reply.languageNote}
-            </p>
-          ) : null}
-          {reply.sourcesUsed?.length ? (
-            <p className="muted" style={{ marginTop: 8 }}>
-              Sources: {reply.sourcesUsed.join(", ")}
-            </p>
-          ) : null}
-          <p className="muted" style={{ marginTop: 12, fontWeight: 600 }}>
-            {reply.disclaimer}
-          </p>
-          {reply.rawRag ? (
-            <details style={{ marginTop: 16 }}>
-              <summary className="muted">Raw RAG payload</summary>
-              <pre
-                style={{
-                  whiteSpace: "pre-wrap",
-                  fontSize: 12,
-                  maxHeight: 320,
-                  overflow: "auto",
-                  marginTop: 8
-                }}
-              >
-                {JSON.stringify(reply.rawRag, null, 2)}
-              </pre>
-            </details>
-          ) : null}
-        </div>
-      ) : null}
     </div>
   );
 }

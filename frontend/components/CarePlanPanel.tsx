@@ -1,41 +1,33 @@
+import type { CSSProperties, ReactNode } from "react";
 import type { CarePlan } from "../lib/types";
 
 export function CarePlanPanel({ plan }: { plan: CarePlan }) {
   return (
     <div className="panel" style={{ display: "grid", gap: 18 }}>
       <div>
-        <h2 style={{ marginBottom: 4 }}>Care Plan (synthetic)</h2>
+        <div className="det-section-title" style={{ marginBottom: 8 }}>
+          Care Plan (synthetic)
+        </div>
         <div className="subtle">
-          For known disease: <strong>{plan.diseaseName}</strong>. All doctors,
-          hospitals, and patient details are SYNTHETIC and fictional.
+          For known disease: <strong>{plan.diseaseName}</strong>. All doctors, hospitals, and patient details are
+          SYNTHETIC and fictional.
         </div>
       </div>
 
       <Section title="1. Exercises for the healing phase">
-        <div style={{ display: "grid", gap: 10 }}>
+        <div className="care-section">
           {plan.exercises.map((ex, i) => (
-            <div
-              key={i}
-              style={{
-                border: "1px solid var(--border)",
-                borderRadius: 8,
-                padding: "10px 12px"
-              }}
-            >
+            <div key={i} className="exercise-card">
               <div style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
-                <strong>{ex.name}</strong>
-                <span className={`pill ${intensityRisk(ex.intensity)}`}>
-                  {ex.intensity}
-                </span>
+                <div className="exercise-name">{ex.name}</div>
+                <span className={`pill ${intensityRisk(ex.intensity)}`}>{ex.intensity}</span>
               </div>
-              <div className="subtle" style={{ marginTop: 4 }}>
-                {ex.description}
-              </div>
-              <div style={{ marginTop: 4, fontSize: 13 }}>
-                <span className="k">Frequency:</span> {ex.frequency}
+              <div className="exercise-meta">{ex.description}</div>
+              <div className="exercise-meta" style={{ marginTop: 6 }}>
+                <span className="kv-k">Frequency:</span> {ex.frequency}
               </div>
               {ex.cautions && ex.cautions.length > 0 && (
-                <div style={{ marginTop: 4, fontSize: 13, color: "#b35a00" }}>
+                <div style={{ marginTop: 6, fontSize: 13, color: "var(--warn)" }}>
                   Caution: {ex.cautions.join(" - ")}
                 </div>
               )}
@@ -45,16 +37,9 @@ export function CarePlanPanel({ plan }: { plan: CarePlan }) {
       </Section>
 
       <Section title="2. Top 5 doctors - 10 medications each - hospitals">
-        <div style={{ display: "grid", gap: 14 }}>
+        <div className="care-section">
           {plan.topDoctors.map((doc, i) => (
-            <div
-              key={i}
-              style={{
-                border: "1px solid var(--border)",
-                borderRadius: 8,
-                padding: "10px 12px"
-              }}
-            >
+            <div key={i} className="exercise-card">
               <div
                 style={{
                   display: "flex",
@@ -65,14 +50,13 @@ export function CarePlanPanel({ plan }: { plan: CarePlan }) {
                 }}
               >
                 <div>
-                  <strong>{doc.name}</strong>{" "}
-                  <span className="subtle">- {doc.specialty}</span>
+                  <strong>{doc.name}</strong> <span className="subtle">- {doc.specialty}</span>
                 </div>
                 <div className="subtle" style={{ fontSize: 13 }}>
                   {doc.hospital.name} - {doc.hospital.city}, {doc.hospital.country}
                 </div>
               </div>
-              <div className="subtle" style={{ fontSize: 13, marginTop: 2 }}>
+              <div className="exercise-meta" style={{ marginTop: 4 }}>
                 {doc.yearsOfExperience} yrs experience - {doc.bio}
               </div>
 
@@ -94,7 +78,7 @@ export function CarePlanPanel({ plan }: { plan: CarePlan }) {
                         <td style={cell}>
                           <strong>{m.name}</strong>
                           {m.cautions?.length > 0 && (
-                            <div style={{ color: "#b35a00", fontSize: 12 }}>
+                            <div style={{ color: "var(--warn)", fontSize: 12 }}>
                               caution: {m.cautions.join(", ")}
                             </div>
                           )}
@@ -113,27 +97,11 @@ export function CarePlanPanel({ plan }: { plan: CarePlan }) {
       </Section>
 
       <Section title="3. Positive manifestations for the healing phase">
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))",
-            gap: 10
-          }}
-        >
+        <div className="affirmation-grid">
           {plan.affirmations.map((a, i) => (
-            <div
-              key={i}
-              style={{
-                border: "1px solid var(--border)",
-                borderRadius: 8,
-                padding: "10px 12px",
-                background: "rgba(0,0,0,0.02)"
-              }}
-            >
-              <div className="subtle" style={{ fontSize: 12, textTransform: "uppercase", letterSpacing: 0.4 }}>
-                {a.theme}
-              </div>
-              <div style={{ marginTop: 4 }}>{a.statement}</div>
+            <div key={i} className="affirmation-card">
+              <div className="affirmation-theme">{a.theme}</div>
+              <div className="affirmation-text">&ldquo;{a.statement}&rdquo;</div>
             </div>
           ))}
         </div>
@@ -148,16 +116,16 @@ export function CarePlanPanel({ plan }: { plan: CarePlan }) {
   );
 }
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
     <div>
-      <div className="section-title">{title}</div>
+      <div className="det-section-title">{title}</div>
       {children}
     </div>
   );
 }
 
-const cell: React.CSSProperties = {
+const cell: CSSProperties = {
   padding: "6px 8px",
   verticalAlign: "top"
 };

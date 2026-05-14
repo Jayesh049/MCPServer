@@ -23,6 +23,7 @@
     "integration": "npm run build && tsx demo/mcp_integration.ts",
     "train:diabetes": "tsx src/training/trainDiabetes.ts",
     "lint": "eslint .",
+    "healer": "tsx src/healer/cli.ts",
     "smoke:health": "node scripts/smoke-http-health.mjs"
   },
   "dependencies": {

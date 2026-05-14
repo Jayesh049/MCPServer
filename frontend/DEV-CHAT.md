@@ -29,6 +29,12 @@ The Next app rewrites `/api/*` to `MCP_API_BASE_URL` (see `frontend/next.config.
 
 **If you see `fetch failed` on the home page:** start the Node server first (`npm run dev` in repo root with `PORT=3333`). On Windows, prefer **`http://127.0.0.1:3333`** in `frontend/.env.local` as `MCP_API_BASE_URL` (not only `localhost`) so server-side fetches resolve reliably.
 
+**If you still see proxy to the wrong port (e.g. 3335):**
+
+1. Check **Windows user env**: `MCP_API_BASE_URL` in System Properties → Environment Variables overrides `.env.local`. Remove it or set it to `http://127.0.0.1:3333`.
+2. For **`npm start`** (production): delete `frontend/.next`, fix `frontend/.env.local`, then run `npm run build` again — an old build can keep an old rewrite target.
+3. Prefer **`npm run dev`** while developing; it reloads config when you restart.
+
 ## Notes
 
 - Answers are **plain English** templates + Wikipedia RAG; **no external LLM** on this path (`skipGeminiSynthesis` on the server).

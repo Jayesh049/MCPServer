@@ -1,0 +1,1559 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Agents Assemble — 20 Disease MCP Tester</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<style>
+:root {
+  --void: #050810;
+  --ink: #0a0f1e;
+  --deep: #0f1528;
+  --mid: #162040;
+  --surface: #1c2a50;
+  --lift: #243260;
+  --border: rgba(100,140,255,0.12);
+  --border-bright: rgba(100,140,255,0.28);
+  --text: #e8ecff;
+  --muted: #7a8ab8;
+  --faint: #3a4570;
+  --accent: #5b8dff;
+  --accent-glow: #7aabff;
+  --gold: #f5c76e;
+  --gold-muted: #8a6d30;
+  --emerald: #3ddba0;
+  --coral: #ff6b7a;
+  --violet: #a78bfa;
+  --warn: #fbbf24;
+  --font-display: 'DM Serif Display', Georgia, serif;
+  --font-body: 'Outfit', system-ui, sans-serif;
+  --font-mono: 'DM Mono', monospace;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--void);
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.6;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ── STAR FIELD ─────────────────────────────────────── */
+#starfield {
+  position: fixed; inset: 0; z-index: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse 60% 40% at 20% 10%, rgba(80,120,255,0.06) 0%, transparent 70%),
+    radial-gradient(ellipse 50% 60% at 80% 80%, rgba(160,100,255,0.05) 0%, transparent 70%),
+    var(--void);
+}
+#starfield canvas { width:100%; height:100%; display:block; }
+
+/* ── LAYOUT ─────────────────────────────────────────── */
+.app { position: relative; z-index: 1; display: grid; grid-template-rows: auto 1fr; min-height: 100vh; }
+
+/* ── TOPBAR ─────────────────────────────────────────── */
+.topbar {
+  position: sticky; top: 0; z-index: 100;
+  display: flex; align-items: center; gap: 0;
+  background: rgba(5,8,16,0.82);
+  backdrop-filter: saturate(160%) blur(20px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 32px;
+  height: 60px;
+}
+
+.brand {
+  display: flex; align-items: center; gap: 10px;
+  font-family: var(--font-display);
+  font-size: 18px;
+  color: var(--text);
+  text-decoration: none;
+  flex-shrink: 0;
+}
+.brand-icon {
+  width: 28px; height: 28px;
+  background: linear-gradient(135deg, var(--accent) 0%, var(--violet) 100%);
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px;
+}
+.brand sup {
+  font-family: var(--font-body);
+  font-size: 10px; font-weight: 500;
+  color: var(--muted);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  vertical-align: super;
+}
+
+.topbar-divider { width: 1px; height: 24px; background: var(--border); margin: 0 20px; }
+
+.nav { display: flex; gap: 2px; flex: 1; }
+.nav-item {
+  display: flex; align-items: center; gap: 6px;
+  padding: 6px 14px; border-radius: 8px;
+  font-size: 13px; font-weight: 500;
+  color: var(--muted);
+  cursor: pointer;
+  transition: all 0.15s;
+  border: none; background: none;
+  text-decoration: none;
+}
+.nav-item svg { width: 15px; height: 15px; opacity: 0.7; }
+.nav-item:hover { background: rgba(91,141,255,0.08); color: var(--text); }
+.nav-item.active { background: rgba(91,141,255,0.12); color: var(--accent-glow); }
+.nav-item.active svg { opacity: 1; }
+
+.topbar-actions { display: flex; align-items: center; gap: 8px; margin-left: auto; }
+.badge-live {
+  display: flex; align-items: center; gap: 5px;
+  font-size: 11px; font-weight: 500; letter-spacing: 0.04em;
+  color: var(--emerald);
+  padding: 4px 10px; border-radius: 999px;
+  border: 1px solid rgba(61,219,160,0.2);
+  background: rgba(61,219,160,0.07);
+}
+.badge-live::before {
+  content: '';
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--emerald);
+  animation: pulse 2s ease-in-out infinite;
+}
+@keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.5;transform:scale(0.8)} }
+
+/* ── MAIN LAYOUT ────────────────────────────────────── */
+.layout { display: grid; grid-template-columns: 240px 1fr; min-height: calc(100vh - 60px); }
+
+/* ── SIDEBAR ────────────────────────────────────────── */
+.sidebar {
+  background: rgba(15,21,40,0.6);
+  border-right: 1px solid var(--border);
+  padding: 24px 16px;
+  display: flex; flex-direction: column; gap: 8px;
+  position: sticky; top: 60px; height: calc(100vh - 60px);
+  overflow-y: auto;
+}
+
+.sidebar-section-title {
+  font-size: 10px; font-weight: 600; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--faint);
+  padding: 0 10px; margin: 12px 0 6px;
+}
+.sidebar-section-title:first-child { margin-top: 0; }
+
+.sidebar-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 9px 12px; border-radius: 10px;
+  font-size: 13px; color: var(--muted);
+  cursor: pointer; transition: all 0.15s;
+  border: none; background: none; width: 100%; text-align: left;
+  text-decoration: none;
+}
+.sidebar-item svg { width: 16px; height: 16px; flex-shrink: 0; }
+.sidebar-item:hover { background: rgba(91,141,255,0.07); color: var(--text); }
+.sidebar-item.active { background: rgba(91,141,255,0.12); color: var(--accent-glow); }
+.sidebar-item .count {
+  margin-left: auto; font-size: 11px; font-weight: 500;
+  background: rgba(91,141,255,0.15); color: var(--accent);
+  padding: 1px 7px; border-radius: 999px;
+}
+
+.sidebar-disease {
+  display: flex; align-items: center; gap: 8px;
+  padding: 7px 12px; border-radius: 8px;
+  font-size: 12px; color: var(--muted);
+  cursor: pointer; transition: all 0.15s;
+  border: none; background: none; width: 100%; text-align: left;
+}
+.sidebar-disease:hover { background: rgba(91,141,255,0.07); color: var(--text); }
+.sidebar-disease .dot {
+  width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0;
+}
+
+/* ── CONTENT ────────────────────────────────────────── */
+.content { padding: 0; overflow: hidden; }
+
+/* ── HERO ───────────────────────────────────────────── */
+.hero {
+  padding: 48px 48px 40px;
+  border-bottom: 1px solid var(--border);
+  position: relative; overflow: hidden;
+}
+.hero::before {
+  content: '';
+  position: absolute; top: -60px; right: -60px;
+  width: 400px; height: 400px;
+  background: radial-gradient(circle, rgba(91,141,255,0.08) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.hero-eyebrow {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 11px; font-weight: 500; letter-spacing: 0.08em;
+  text-transform: uppercase; color: var(--accent);
+  margin-bottom: 14px;
+}
+.hero-eyebrow::before {
+  content: '';
+  width: 20px; height: 1px;
+  background: var(--accent);
+}
+
+.hero h1 {
+  font-family: var(--font-display);
+  font-size: 42px; line-height: 1.12;
+  color: var(--text);
+  margin-bottom: 12px;
+  max-width: 560px;
+}
+.hero h1 em {
+  font-style: italic; color: var(--accent-glow);
+}
+
+.hero-sub {
+  font-size: 15px; color: var(--muted); max-width: 520px;
+  line-height: 1.6; margin-bottom: 28px;
+}
+
+.hero-meta {
+  display: flex; align-items: center; gap: 20px; flex-wrap: wrap;
+}
+.hero-stat {
+  display: flex; align-items: baseline; gap: 6px;
+}
+.hero-stat-num {
+  font-family: var(--font-display); font-size: 28px;
+  color: var(--text);
+}
+.hero-stat-label { font-size: 12px; color: var(--muted); }
+
+.hero-pipeline {
+  display: inline-flex; align-items: center; gap: 0;
+  border: 1px solid var(--border); border-radius: 10px;
+  overflow: hidden; margin-left: auto;
+}
+.pipeline-step {
+  padding: 8px 16px; font-size: 12px; font-weight: 500;
+  display: flex; align-items: center; gap: 6px;
+}
+.pipeline-step:not(:last-child) { border-right: 1px solid var(--border); }
+.pipeline-step.detect { color: var(--accent); background: rgba(91,141,255,0.07); }
+.pipeline-step.resolve { color: var(--gold); background: rgba(245,199,110,0.07); }
+.pipeline-step.solve { color: var(--emerald); background: rgba(61,219,160,0.07); }
+.pipeline-step svg { width: 13px; height: 13px; }
+
+/* ── STATS ROW ──────────────────────────────────────── */
+.stats-row {
+  display: grid; grid-template-columns: repeat(4, 1fr);
+  border-bottom: 1px solid var(--border);
+}
+.stat-cell {
+  padding: 20px 28px;
+  border-right: 1px solid var(--border);
+}
+.stat-cell:last-child { border-right: none; }
+.stat-val {
+  font-family: var(--font-display); font-size: 30px;
+  color: var(--text); line-height: 1;
+}
+.stat-lbl { font-size: 12px; color: var(--muted); margin-top: 4px; }
+.stat-trend {
+  font-size: 11px; margin-top: 3px;
+  display: inline-flex; align-items: center; gap: 3px;
+}
+.stat-trend.up { color: var(--emerald); }
+.stat-trend.neutral { color: var(--muted); }
+
+/* ── DISEASE GRID ───────────────────────────────────── */
+.section-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 24px 48px 16px;
+}
+.section-title-group { display: flex; align-items: center; gap: 12px; }
+.section-title {
+  font-size: 13px; font-weight: 600; letter-spacing: 0.06em;
+  text-transform: uppercase; color: var(--muted);
+}
+.section-pill {
+  font-size: 11px; padding: 2px 8px; border-radius: 999px;
+  font-weight: 500;
+}
+.section-pill.imaging { background: rgba(91,141,255,0.12); color: var(--accent); }
+.section-pill.clinical { background: rgba(245,199,110,0.12); color: var(--gold); }
+.section-pill.signal { background: rgba(61,219,160,0.12); color: var(--emerald); }
+
+.filter-row {
+  display: flex; align-items: center; gap: 8px;
+}
+.filter-btn {
+  font-size: 12px; font-weight: 500;
+  padding: 5px 12px; border-radius: 8px;
+  border: 1px solid var(--border);
+  background: transparent; color: var(--muted);
+  cursor: pointer; transition: all 0.15s;
+}
+.filter-btn:hover { border-color: var(--border-bright); color: var(--text); }
+.filter-btn.active { border-color: var(--accent); background: rgba(91,141,255,0.1); color: var(--accent-glow); }
+
+.disease-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 14px; padding: 0 48px 32px;
+}
+
+.disease-card {
+  background: var(--deep);
+  border: 1px solid var(--border);
+  border-radius: 16px; padding: 20px;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.22,0.68,0,1.2);
+  position: relative; overflow: hidden;
+  text-decoration: none; color: inherit;
+  display: block;
+}
+.disease-card::before {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0;
+  height: 2px;
+  opacity: 0; transition: opacity 0.2s;
+}
+.disease-card.imaging::before { background: linear-gradient(90deg, var(--accent), var(--violet)); }
+.disease-card.clinical::before { background: linear-gradient(90deg, var(--gold), var(--coral)); }
+.disease-card.signal::before { background: linear-gradient(90deg, var(--emerald), var(--accent)); }
+.disease-card:hover { transform: translateY(-3px); border-color: var(--border-bright); }
+.disease-card:hover::before { opacity: 1; }
+
+.card-top { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 10px; }
+.card-icon {
+  width: 36px; height: 36px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 17px; flex-shrink: 0;
+}
+.card-icon.imaging { background: rgba(91,141,255,0.12); }
+.card-icon.clinical { background: rgba(245,199,110,0.12); }
+.card-icon.signal { background: rgba(61,219,160,0.12); }
+
+.card-badge {
+  font-size: 10px; font-weight: 600; letter-spacing: 0.06em;
+  text-transform: uppercase; padding: 3px 8px; border-radius: 6px;
+}
+.card-badge.open-source { background: rgba(167,139,250,0.12); color: var(--violet); }
+.card-badge.self-trained { background: rgba(61,219,160,0.12); color: var(--emerald); }
+.card-badge.stub { background: rgba(100,100,150,0.12); color: var(--muted); }
+
+.card-name {
+  font-size: 15px; font-weight: 600; color: var(--text);
+  margin-bottom: 5px; line-height: 1.3;
+}
+.card-desc {
+  font-size: 12px; color: var(--muted); line-height: 1.5;
+  margin-bottom: 14px;
+}
+.card-footer {
+  display: flex; align-items: center; gap: 6px;
+  flex-wrap: wrap;
+}
+.card-tag {
+  font-size: 11px; padding: 3px 8px; border-radius: 6px;
+  border: 1px solid var(--border); color: var(--faint);
+  font-family: var(--font-mono);
+}
+.card-arrow {
+  margin-left: auto; color: var(--faint); font-size: 14px;
+  transition: all 0.15s;
+}
+.disease-card:hover .card-arrow { color: var(--accent); transform: translateX(3px); }
+
+/* ── DETAIL PANEL ───────────────────────────────────── */
+.detail-overlay {
+  display: none;
+  position: fixed; inset: 0; z-index: 200;
+  background: rgba(5,8,16,0.7);
+  backdrop-filter: blur(4px);
+  animation: fade-in 0.2s ease;
+}
+.detail-overlay.open { display: block; }
+@keyframes fade-in { from{opacity:0} to{opacity:1} }
+
+.detail-panel {
+  position: fixed; top: 0; right: 0; bottom: 0;
+  width: 640px; z-index: 201;
+  background: var(--ink);
+  border-left: 1px solid var(--border);
+  display: flex; flex-direction: column;
+  animation: slide-in 0.25s cubic-bezier(0.22,0.68,0,1.1);
+  overflow: hidden;
+}
+@keyframes slide-in { from{transform:translateX(40px);opacity:0} to{transform:translateX(0);opacity:1} }
+
+.detail-topbar {
+  display: flex; align-items: center; gap: 12px;
+  padding: 18px 24px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.detail-close {
+  width: 32px; height: 32px; border-radius: 8px;
+  border: 1px solid var(--border); background: transparent;
+  color: var(--muted); cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px; transition: all 0.15s;
+}
+.detail-close:hover { border-color: var(--border-bright); color: var(--text); background: var(--mid); }
+.detail-title { font-family: var(--font-display); font-size: 20px; }
+
+.detail-body { flex: 1; overflow-y: auto; padding: 24px; }
+
+.det-section { margin-bottom: 28px; }
+.det-section-title {
+  font-size: 10px; font-weight: 600; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--faint);
+  margin-bottom: 12px; padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+}
+
+/* Result panels */
+.result-cards { display: grid; gap: 12px; }
+.result-card {
+  background: var(--deep); border: 1px solid var(--border);
+  border-radius: 12px; padding: 16px;
+}
+.result-card-label {
+  font-size: 10px; font-weight: 600; letter-spacing: 0.08em;
+  text-transform: uppercase; margin-bottom: 10px;
+  display: flex; align-items: center; gap: 8px;
+}
+.result-card-label .step-num {
+  width: 18px; height: 18px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 10px; font-weight: 600;
+}
+.step-detect .step-num { background: rgba(91,141,255,0.15); color: var(--accent); }
+.step-resolve .step-num { background: rgba(245,199,110,0.15); color: var(--gold); }
+.step-solve .step-num { background: rgba(61,219,160,0.15); color: var(--emerald); }
+
+.kv-grid { display: grid; grid-template-columns: max-content 1fr; gap: 8px 16px; font-size: 13px; }
+.kv-k { color: var(--muted); }
+
+.risk-pill {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 10px; border-radius: 999px; font-size: 12px; font-weight: 500;
+}
+.risk-pill.high { background: rgba(255,107,122,0.12); color: var(--coral); border: 1px solid rgba(255,107,122,0.25); }
+.risk-pill.medium { background: rgba(251,191,36,0.12); color: var(--warn); border: 1px solid rgba(251,191,36,0.25); }
+.risk-pill.low { background: rgba(61,219,160,0.12); color: var(--emerald); border: 1px solid rgba(61,219,160,0.25); }
+.risk-pill::before {
+  content: ''; width: 6px; height: 6px; border-radius: 50%;
+}
+.risk-pill.high::before { background: var(--coral); }
+.risk-pill.medium::before { background: var(--warn); }
+.risk-pill.low::before { background: var(--emerald); }
+
+.confidence-bar {
+  height: 4px; background: var(--mid); border-radius: 999px;
+  overflow: hidden; margin-top: 6px;
+}
+.confidence-fill {
+  height: 100%; border-radius: 999px;
+  background: linear-gradient(90deg, var(--accent), var(--violet));
+  transition: width 0.6s cubic-bezier(0.22,0.68,0,1.1);
+}
+
+.step-list { list-style: none; display: grid; gap: 8px; }
+.step-list li {
+  display: flex; align-items: flex-start; gap: 10px;
+  font-size: 13px; color: var(--text); line-height: 1.5;
+}
+.step-list li::before {
+  content: attr(data-n);
+  min-width: 20px; height: 20px; border-radius: 50%;
+  background: var(--mid); color: var(--muted);
+  font-size: 10px; font-weight: 600; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  margin-top: 1px;
+}
+
+/* Form */
+.form-field { margin-bottom: 14px; }
+.form-label {
+  display: block; font-size: 11px; font-weight: 500;
+  letter-spacing: 0.04em; color: var(--muted); margin-bottom: 6px;
+}
+.form-input, .form-select {
+  width: 100%; background: var(--mid); border: 1px solid var(--border);
+  color: var(--text); padding: 10px 14px; border-radius: 10px;
+  font-size: 14px; font-family: var(--font-body);
+  transition: border-color 0.15s;
+}
+.form-input:focus, .form-select:focus {
+  outline: none; border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(91,141,255,0.12);
+}
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+.btn-primary {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: var(--accent); color: #fff;
+  border: none; padding: 11px 20px; border-radius: 10px;
+  font-size: 14px; font-weight: 600; font-family: var(--font-body);
+  cursor: pointer; transition: all 0.15s;
+  letter-spacing: 0.02em;
+}
+.btn-primary:hover { background: var(--accent-glow); transform: translateY(-1px); }
+.btn-primary:active { transform: translateY(0); }
+.btn-primary:disabled { opacity: 0.5; cursor: default; transform: none; }
+
+.btn-ghost {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: transparent; color: var(--muted);
+  border: 1px solid var(--border); padding: 10px 18px; border-radius: 10px;
+  font-size: 13px; font-weight: 500; font-family: var(--font-body);
+  cursor: pointer; transition: all 0.15s;
+}
+.btn-ghost:hover { border-color: var(--border-bright); color: var(--text); }
+
+/* Upload zone */
+.upload-zone {
+  border: 1.5px dashed var(--border);
+  background: rgba(91,141,255,0.02);
+  border-radius: 12px; padding: 32px;
+  text-align: center; color: var(--muted);
+  cursor: pointer; transition: all 0.2s;
+  font-size: 13px;
+}
+.upload-zone:hover, .upload-zone.dragging {
+  border-color: var(--accent); background: rgba(91,141,255,0.05);
+  color: var(--text);
+}
+.upload-zone .upload-icon { font-size: 28px; margin-bottom: 8px; opacity: 0.5; }
+.upload-zone.has-file { border-color: var(--emerald); border-style: solid; }
+
+/* Care plan */
+.care-section { display: grid; gap: 10px; }
+.exercise-card {
+  background: var(--deep); border: 1px solid var(--border);
+  border-radius: 10px; padding: 14px;
+}
+.exercise-name { font-size: 13px; font-weight: 600; margin-bottom: 4px; }
+.exercise-meta { font-size: 12px; color: var(--muted); }
+
+.affirmation-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
+}
+.affirmation-card {
+  background: var(--mid); border-radius: 10px; padding: 12px;
+  border-left: 2px solid var(--violet);
+}
+.affirmation-theme {
+  font-size: 10px; font-weight: 600; letter-spacing: 0.08em;
+  text-transform: uppercase; color: var(--faint); margin-bottom: 4px;
+}
+.affirmation-text { font-size: 12px; color: var(--muted); font-style: italic; }
+
+/* Chat page */
+.chat-layout { display: flex; flex-direction: column; height: calc(100vh - 60px); }
+.chat-messages { flex: 1; overflow-y: auto; padding: 32px 48px; display: flex; flex-direction: column; gap: 20px; }
+.chat-bubble {
+  max-width: 620px; padding: 14px 18px; border-radius: 16px;
+  font-size: 14px; line-height: 1.6;
+}
+.chat-bubble.user {
+  align-self: flex-end;
+  background: rgba(91,141,255,0.15); border: 1px solid rgba(91,141,255,0.2);
+  color: var(--text);
+}
+.chat-bubble.assistant {
+  align-self: flex-start;
+  background: var(--deep); border: 1px solid var(--border);
+}
+.chat-bubble.assistant .bubble-src {
+  font-size: 11px; color: var(--accent); font-weight: 500;
+  margin-bottom: 6px; letter-spacing: 0.04em;
+}
+.chat-footer {
+  padding: 16px 48px 24px;
+  border-top: 1px solid var(--border);
+  background: rgba(10,15,30,0.5);
+}
+.chat-input-wrap {
+  display: flex; align-items: flex-end; gap: 10px;
+  background: var(--mid); border: 1px solid var(--border);
+  border-radius: 14px; padding: 12px 14px;
+  transition: border-color 0.15s;
+}
+.chat-input-wrap:focus-within { border-color: var(--accent); }
+.chat-textarea {
+  flex: 1; background: none; border: none; outline: none;
+  color: var(--text); font-family: var(--font-body); font-size: 14px;
+  resize: none; line-height: 1.5; min-height: 22px;
+}
+.chat-send {
+  width: 34px; height: 34px; border-radius: 9px;
+  background: var(--accent); border: none; color: #fff;
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; transition: all 0.15s;
+}
+.chat-send:hover { background: var(--accent-glow); }
+
+/* History */
+.history-list { display: grid; gap: 10px; padding: 24px 48px; }
+.history-item {
+  background: var(--deep); border: 1px solid var(--border);
+  border-radius: 12px; padding: 16px 20px;
+  display: grid; grid-template-columns: 1fr auto; align-items: center;
+  gap: 16px;
+}
+.history-disease { font-size: 14px; font-weight: 600; margin-bottom: 3px; }
+.history-meta { font-size: 12px; color: var(--muted); display: flex; gap: 12px; }
+.history-time { font-size: 12px; color: var(--faint); font-family: var(--font-mono); }
+
+/* About */
+.about-section { padding: 48px; max-width: 740px; }
+.about-section h2 {
+  font-family: var(--font-display); font-size: 28px;
+  margin-bottom: 12px; color: var(--text);
+}
+.about-section p { color: var(--muted); font-size: 14px; line-height: 1.8; margin-bottom: 14px; }
+
+.tech-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;
+  margin-top: 24px;
+}
+.tech-card {
+  background: var(--deep); border: 1px solid var(--border);
+  border-radius: 12px; padding: 16px;
+}
+.tech-card-icon { font-size: 22px; margin-bottom: 8px; }
+.tech-card-name { font-size: 13px; font-weight: 600; margin-bottom: 3px; }
+.tech-card-desc { font-size: 12px; color: var(--muted); }
+
+/* Page visibility */
+.page { display: none; }
+.page.active { display: block; }
+.page.chat-layout { display: none; }
+.page.chat-layout.active { display: flex; }
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--faint); border-radius: 999px; }
+::-webkit-scrollbar-thumb:hover { background: var(--muted); }
+
+/* Tooltip */
+.tooltip { position: relative; }
+.tooltip::after {
+  content: attr(data-tip);
+  position: absolute; bottom: calc(100% + 6px); left: 50%;
+  transform: translateX(-50%);
+  background: var(--surface); color: var(--text);
+  font-size: 11px; padding: 4px 8px; border-radius: 6px;
+  white-space: nowrap; pointer-events: none;
+  opacity: 0; transition: opacity 0.15s;
+  border: 1px solid var(--border);
+}
+.tooltip:hover::after { opacity: 1; }
+
+/* Spinner */
+.spinner {
+  width: 18px; height: 18px;
+  border: 2px solid rgba(255,255,255,0.2);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}
+@keyframes spin { to{transform:rotate(360deg)} }
+
+/* Search */
+.search-wrap {
+  padding: 0 48px 20px;
+}
+.search-input-wrap {
+  display: flex; align-items: center; gap: 10px;
+  background: var(--deep); border: 1px solid var(--border);
+  border-radius: 12px; padding: 10px 16px;
+  transition: border-color 0.15s;
+  max-width: 400px;
+}
+.search-input-wrap:focus-within { border-color: var(--border-bright); }
+.search-input {
+  flex: 1; background: none; border: none; outline: none;
+  color: var(--text); font-family: var(--font-body); font-size: 14px;
+}
+.search-icon { color: var(--faint); font-size: 16px; flex-shrink: 0; }
+
+/* Responsive */
+@media (max-width: 900px) {
+  .layout { grid-template-columns: 1fr; }
+  .sidebar { display: none; }
+  .hero { padding: 28px 24px; }
+  .hero h1 { font-size: 28px; }
+  .disease-grid { padding: 0 24px 24px; }
+  .section-header { padding: 16px 24px 10px; }
+  .stats-row { grid-template-columns: 1fr 1fr; }
+  .detail-panel { width: 100%; }
+  .search-wrap { padding: 0 24px 16px; }
+}
+</style>
+</head>
+<body>
+
+<div id="starfield"><canvas id="stars"></canvas></div>
+
+<div class="app">
+  <!-- TOPBAR -->
+  <header class="topbar">
+    <a class="brand" href="#" onclick="navigate('diseases')">
+      <div class="brand-icon">⚕</div>
+      Agents Assemble
+      <sup>MCP</sup>
+    </a>
+    <div class="topbar-divider"></div>
+    <nav class="nav">
+      <a class="nav-item active" id="nav-diseases" onclick="navigate('diseases')" href="#">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M3 9h3M18 9h3M3 15h3M18 15h3M9 3v3M9 18v3M15 3v3M15 18v3"/></svg>
+        Diseases
+      </a>
+      <a class="nav-item" id="nav-chat" onclick="navigate('chat')" href="#">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        Patient Chat
+      </a>
+      <a class="nav-item" id="nav-report" onclick="navigate('report')" href="#">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+        Report Analyzer
+      </a>
+      <a class="nav-item" id="nav-history" onclick="navigate('history')" href="#">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        History
+      </a>
+      <a class="nav-item" id="nav-about" onclick="navigate('about')" href="#">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        About
+      </a>
+    </nav>
+    <div class="topbar-actions">
+      <div class="badge-live">MCP Tester Active</div>
+    </div>
+  </header>
+
+  <div class="layout">
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+      <div class="sidebar-section-title">Navigation</div>
+      <a class="sidebar-item active" onclick="navigate('diseases')" href="#">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+        Disease Hub
+        <span class="count">20</span>
+      </a>
+      <a class="sidebar-item" onclick="navigate('chat')" href="#">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        Patient Chat
+      </a>
+      <a class="sidebar-item" onclick="navigate('report')" href="#">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/></svg>
+        Report Analyzer
+      </a>
+      <a class="sidebar-item" onclick="navigate('history')" href="#">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        History
+      </a>
+
+      <div class="sidebar-section-title">Imaging</div>
+      <button class="sidebar-disease" onclick="openDetail({name:'Diabetic Retinopathy',slug:'diabetic-retinopathy',category:'imaging',modality:'imaging',description:'Retinal scan analysis using CNN',modelKind:'open-source-pretrained'})">
+        <span class="dot" style="background:#5b8dff"></span>Diabetic Retinopathy
+      </button>
+      <button class="sidebar-disease" onclick="openDetail({name:'Pneumonia',slug:'pneumonia',category:'imaging',modality:'imaging',description:'Chest X-ray CNN classifier',modelKind:'open-source-pretrained'})">
+        <span class="dot" style="background:#5b8dff"></span>Pneumonia
+      </button>
+      <button class="sidebar-disease" onclick="openDetail({name:'Skin Lesion',slug:'skin-lesion',category:'imaging',modality:'imaging',description:'Dermoscopy image analysis',modelKind:'self-trained'})">
+        <span class="dot" style="background:#5b8dff"></span>Skin Lesion
+      </button>
+      <button class="sidebar-disease" onclick="openDetail({name:'Brain Tumor',slug:'brain-tumor',category:'imaging',modality:'imaging',description:'MRI scan segmentation',modelKind:'open-source-pretrained'})">
+        <span class="dot" style="background:#5b8dff"></span>Brain Tumor
+      </button>
+
+      <div class="sidebar-section-title">Clinical</div>
+      <button class="sidebar-disease" onclick="openDetail({name:'Diabetes',slug:'diabetes',category:'clinical',modality:'clinical',description:'Glucose & HbA1c biomarker model',modelKind:'self-trained'})">
+        <span class="dot" style="background:#f5c76e"></span>Diabetes
+      </button>
+      <button class="sidebar-disease" onclick="openDetail({name:'Heart Disease',slug:'heart-disease',category:'clinical',modality:'clinical',description:'Framingham risk scoring',modelKind:'self-trained'})">
+        <span class="dot" style="background:#f5c76e"></span>Heart Disease
+      </button>
+      <button class="sidebar-disease" onclick="openDetail({name:'Hypertension',slug:'hypertension',category:'clinical',modality:'clinical',description:'BP & lifestyle risk model',modelKind:'stub'})">
+        <span class="dot" style="background:#f5c76e"></span>Hypertension
+      </button>
+
+      <div class="sidebar-section-title">Signal</div>
+      <button class="sidebar-disease" onclick="openDetail({name:'Arrhythmia',slug:'arrhythmia',category:'signal',modality:'signal',description:'ECG waveform anomaly detection',modelKind:'open-source-pretrained'})">
+        <span class="dot" style="background:#3ddba0"></span>Arrhythmia
+      </button>
+      <button class="sidebar-disease" onclick="openDetail({name:'Sleep Apnea',slug:'sleep-apnea',category:'signal',modality:'signal',description:'Oxygen saturation time-series',modelKind:'stub'})">
+        <span class="dot" style="background:#3ddba0"></span>Sleep Apnea
+      </button>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <main>
+
+      <!-- ═══ DISEASES PAGE ═══ -->
+      <div class="page active" id="page-diseases">
+        <div class="hero">
+          <div class="hero-eyebrow">Healthcare AI Platform</div>
+          <h1>20 Disease Detection <em>Pipelines</em></h1>
+          <p class="hero-sub">
+            Each disease is exposed as an MCP tool and REST endpoint. Detection → Resolution → Solution — synthetic data only, no real PHI.
+          </p>
+          <div class="hero-meta">
+            <div class="hero-stat">
+              <span class="hero-stat-num">20</span>
+              <span class="hero-stat-label">diseases</span>
+            </div>
+            <div class="hero-stat">
+              <span class="hero-stat-num">3</span>
+              <span class="hero-stat-label">modalities</span>
+            </div>
+            <div class="hero-stat">
+              <span class="hero-stat-num">∞</span>
+              <span class="hero-stat-label">synthetic samples</span>
+            </div>
+            <div class="hero-pipeline">
+              <div class="pipeline-step detect">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                Detection
+              </div>
+              <div class="pipeline-step resolve">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+                Resolution
+              </div>
+              <div class="pipeline-step solve">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12l2 2 4-4"/><path d="M21 12c0 4.97-4.03 9-9 9s-9-4.03-9-9 4.03-9 9-9 9 4.03 9 9z"/></svg>
+                Solution
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="stats-row">
+          <div class="stat-cell">
+            <div class="stat-val">12</div>
+            <div class="stat-lbl">Imaging models</div>
+            <div class="stat-trend up">↑ CNN-based</div>
+          </div>
+          <div class="stat-cell">
+            <div class="stat-val">6</div>
+            <div class="stat-lbl">Clinical / tabular</div>
+            <div class="stat-trend neutral">biomarker inputs</div>
+          </div>
+          <div class="stat-cell">
+            <div class="stat-val">2</div>
+            <div class="stat-lbl">Signal-based</div>
+            <div class="stat-trend neutral">ECG / SpO₂</div>
+          </div>
+          <div class="stat-cell">
+            <div class="stat-val">3</div>
+            <div class="stat-lbl">Pipeline stages</div>
+            <div class="stat-trend up">↑ detect→resolve→solve</div>
+          </div>
+        </div>
+
+        <div class="search-wrap" style="padding-top:20px">
+          <div class="search-input-wrap">
+            <span class="search-icon">🔍</span>
+            <input class="search-input" id="disease-search" type="text" placeholder="Search diseases…" oninput="filterCards(this.value)"/>
+          </div>
+        </div>
+
+        <!-- Imaging -->
+        <div class="section-header" id="header-imaging">
+          <div class="section-title-group">
+            <div class="section-title">Imaging-based</div>
+            <span class="section-pill imaging">CNN / Vision</span>
+          </div>
+          <div class="filter-row">
+            <button class="filter-btn active" onclick="filterCategory('imaging','all',this)">All</button>
+            <button class="filter-btn" onclick="filterCategory('imaging','open-source-pretrained',this)">Open source</button>
+            <button class="filter-btn" onclick="filterCategory('imaging','self-trained',this)">Self-trained</button>
+          </div>
+        </div>
+        <div class="disease-grid" id="grid-imaging"></div>
+
+        <!-- Clinical -->
+        <div class="section-header" id="header-clinical">
+          <div class="section-title-group">
+            <div class="section-title">Clinical / Tabular</div>
+            <span class="section-pill clinical">Biomarkers</span>
+          </div>
+        </div>
+        <div class="disease-grid" id="grid-clinical"></div>
+
+        <!-- Signal -->
+        <div class="section-header" id="header-signal">
+          <div class="section-title-group">
+            <div class="section-title">Signal-based</div>
+            <span class="section-pill signal">ECG / SpO₂</span>
+          </div>
+        </div>
+        <div class="disease-grid" id="grid-signal"></div>
+      </div>
+
+      <!-- ═══ CHAT PAGE ═══ -->
+      <div class="page chat-layout" id="page-chat">
+        <div class="chat-messages" id="chat-messages">
+          <div class="chat-bubble assistant">
+            <div class="bubble-src">🏥 Agents Assemble — Patient Chat</div>
+            Ask me anything in simple terms about a symptom, disease, or condition. You can also upload a PDF report. I'll explain it clearly. <em>Not medical advice.</em>
+          </div>
+        </div>
+        <div class="chat-footer">
+          <div style="display:flex;gap:12px;margin-bottom:10px;flex-wrap:wrap;">
+            <label style="font-size:12px;color:var(--muted);display:flex;align-items:center;gap:6px;cursor:pointer;">
+              Language:
+              <select id="chat-lang" style="background:var(--mid);border:1px solid var(--border);color:var(--text);padding:4px 10px;border-radius:8px;font-size:12px;font-family:var(--font-body);">
+                <option>English</option><option>Hindi</option><option>Tamil</option>
+                <option>Telugu</option><option>Bengali</option><option>Spanish</option>
+                <option>French</option><option>Arabic</option>
+              </select>
+            </label>
+            <label style="font-size:12px;color:var(--muted);display:flex;align-items:center;gap:6px;cursor:pointer;">
+              <input type="file" id="chat-pdf" accept="application/pdf,.pdf" style="display:none" onchange="chatFileSet(this)"/>
+              <span onclick="document.getElementById('chat-pdf').click()" style="cursor:pointer;padding:4px 10px;border:1px solid var(--border);border-radius:8px;transition:all 0.15s;" id="pdf-label">📎 Attach PDF</span>
+            </label>
+          </div>
+          <div class="chat-input-wrap">
+            <textarea class="chat-textarea" id="chat-input" rows="1" placeholder="Ask in your own words, e.g. 'What is high blood pressure?'" onkeydown="chatKey(event)" oninput="autoResize(this)"></textarea>
+            <button class="chat-send" onclick="sendChat()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+            </button>
+          </div>
+          <p style="font-size:11px;color:var(--faint);margin-top:8px;">Uses RAG over Wikipedia-style disease notes. Not medical advice.</p>
+        </div>
+      </div>
+
+      <!-- ═══ REPORT PAGE ═══ -->
+      <div class="page" id="page-report">
+        <div class="hero" style="padding-bottom:32px">
+          <div class="hero-eyebrow">AI Analysis</div>
+          <h1>Report <em>Analyzer</em></h1>
+          <p class="hero-sub">Upload a PDF, CSV, or paste text. We extract the most likely diseases and generate a synthetic care plan.</p>
+        </div>
+        <div style="padding:32px 48px;display:grid;grid-template-columns:1fr 1fr;gap:24px;max-width:900px;">
+          <div>
+            <div class="upload-zone" id="report-drop" onclick="document.getElementById('report-file').click()" ondragover="dragOver(event)" ondragleave="dragLeave(event)" ondrop="dropFile(event)">
+              <div class="upload-icon">📊</div>
+              <div style="font-weight:500;margin-bottom:4px;">Drop report here</div>
+              <div style="font-size:12px;">PDF · CSV · XLSX · TXT</div>
+              <input type="file" id="report-file" style="display:none" accept=".pdf,.csv,.xlsx,.txt" onchange="reportFileSet(this)"/>
+            </div>
+            <div style="text-align:center;color:var(--faint);font-size:12px;margin:14px 0;">— or paste text —</div>
+            <textarea id="report-text" class="form-input" rows="6" placeholder="Paste patient report, lab results, or clinical notes here…" style="resize:vertical;font-size:13px;"></textarea>
+            <div style="margin-top:14px;display:flex;gap:10px;">
+              <button class="btn-primary" onclick="analyzeReport()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                Analyze
+              </button>
+              <button class="btn-ghost" onclick="clearReport()">Clear</button>
+            </div>
+          </div>
+          <div id="report-results" style="display:none;">
+            <div class="det-section-title">Detected Conditions</div>
+            <div id="report-hits" style="display:grid;gap:8px;margin-bottom:20px;"></div>
+            <div class="det-section-title">Primary Diagnosis</div>
+            <div id="report-primary"></div>
+          </div>
+          <div id="report-loading" style="display:none;align-items:center;gap:12px;color:var(--muted);font-size:14px;">
+            <div class="spinner"></div> Analyzing report…
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ HISTORY PAGE ═══ -->
+      <div class="page" id="page-history">
+        <div class="hero">
+          <div class="hero-eyebrow">Session Data</div>
+          <h1>Detection <em>History</em></h1>
+          <p class="hero-sub">All detections run this session. Cleared on page reload. No PHI stored.</p>
+        </div>
+        <div class="history-list" id="history-list">
+          <div style="color:var(--muted);font-size:14px;text-align:center;padding:40px;">No detections yet. Run a disease pipeline to see results here.</div>
+        </div>
+      </div>
+
+      <!-- ═══ ABOUT PAGE ═══ -->
+      <div class="page" id="page-about">
+        <div class="about-section">
+          <div class="hero-eyebrow" style="padding-top:40px">Project</div>
+          <h2>Agents Assemble — 20-Disease MCP Tester</h2>
+          <p>A manual testing UI for the Agents Assemble Healthcare MCP server. All data is synthetic and fictional — no real PHI ever enters the system.</p>
+          <p>The platform demonstrates a full AI pipeline: an image, form, or signal input is processed by a disease-specific model, escalated through a risk-resolution stage, and concluded with actionable solution steps and a synthetic care plan.</p>
+
+          <div class="det-section-title" style="margin-top:28px;">Pipeline Architecture</div>
+          <div style="background:var(--deep);border:1px solid var(--border);border-radius:14px;padding:20px;font-family:var(--font-mono);font-size:12px;line-height:2;color:var(--muted);">
+            <span style="color:var(--accent)">Input</span> (image | form | signal)<br/>
+            &nbsp;→ <span style="color:var(--gold)">Model Inference</span> (CNN | tabular | signal-ML)<br/>
+            &nbsp;→ <span style="color:var(--violet)">Prediction</span> (classification, confidence, risk level)<br/>
+            &nbsp;→ <span style="color:var(--warn)">Resolution</span> (risk-stratified steps)<br/>
+            &nbsp;→ <span style="color:var(--emerald)">Solution</span> (actions, follow-up, patient ed.)<br/>
+            &nbsp;→ <span style="color:var(--coral)">Care Plan</span> (doctors, exercises, affirmations)
+          </div>
+
+          <div class="det-section-title" style="margin-top:28px;">Tech Stack</div>
+          <div class="tech-grid">
+            <div class="tech-card">
+              <div class="tech-card-icon">⚡</div>
+              <div class="tech-card-name">Next.js 15</div>
+              <div class="tech-card-desc">App Router, Server Components, TypeScript</div>
+            </div>
+            <div class="tech-card">
+              <div class="tech-card-icon">🔗</div>
+              <div class="tech-card-name">MCP Protocol</div>
+              <div class="tech-card-desc">20 disease tools exposed as MCP endpoints</div>
+            </div>
+            <div class="tech-card">
+              <div class="tech-card-icon">🧠</div>
+              <div class="tech-card-name">AI Pipeline</div>
+              <div class="tech-card-desc">Detection → Resolution → Solution</div>
+            </div>
+            <div class="tech-card">
+              <div class="tech-card-icon">🏥</div>
+              <div class="tech-card-name">RAG Chat</div>
+              <div class="tech-card-desc">Wikipedia-style notes, multi-language</div>
+            </div>
+            <div class="tech-card">
+              <div class="tech-card-icon">📄</div>
+              <div class="tech-card-name">Report Analyzer</div>
+              <div class="tech-card-desc">PDF, CSV, XLSX, plain text parsing</div>
+            </div>
+            <div class="tech-card">
+              <div class="tech-card-icon">🔒</div>
+              <div class="tech-card-name">Synthetic Only</div>
+              <div class="tech-card-desc">Zero PHI — all data is fictional</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<!-- DETAIL PANEL -->
+<div class="detail-overlay" id="overlay" onclick="closeDetail()"></div>
+<div class="detail-panel" id="detail-panel">
+  <div class="detail-topbar">
+    <button class="detail-close" onclick="closeDetail()">✕</button>
+    <div>
+      <div class="detail-title" id="dp-name">Disease</div>
+      <div style="font-size:12px;color:var(--muted);margin-top:1px;" id="dp-meta"></div>
+    </div>
+    <div style="margin-left:auto;display:flex;gap:8px;" id="dp-badges"></div>
+  </div>
+  <div class="detail-body" id="detail-body">
+    <!-- injected dynamically -->
+  </div>
+</div>
+
+<script>
+// ─── STAR FIELD ─────────────────────────────────────
+const canvas = document.getElementById('stars');
+const ctx = canvas.getContext('2d');
+let stars = [];
+function initStars() {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+  stars = Array.from({length:160},()=>({
+    x: Math.random()*canvas.width,
+    y: Math.random()*canvas.height,
+    r: Math.random()*1.2+0.2,
+    o: Math.random()*0.5+0.1,
+    speed: Math.random()*0.3+0.05
+  }));
+}
+function drawStars() {
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  stars.forEach(s=>{
+    s.o += (Math.random()-0.5)*0.02;
+    s.o = Math.max(0.05,Math.min(0.6,s.o));
+    ctx.beginPath();
+    ctx.arc(s.x,s.y,s.r,0,Math.PI*2);
+    ctx.fillStyle=`rgba(180,200,255,${s.o})`;
+    ctx.fill();
+  });
+  requestAnimationFrame(drawStars);
+}
+initStars();
+drawStars();
+window.addEventListener('resize',initStars);
+
+// ─── DISEASE DATA ─────────────────────────────────
+const diseases = [
+  // Imaging
+  {slug:'diabetic-retinopathy',name:'Diabetic Retinopathy',category:'imaging',modality:'imaging',description:'Retinal fundus photograph analyzed by CNN for DR grading.',modelKind:'open-source-pretrained',icon:'👁'},
+  {slug:'pneumonia',name:'Pneumonia',category:'imaging',modality:'imaging',description:'Chest X-ray binary classifier distinguishing normal vs pneumonia.',modelKind:'open-source-pretrained',icon:'🫁'},
+  {slug:'skin-lesion',name:'Skin Lesion',category:'imaging',modality:'imaging',description:'Dermoscopy image classification for melanoma and other lesions.',modelKind:'self-trained',icon:'🔬'},
+  {slug:'brain-tumor',name:'Brain Tumor',category:'imaging',modality:'imaging',description:'MRI scan segmentation and tumor type classification.',modelKind:'open-source-pretrained',icon:'🧠'},
+  {slug:'breast-cancer',name:'Breast Cancer',category:'imaging',modality:'imaging',description:'Mammography-based malignancy screening model.',modelKind:'self-trained',icon:'🎗'},
+  {slug:'colon-cancer',name:'Colon Cancer',category:'imaging',modality:'imaging',description:'Histopathology slide classification for polyp detection.',modelKind:'open-source-pretrained',icon:'🔭'},
+  {slug:'glaucoma',name:'Glaucoma',category:'imaging',modality:'imaging',description:'Optic disc analysis from fundus images.',modelKind:'stub',icon:'👀'},
+  {slug:'tuberculosis',name:'Tuberculosis',category:'imaging',modality:'imaging',description:'Chest X-ray screening for TB patterns.',modelKind:'self-trained',icon:'🫀'},
+  // Clinical
+  {slug:'diabetes',name:'Diabetes',category:'clinical',modality:'clinical',description:'Glucose, HbA1c, BMI, and insulin biomarker risk model.',modelKind:'self-trained',icon:'💉'},
+  {slug:'heart-disease',name:'Heart Disease',category:'clinical',modality:'clinical',description:'Framingham risk score with ECG-derived features.',modelKind:'self-trained',icon:'❤️'},
+  {slug:'hypertension',name:'Hypertension',category:'clinical',modality:'clinical',description:'Blood pressure, age, lifestyle factor analysis.',modelKind:'stub',icon:'🩺'},
+  {slug:'kidney-disease',name:'Kidney Disease',category:'clinical',modality:'clinical',description:'Creatinine, eGFR, urea nitrogen staging model.',modelKind:'self-trained',icon:'🧪'},
+  {slug:'liver-cirrhosis',name:'Liver Cirrhosis',category:'clinical',modality:'clinical',description:'Liver enzyme panels and Child-Pugh scoring.',modelKind:'stub',icon:'🔬'},
+  {slug:'anemia',name:'Anemia',category:'clinical',modality:'clinical',description:'CBC, ferritin, B12, folate deficiency classifier.',modelKind:'self-trained',icon:'🩸'},
+  // Signal
+  {slug:'arrhythmia',name:'Arrhythmia',category:'signal',modality:'signal',description:'12-lead ECG waveform anomaly detection via 1D-CNN.',modelKind:'open-source-pretrained',icon:'📈'},
+  {slug:'sleep-apnea',name:'Sleep Apnea',category:'signal',modality:'signal',description:'SpO₂ time-series analysis for apnea-hypopnea index.',modelKind:'stub',icon:'😴'},
+  {slug:'parkinsons',name:"Parkinson's",category:'clinical',modality:'clinical',description:'Gait signal and voice tremor feature analysis.',modelKind:'stub',icon:'🤲'},
+  {slug:'alzheimers',name:"Alzheimer's",category:'imaging',modality:'imaging',description:'PET and MRI volumetric biomarker analysis.',modelKind:'open-source-pretrained',icon:'🧩'},
+  {slug:'covid',name:'COVID-19',category:'imaging',modality:'imaging',description:'CT scan ground-glass opacity pattern recognition.',modelKind:'self-trained',icon:'🦠'},
+  {slug:'osteoporosis',name:'Osteoporosis',category:'clinical',modality:'clinical',description:'DEXA scan T-score + clinical risk factor model.',modelKind:'stub',icon:'🦴'},
+];
+
+// ─── RENDER DISEASE CARDS ─────────────────────────
+function renderCards() {
+  ['imaging','clinical','signal'].forEach(cat => {
+    const grid = document.getElementById('grid-'+cat);
+    const items = diseases.filter(d=>d.category===cat);
+    grid.innerHTML = items.map(d=>diseaseCardHTML(d)).join('');
+  });
+}
+
+function diseaseCardHTML(d) {
+  const badgeMap = {'open-source-pretrained':'open-source','self-trained':'self-trained','stub':'stub'};
+  const badgeLabel = {'open-source-pretrained':'Open Source','self-trained':'Self-Trained','stub':'Stub'};
+  return `
+  <div class="disease-card ${d.category}" onclick="openDetail(${JSON.stringify(d).replace(/"/g,"'")})" data-name="${d.name.toLowerCase()}" data-cat="${d.category}">
+    <div class="card-top">
+      <div class="card-icon ${d.category}">${d.icon}</div>
+      <div class="card-badge ${badgeMap[d.modelKind]}">${badgeLabel[d.modelKind]}</div>
+    </div>
+    <div class="card-name">${d.name}</div>
+    <div class="card-desc">${d.description}</div>
+    <div class="card-footer">
+      <span class="card-tag">${d.modality}</span>
+      <span class="card-tag">${d.modelKind}</span>
+      <span class="card-arrow">→</span>
+    </div>
+  </div>`;
+}
+
+renderCards();
+
+// ─── FILTERING ────────────────────────────────────
+let categoryFilters = {imaging:'all',clinical:'all',signal:'all'};
+
+function filterCards(q) {
+  const query = q.toLowerCase();
+  document.querySelectorAll('.disease-card').forEach(card => {
+    const name = card.dataset.name;
+    card.style.display = name.includes(query) ? '' : 'none';
+  });
+}
+
+function filterCategory(cat, kind, btn) {
+  categoryFilters[cat] = kind;
+  btn.closest('.filter-row').querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll(`#grid-${cat} .disease-card`).forEach(card => {
+    if (kind === 'all') { card.style.display = ''; return; }
+    const d = diseases.find(x=>x.name.toLowerCase()===card.dataset.name);
+    card.style.display = d && d.modelKind===kind ? '' : 'none';
+  });
+}
+
+// ─── NAVIGATION ──────────────────────────────────
+function navigate(page) {
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item, .sidebar-item').forEach(n=>n.classList.remove('active'));
+  const el = document.getElementById('page-'+page);
+  if (el) el.classList.add('active');
+  const nav = document.getElementById('nav-'+page);
+  if (nav) nav.classList.add('active');
+  return false;
+}
+
+// ─── DETAIL PANEL ────────────────────────────────
+let currentDisease = null;
+
+function openDetail(d) {
+  currentDisease = d;
+  document.getElementById('dp-name').textContent = d.name;
+  document.getElementById('dp-meta').textContent = d.category + ' · ' + d.modality;
+
+  const badgeMap = {'open-source-pretrained':'open-source','self-trained':'self-trained','stub':'stub'};
+  const badgeLabel = {'open-source-pretrained':'Open Source','self-trained':'Self-Trained','stub':'Stub'};
+  document.getElementById('dp-badges').innerHTML = `<span class="card-badge ${badgeMap[d.modelKind]}">${badgeLabel[d.modelKind]}</span>`;
+
+  const body = document.getElementById('detail-body');
+
+  const isImage = d.modality === 'imaging';
+  const isClinical = d.modality === 'clinical';
+  const isSignal = d.modality === 'signal';
+
+  body.innerHTML = `
+    <div class="det-section">
+      <div class="det-section-title">About</div>
+      <p style="font-size:13px;color:var(--muted);line-height:1.7;">${d.description} This pipeline runs <strong style="color:var(--text)">detection → resolution → solution</strong> on synthetic data.</p>
+    </div>
+
+    <div class="det-section">
+      <div class="det-section-title">${isImage?'Upload Image':isClinical?'Enter Clinical Data':'Upload Signal'}</div>
+      ${isImage ? `
+        <div class="upload-zone" id="dp-upload" onclick="document.getElementById('dp-file').click()">
+          <div class="upload-icon">🖼</div>
+          <div style="font-weight:500;margin-bottom:4px;">Drop image or click to browse</div>
+          <div style="font-size:12px;">JPG · PNG · DICOM</div>
+          <input type="file" id="dp-file" style="display:none" accept="image/*" onchange="dpFileSet(this)"/>
+        </div>` : isSignal ? `
+        <div class="upload-zone" id="dp-upload" onclick="document.getElementById('dp-file').click()">
+          <div class="upload-icon">📈</div>
+          <div style="font-weight:500;margin-bottom:4px;">Drop ECG/signal file</div>
+          <div style="font-size:12px;">CSV · EDF · BIN</div>
+          <input type="file" id="dp-file" style="display:none" onchange="dpFileSet(this)"/>
+        </div>` : `
+        <div class="form-row">
+          <div class="form-field">
+            <label class="form-label">Patient Age</label>
+            <input class="form-input" type="number" placeholder="45" min="1" max="120"/>
+          </div>
+          <div class="form-field">
+            <label class="form-label">Sex</label>
+            <select class="form-select"><option>Male</option><option>Female</option><option>Other</option></select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-field">
+            <label class="form-label">Primary Biomarker</label>
+            <input class="form-input" type="number" placeholder="e.g. 126" step="0.1"/>
+          </div>
+          <div class="form-field">
+            <label class="form-label">Secondary Biomarker</label>
+            <input class="form-input" type="number" placeholder="e.g. 6.8" step="0.1"/>
+          </div>
+        </div>
+        <div class="form-field">
+          <label class="form-label">Risk Factors</label>
+          <input class="form-input" type="text" placeholder="e.g. hypertension, family history"/>
+        </div>`}
+    </div>
+
+    <div class="det-section">
+      <button class="btn-primary" id="dp-run-btn" onclick="runPipeline('${d.slug}','${d.name}')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+        Run Pipeline
+      </button>
+    </div>
+
+    <div id="dp-results" style="display:none;">
+      <div class="result-cards">
+        <div class="result-card">
+          <div class="result-card-label step-detect">
+            <span class="step-num">1</span>
+            Detection
+          </div>
+          <div class="kv-grid">
+            <div class="kv-k">Classification</div>
+            <div id="res-class" style="font-weight:600;"></div>
+            <div class="kv-k">Confidence</div>
+            <div>
+              <div id="res-conf-text" style="font-size:13px;margin-bottom:4px;"></div>
+              <div class="confidence-bar"><div class="confidence-fill" id="res-conf-bar" style="width:0%"></div></div>
+            </div>
+            <div class="kv-k">Risk Level</div>
+            <div id="res-risk"></div>
+            <div class="kv-k">Rationale</div>
+            <div id="res-rationale" style="font-size:12px;color:var(--muted);"></div>
+          </div>
+        </div>
+        <div class="result-card">
+          <div class="result-card-label step-resolve">
+            <span class="step-num">2</span>
+            Resolution
+          </div>
+          <div style="font-size:12px;color:var(--muted);margin-bottom:8px;">Steps for risk level: <span id="res-risk-label" style="color:var(--text);font-weight:500;"></span></div>
+          <ol class="step-list" id="res-steps"></ol>
+        </div>
+        <div class="result-card">
+          <div class="result-card-label step-solve">
+            <span class="step-num">3</span>
+            Solution
+          </div>
+          <div style="font-size:11px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:var(--faint);margin-bottom:6px;">Immediate Actions</div>
+          <ul class="step-list" id="res-actions" style="margin-bottom:14px;"></ul>
+          <div style="font-size:11px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:var(--faint);margin-bottom:6px;">Follow-up</div>
+          <ul class="step-list" id="res-followup"></ul>
+        </div>
+      </div>
+      <button onclick="showCarePlan()" class="btn-ghost" style="margin-top:14px;width:100%;justify-content:center;">
+        ✨ View Synthetic Care Plan
+      </button>
+    </div>
+
+    <div id="dp-careplan" style="display:none;margin-top:20px;">
+      <div class="det-section-title">Care Plan (synthetic)</div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:14px;">All doctors, hospitals, and details are SYNTHETIC and fictional.</div>
+      <div id="cp-content"></div>
+    </div>
+  `;
+
+  document.getElementById('overlay').classList.add('open');
+  document.getElementById('detail-panel').style.display = 'flex';
+}
+
+function closeDetail() {
+  document.getElementById('overlay').classList.remove('open');
+  document.getElementById('detail-panel').style.display = 'none';
+}
+
+function dpFileSet(input) {
+  if (input.files[0]) {
+    const zone = document.getElementById('dp-upload');
+    if (zone) {
+      zone.classList.add('has-file');
+      zone.querySelector('div:nth-child(2)').textContent = input.files[0].name;
+    }
+  }
+}
+
+// ─── PIPELINE SIMULATION ─────────────────────────
+const syntheticResults = {
+  classes: ['Positive — High Risk','Positive — Moderate Risk','Negative — Low Risk','Borderline — Needs Review'],
+  rationales: [
+    'Signal features strongly suggest pathological findings consistent with the disease pattern.',
+    'Moderate biomarker elevation with confounding factors; clinical follow-up recommended.',
+    'No significant abnormality detected; within normal reference ranges.',
+    'Borderline result requiring additional workup to confirm or exclude diagnosis.'
+  ],
+  resolutionSteps: [
+    ['Refer to specialist immediately','Order confirmatory tests','Initiate monitoring protocol','Document in EHR'],
+    ['Schedule follow-up in 2 weeks','Lifestyle modification counseling','Repeat labs in 30 days'],
+    ['Annual screening recommended','Maintain healthy lifestyle','No immediate intervention required']
+  ],
+  immediateActions: ['Notify attending physician','Ensure patient is informed','Order follow-up labs'],
+  followUp: ['Re-assess in 2 weeks','Patient education session','Dietary consultation referral']
+};
+
+function runPipeline(slug, name) {
+  const btn = document.getElementById('dp-run-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<div class="spinner"></div> Running…';
+
+  setTimeout(()=>{
+    const riskIdx = Math.floor(Math.random()*3);
+    const risks = ['high','medium','low'];
+    const risk = risks[riskIdx];
+    const classIdx = riskIdx;
+    const confidence = (0.55 + Math.random()*0.42);
+    const cls = syntheticResults.classes[classIdx];
+    const rationale = syntheticResults.rationales[classIdx];
+    const steps = syntheticResults.resolutionSteps[riskIdx];
+
+    document.getElementById('res-class').textContent = cls;
+    document.getElementById('res-conf-text').textContent = (confidence*100).toFixed(1)+'%';
+    setTimeout(()=>{ document.getElementById('res-conf-bar').style.width = (confidence*100).toFixed(1)+'%'; },50);
+    document.getElementById('res-risk').innerHTML = `<span class="risk-pill ${risk}">${risk}</span>`;
+    document.getElementById('res-rationale').textContent = rationale;
+    document.getElementById('res-risk-label').textContent = risk;
+
+    const stepsEl = document.getElementById('res-steps');
+    stepsEl.innerHTML = steps.map((s,i)=>`<li data-n="${i+1}">${s}</li>`).join('');
+
+    document.getElementById('res-actions').innerHTML = syntheticResults.immediateActions.map((a,i)=>`<li data-n="${i+1}">${a}</li>`).join('');
+    document.getElementById('res-followup').innerHTML = syntheticResults.followUp.map((a,i)=>`<li data-n="${i+1}">${a}</li>`).join('');
+
+    document.getElementById('dp-results').style.display = 'block';
+    btn.disabled = false;
+    btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg> Re-run';
+
+    // Add to history
+    addHistory(name, cls, (confidence*100).toFixed(1)+'%', risk);
+  }, 1600);
+}
+
+// ─── CARE PLAN ───────────────────────────────────
+function showCarePlan() {
+  const cp = document.getElementById('dp-careplan');
+  if (cp.style.display !== 'none') { cp.style.display='none'; return; }
+
+  const exercises = [
+    {name:'Walking',desc:'Light cardiovascular activity, low impact',freq:'Daily 30 min',intensity:'low'},
+    {name:'Breathing Exercises',desc:'Diaphragmatic breathing to reduce stress markers',freq:'2x daily, 10 min',intensity:'low'},
+    {name:'Stretching Routine',desc:'Full-body flexibility to aid recovery',freq:'Daily morning',intensity:'low'},
+  ];
+  const doctors = [
+    {name:'Dr. Aisha Mehta',spec:'Internal Medicine',yrs:14,hosp:'AIIMS New Delhi'},
+    {name:'Dr. Rajan Krishnamurthy',spec:'Endocrinology',yrs:22,hosp:'Apollo Hospitals Chennai'},
+  ];
+  const affirmations = [
+    {theme:'Resilience','statement':'My body has the strength to heal and recover.'},
+    {theme:'Patience','statement':'I allow healing to unfold at its own pace.'},
+    {theme:'Hope','statement':'Every day I move closer to full health.'},
+    {theme:'Gratitude','statement':'I am grateful for the care I receive.'},
+  ];
+
+  document.getElementById('cp-content').innerHTML = `
+    <div class="care-section" style="margin-bottom:18px;">
+      <div style="font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--faint);margin-bottom:10px;">Exercises</div>
+      ${exercises.map(ex=>`
+        <div class="exercise-card">
+          <div style="display:flex;justify-content:space-between;align-items:baseline;">
+            <div class="exercise-name">${ex.name}</div>
+            <span class="risk-pill ${ex.intensity==='high'?'high':ex.intensity==='moderate'?'medium':'low'}">${ex.intensity}</span>
+          </div>
+          <div class="exercise-meta">${ex.desc} · ${ex.freq}</div>
+        </div>`).join('')}
+    </div>
+    <div style="margin-bottom:18px;">
+      <div style="font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--faint);margin-bottom:10px;">Top Doctors</div>
+      ${doctors.map(d=>`
+        <div class="exercise-card" style="margin-bottom:8px;">
+          <div style="font-size:13px;font-weight:600;">${d.name}</div>
+          <div class="exercise-meta">${d.spec} · ${d.yrs} yrs · ${d.hosp}</div>
+        </div>`).join('')}
+    </div>
+    <div>
+      <div style="font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--faint);margin-bottom:10px;">Affirmations</div>
+      <div class="affirmation-grid">
+        ${affirmations.map(a=>`
+          <div class="affirmation-card">
+            <div class="affirmation-theme">${a.theme}</div>
+            <div class="affirmation-text">"${a.statement}"</div>
+          </div>`).join('')}
+      </div>
+    </div>
+    <div style="margin-top:14px;font-size:11px;color:var(--faint);">— All doctors and hospitals are synthetic and fictional. Not medical advice.</div>
+  `;
+
+  cp.style.display = 'block';
+}
+
+// ─── HISTORY ─────────────────────────────────────
+const sessionHistory = [];
+function addHistory(disease, result, confidence, risk) {
+  sessionHistory.unshift({disease, result, confidence, risk, time: new Date().toLocaleTimeString()});
+  renderHistory();
+}
+function renderHistory() {
+  const el = document.getElementById('history-list');
+  if (!sessionHistory.length) { el.innerHTML = '<div style="color:var(--muted);font-size:14px;text-align:center;padding:40px;">No detections yet.</div>'; return; }
+  el.innerHTML = sessionHistory.map(h=>`
+    <div class="history-item">
+      <div>
+        <div class="history-disease">${h.disease}</div>
+        <div class="history-meta">
+          <span>${h.result}</span>
+          <span>Confidence: ${h.confidence}</span>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;">
+        <span class="risk-pill ${h.risk}">${h.risk}</span>
+        <span class="history-time">${h.time}</span>
+      </div>
+    </div>`).join('');
+}
+
+// ─── CHAT ────────────────────────────────────────
+let pdfAttached = null;
+function chatFileSet(input) {
+  pdfAttached = input.files[0] || null;
+  document.getElementById('pdf-label').textContent = pdfAttached ? '📎 '+pdfAttached.name : '📎 Attach PDF';
+}
+function chatKey(e) {
+  if (e.key==='Enter' && !e.shiftKey) { e.preventDefault(); sendChat(); }
+}
+function autoResize(ta) {
+  ta.style.height = 'auto';
+  ta.style.height = Math.min(ta.scrollHeight, 120)+'px';
+}
+function sendChat() {
+  const input = document.getElementById('chat-input');
+  const msg = input.value.trim();
+  if (!msg) return;
+  const messages = document.getElementById('chat-messages');
+  messages.innerHTML += `<div class="chat-bubble user">${escHtml(msg)}</div>`;
+  input.value = ''; input.style.height = '';
+  messages.scrollTop = 999999;
+
+  const thinking = document.createElement('div');
+  thinking.className = 'chat-bubble assistant';
+  thinking.innerHTML = '<div class="bubble-src">🏥 Agents Assemble</div><div class="spinner"></div>';
+  messages.appendChild(thinking);
+  messages.scrollTop = 999999;
+
+  setTimeout(()=>{
+    const responses = [
+      'Based on medical literature, this condition is characterized by elevated biomarkers that signal systemic involvement. Early detection significantly improves outcomes. Please consult a healthcare professional for personalized advice.',
+      'This is a common concern. The condition you\'re asking about typically presents with these key signs. Management usually involves lifestyle modification and, in some cases, medication under medical supervision.',
+      'Great question. The disease mechanism involves complex interactions between biological systems. I can provide general information — for diagnosis and treatment, always consult a qualified physician.',
+      'The research suggests that risk factors include genetic predisposition, environmental exposure, and lifestyle choices. Regular screening is the most effective preventive measure available.',
+    ];
+    thinking.innerHTML = `<div class="bubble-src">🏥 Agents Assemble</div>${responses[Math.floor(Math.random()*responses.length)]}<p style="font-size:11px;color:var(--faint);margin-top:10px;">Sources: synthetic-notes-v2 · Not medical advice.</p>`;
+    messages.scrollTop = 999999;
+  }, 1200+(Math.random()*600));
+}
+function escHtml(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+// ─── REPORT ANALYZER ─────────────────────────────
+function dragOver(e) { e.preventDefault(); document.getElementById('report-drop').classList.add('dragging'); }
+function dragLeave(e) { document.getElementById('report-drop').classList.remove('dragging'); }
+function dropFile(e) {
+  e.preventDefault(); dragLeave(e);
+  const f = e.dataTransfer.files[0];
+  if (f) reportFileSet({files:[f]});
+}
+function reportFileSet(input) {
+  const f = input.files[0];
+  if (!f) return;
+  const drop = document.getElementById('report-drop');
+  drop.classList.add('has-file');
+  drop.querySelector('div:nth-child(2)').textContent = f.name;
+}
+function clearReport() {
+  document.getElementById('report-text').value = '';
+  document.getElementById('report-results').style.display = 'none';
+  const drop = document.getElementById('report-drop');
+  drop.classList.remove('has-file');
+  drop.querySelector('div:nth-child(2)').textContent = 'Drop report here';
+}
+function analyzeReport() {
+  const text = document.getElementById('report-text').value;
+  const loading = document.getElementById('report-loading');
+  const results = document.getElementById('report-results');
+  loading.style.display = 'flex'; results.style.display = 'none';
+  setTimeout(()=>{
+    loading.style.display = 'none';
+    results.style.display = 'block';
+    const hits = [
+      {name:'Diabetes',score:0.87,evidence:['elevated glucose','HbA1c 8.2%']},
+      {name:'Hypertension',score:0.72,evidence:['BP 145/92','family history']},
+      {name:'Kidney Disease',score:0.44,evidence:['creatinine borderline']},
+    ];
+    document.getElementById('report-hits').innerHTML = hits.map(h=>`
+      <div style="background:var(--deep);border:1px solid var(--border);border-radius:10px;padding:12px 14px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+          <div style="font-size:13px;font-weight:600;">${h.name}</div>
+          <div style="font-size:12px;color:var(--accent);font-family:var(--font-mono);">${(h.score*100).toFixed(0)}%</div>
+        </div>
+        <div class="confidence-bar" style="margin-bottom:6px;"><div class="confidence-fill" style="width:${h.score*100}%"></div></div>
+        <div style="font-size:11px;color:var(--muted);">Evidence: ${h.evidence.join(' · ')}</div>
+      </div>`).join('');
+    document.getElementById('report-primary').innerHTML = `
+      <div style="background:rgba(91,141,255,0.07);border:1px solid rgba(91,141,255,0.2);border-radius:12px;padding:16px;">
+        <div style="font-size:15px;font-weight:600;margin-bottom:4px;">Diabetes (Primary)</div>
+        <div style="font-size:13px;color:var(--muted);">Score 87% — elevated glucose and HbA1c are primary indicators. Recommend endocrinology referral.</div>
+      </div>`;
+  }, 1800);
+}
+</script>
+</body>
+</html>

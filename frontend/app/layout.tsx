@@ -1,6 +1,27 @@
 import "./globals.css";
 import type { ReactNode } from "react";
-import Link from "next/link";
+import { DM_Mono, DM_Serif_Display, Outfit } from "next/font/google";
+import { AppShell } from "../components/AppShell";
+import { Starfield } from "../components/Starfield";
+import { getDiseaseSummaries } from "../lib/fetch-diseases";
+
+const fontDisplay = DM_Serif_Display({
+  subsets: ["latin"],
+  weight: "400",
+  variable: "--font-display"
+});
+
+const fontBody = Outfit({
+  subsets: ["latin"],
+  weight: ["300", "400", "500", "600"],
+  variable: "--font-body"
+});
+
+const fontMono = DM_Mono({
+  subsets: ["latin"],
+  weight: ["400", "500"],
+  variable: "--font-mono"
+});
 
 export const metadata = {
   title: "Agents Assemble — 20 Disease MCP Tester",
@@ -8,21 +29,16 @@ export const metadata = {
     "Manual testing UI for the Agents Assemble Healthcare MCP server (synthetic data only)."
 };
 
-export default function RootLayout({ children }: { children: ReactNode }) {
+export default async function RootLayout({ children }: { children: ReactNode }) {
+  const diseases = await getDiseaseSummaries();
   return (
-    <html lang="en">
+    <html
+      lang="en"
+      className={`${fontDisplay.variable} ${fontBody.variable} ${fontMono.variable}`}
+    >
       <body>
-        <header className="header">
-          <div className="brand">Agents Assemble — 20-Disease MCP Tester</div>
-          <nav className="nav">
-            <Link href="/">Diseases</Link>
-            <Link href="/chat">Simple chat</Link>
-            <Link href="/report">Report</Link>
-            <Link href="/history">History</Link>
-            <Link href="/about">About</Link>
-          </nav>
-        </header>
-        <main className="container">{children}</main>
+        <Starfield />
+        <AppShell diseases={diseases}>{children}</AppShell>
       </body>
     </html>
   );

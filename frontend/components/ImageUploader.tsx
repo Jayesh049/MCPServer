@@ -45,6 +45,9 @@ export function ImageUploader({
       >
         {file ? (
           <>
+            <div className="upload-icon" aria-hidden>
+              ✓
+            </div>
             <strong>{file.name}</strong>
             <div className="subtle">
               {(file.size / 1024).toFixed(1)} KB — click to replace
@@ -52,6 +55,9 @@ export function ImageUploader({
           </>
         ) : (
           <>
+            <div className="upload-icon" aria-hidden>
+              🖼
+            </div>
             <strong>Click to upload an image</strong>
             <div className="subtle">
               Accepted: {acceptedMimeTypes.join(", ")} — synthetic / non-PHI only

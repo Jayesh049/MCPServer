@@ -1,14 +1,6 @@
 import Link from "next/link";
-import type { DiseaseSummary } from "../../../lib/types";
+import { getDiseaseSummaries } from "../../../lib/fetch-diseases";
 import { DetectorTester } from "./DetectorTester";
-
-async function getDiseases(): Promise<DiseaseSummary[]> {
-  const base = process.env.MCP_API_BASE_URL ?? "http://localhost:3333";
-  const res = await fetch(`${base}/api/diseases`, { cache: "no-store" });
-  if (!res.ok) return [];
-  const data = (await res.json()) as { diseases: DiseaseSummary[] };
-  return data.diseases;
-}
 
 export default async function DiseasePage({
   params
@@ -16,14 +8,14 @@ export default async function DiseasePage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const list = await getDiseases();
+  const list = await getDiseaseSummaries();
   const disease = list.find((d) => d.slug === slug);
 
   if (!disease) {
     return (
-      <div>
+      <div className="page-hero-compact">
         <p>Unknown disease: {slug}</p>
-        <Link href="/" className="btn secondary" style={{ marginTop: 12 }}>
+        <Link href="/" className="btn secondary" style={{ marginTop: 12, display: "inline-flex" }}>
           ← Back to all diseases
         </Link>
       </div>
@@ -32,19 +24,20 @@ export default async function DiseasePage({
 
   return (
     <div>
-      <div style={{ marginBottom: 14 }}>
+      <div className="back-row">
         <Link href="/" className="subtle">
           ← All diseases
         </Link>
       </div>
       <section className="hero">
+        <div className="hero-eyebrow">Disease pipeline</div>
         <h1>{disease.name}</h1>
-        <p>{disease.description}</p>
-        <div style={{ marginTop: 10 }}>
-          <span className="tag">{disease.modality}</span>
-          <span className="tag">{disease.modelKind}</span>
+        <p className="hero-sub">{disease.description}</p>
+        <div className="hero-meta" style={{ marginTop: 8 }}>
+          <span className="card-tag">{disease.modality}</span>
+          <span className="card-tag">{disease.modelKind}</span>
         </div>
-        <p className="subtle" style={{ marginTop: 8 }}>
+        <p className="subtle" style={{ marginTop: 14, maxWidth: 640 }}>
           {disease.modelNotes}
         </p>
       </section>

@@ -1,0 +1,122 @@
+import type { HealerTechStack, ParsedHealerError } from "./types.js";
+
+const TS_ERROR_LINE =
+  /^(.+?)\((\d+),(\d+)\):\s*error\s+(TS\d+):\s*(.+)$/m;
+
+const NEXT_FILE_LINE = /(?:^|\n)\s*(?:⨯|Error:)\s*(.+)$/m;
+const NEXT_PATH = /(?:^|\s)([\w./\\-]+\.(?:tsx?|jsx?|mjs|cjs))(?:\s|$|\()/i;
+
+/** Python traceback: File "path", line N, in ... */
+const PY_FILE_LINE = /File\s+"([^"]+)",\s*line\s+(\d+)/;
+
+const PY_EXCEPTION = /^(\w+Error|\w+Exception):\s*(.+)$/m;
+
+function excerpt(s: string, max = 1200): string {
+  const t = s.trim();
+  return t.length <= max ? t : t.slice(-max);
+}
+
+function classifyNext(buffer: string): boolean {
+  return (
+    /next(\s+|\/)build/i.test(buffer) ||
+    /\bTurbopack\b/i.test(buffer) ||
+    /\bNext\.js\b/i.test(buffer) ||
+    /Module not found/i.test(buffer)
+  );
+}
+
+function tryParseTypeScript(buffer: string): ParsedHealerError | null {
+  const m = buffer.match(TS_ERROR_LINE);
+  if (!m?.[1] || !m[2] || !m[4] || !m[5]) return null;
+  const file = m[1].trim();
+  const line = Number(m[2]);
+  const code = m[4].trim();
+  const msg = m[5].trim();
+  return {
+    techStack: "NODE_TS",
+    primaryFilePath: file,
+    primaryLine: Number.isFinite(line) ? line : null,
+    normalizedMessage: `${code}: ${msg}`,
+    rawExcerpt: excerpt(buffer)
+  };
+}
+
+function tryParseNext(buffer: string): ParsedHealerError | null {
+  if (!classifyNext(buffer)) return null;
+  const ts = tryParseTypeScript(buffer);
+  if (ts) {
+    return { ...ts, techStack: "NEXT" };
+  }
+  const py = tryParsePython(buffer);
+  if (py && classifyNext(buffer)) {
+    return { ...py, techStack: "NEXT" };
+  }
+  let file: string | null = null;
+  const fm = buffer.match(NEXT_FILE_LINE);
+  if (fm?.[1]) {
+    const candidate = fm[1].trim();
+    if (/\.(tsx?|jsx?|mjs|cjs)/i.test(candidate)) {
+      file = candidate.split(/\s+/)[0] ?? null;
+    }
+  }
+  if (!file) {
+    const pm = buffer.match(NEXT_PATH);
+    file = pm?.[1]?.trim() ?? null;
+  }
+  const oneLine = buffer
+    .split("\n")
+    .map((l) => l.trim())
+    .find((l) => l.includes("Error") || l.includes("error"));
+  return {
+    techStack: "NEXT",
+    primaryFilePath: file,
+    primaryLine: null,
+    normalizedMessage: (oneLine ?? buffer).slice(0, 500).trim(),
+    rawExcerpt: excerpt(buffer)
+  };
+}
+
+function tryParsePython(buffer: string): ParsedHealerError | null {
+  if (!/Traceback \(most recent call last\)/s.test(buffer)) return null;
+  const lines = buffer.split("\n");
+  let lastFile: string | null = null;
+  let lastLine: number | null = null;
+  for (const line of lines) {
+    const m = line.match(PY_FILE_LINE);
+    if (m?.[1] && m[2]) {
+      lastFile = m[1].trim();
+      lastLine = Number(m[2]);
+    }
+  }
+  const ex = buffer.match(PY_EXCEPTION);
+  const msg = ex ? `${ex[1]}: ${(ex[2] ?? "").trim()}` : "Python traceback";
+  return {
+    techStack: "PYTHON",
+    primaryFilePath: lastFile,
+    primaryLine: lastLine,
+    normalizedMessage: msg.slice(0, 500),
+    rawExcerpt: excerpt(buffer)
+  };
+}
+
+/** Pick the strongest parse from a log tail. */
+export function parseHealerBuffer(buffer: string): ParsedHealerError | null {
+  const tail = buffer.slice(-24_000);
+  if (classifyNext(tail)) {
+    const n = tryParseNext(tail);
+    if (n) return n;
+  }
+  const ts = tryParseTypeScript(tail);
+  if (ts) return ts;
+  const py = tryParsePython(tail);
+  if (py) return py;
+  return null;
+}
+
+export function inferStackHint(cmd: string): HealerTechStack | null {
+  const c = cmd.toLowerCase();
+  if (/next|turbopack/.test(c)) return "NEXT";
+  if (/flask|python|uvicorn|gunicorn/.test(c)) return "PYTHON";
+  if (/tsx|tsc|node|npm/.test(c)) return "NODE_TS";
+  return null;
+}

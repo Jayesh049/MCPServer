@@ -42,57 +42,75 @@ export function ReportUploader() {
   }
 
   return (
-    <div style={{ display: "grid", gap: 14 }}>
-      <div className="panel">
-        <h2>PDF input</h2>
-        <label className="label">Select report PDF</label>
+    <div className="report-two-col">
+      <div>
+        <div className="det-section-title">PDF input</div>
+        <label className="form-label">Select report PDF</label>
         <input
-          className="input"
+          className="form-input"
           type="file"
           accept="application/pdf"
           onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+          style={{ marginBottom: 12 }}
         />
-        <div style={{ marginTop: 12, display: "flex", gap: 8 }}>
-          <button className="btn" onClick={run} disabled={!file || loading}>
-            {loading ? "Analyzing…" : "Analyze report"}
+        <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+          <button type="button" className="btn-primary" onClick={run} disabled={!file || loading}>
+            {loading ? (
+              <>
+                <span className="spinner" />
+                Analyzing…
+              </>
+            ) : (
+              <>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="15" height="15" aria-hidden>
+                  <circle cx="11" cy="11" r="8" />
+                  <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                </svg>
+                Analyze report
+              </>
+            )}
           </button>
         </div>
-        {error && (
-          <div className="error" style={{ marginTop: 12 }}>
-            {error}
+        {error && <div className="error" style={{ marginTop: 12 }}>{error}</div>}
+
+        {!result ? (
+          <div className="result-card" style={{ marginTop: 20 }}>
+            <p className="subtle" style={{ margin: 0 }}>
+              Upload a synthetic/de-identified PDF report and click <strong>Analyze report</strong>.
+            </p>
           </div>
-        )}
+        ) : null}
       </div>
 
-      {result ? (
-        <>
-          <div className="panel">
-            <h2>Detected diseases</h2>
-            {result.primaryDisease ? (
-              <p className="subtle">
-                Primary: <strong>{result.primaryDisease.name}</strong> (
-                <code>{result.primaryDisease.slug}</code>) score{" "}
-                {(result.primaryDisease.score * 100).toFixed(0)}%
-              </p>
-            ) : (
-              <p className="subtle">No disease keywords found.</p>
-            )}
+      <div>
+        {result ? (
+          <>
+            <div className="det-section-title">Detected diseases</div>
+            <div className="result-card" style={{ marginBottom: 16 }}>
+              {result.primaryDisease ? (
+                <p className="subtle" style={{ margin: 0 }}>
+                  Primary: <strong>{result.primaryDisease.name}</strong> (
+                  <code>{result.primaryDisease.slug}</code>) score {(result.primaryDisease.score * 100).toFixed(0)}%
+                </p>
+              ) : (
+                <p className="subtle" style={{ margin: 0 }}>
+                  No disease keywords found.
+                </p>
+              )}
 
-            {result.detectedDiseases.length > 0 && (
-              <ul className="list">
-                {result.detectedDiseases.map((d) => (
-                  <li key={d.slug}>
-                    <strong>{d.name}</strong> <span className="subtle">({d.slug})</span>{" "}
-                    — {(d.score * 100).toFixed(0)}% — evidence:{" "}
-                    <span className="subtle">{d.evidence.join(", ")}</span>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
+              {result.detectedDiseases.length > 0 && (
+                <ul className="list" style={{ marginTop: 12 }}>
+                  {result.detectedDiseases.map((d) => (
+                    <li key={d.slug}>
+                      <strong>{d.name}</strong> <span className="subtle">({d.slug})</span> — {(d.score * 100).toFixed(0)}%
+                      — evidence: <span className="subtle">{d.evidence.join(", ")}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
 
-          <div className="panel">
-            <h2>Extracted text preview</h2>
+            <div className="det-section-title">Extracted text preview</div>
             <div className="subtle" style={{ marginBottom: 10 }}>
               Characters: <strong>{result.extracted.charCount}</strong>
               {result.extracted.pages ? (
@@ -105,39 +123,37 @@ export function ReportUploader() {
             <pre
               style={{
                 whiteSpace: "pre-wrap",
-                background: "var(--panel-2)",
+                background: "var(--mid)",
                 border: "1px solid var(--border)",
                 borderRadius: 10,
                 padding: 12,
                 maxHeight: 340,
                 overflow: "auto",
                 fontSize: 12,
-                color: "var(--text)"
+                color: "var(--text)",
+                fontFamily: "var(--font-mono), ui-monospace, monospace"
               }}
             >
               {result.extracted.textPreview}
             </pre>
-          </div>
 
-          {result.carePlan ? (
-            <CarePlanPanel plan={result.carePlan} />
-          ) : (
-            <div className="panel">
-              <h2>Care plan</h2>
-              <p className="subtle">No care plan available (no primary disease detected).</p>
-            </div>
-          )}
-        </>
-      ) : (
-        <div className="panel">
-          <h2>Result</h2>
-          <p className="subtle">
-            Upload a synthetic/de-identified PDF report and click{" "}
-            <strong>Analyze report</strong>.
-          </p>
-        </div>
-      )}
+            {result.carePlan ? (
+              <div style={{ marginTop: 20 }}>
+                <CarePlanPanel plan={result.carePlan} />
+              </div>
+            ) : (
+              <div className="result-card" style={{ marginTop: 20 }}>
+                <div className="det-section-title" style={{ marginTop: 0 }}>
+                  Care plan
+                </div>
+                <p className="subtle" style={{ margin: 0 }}>
+                  No care plan available (no primary disease detected).
+                </p>
+              </div>
+            )}
+          </>
+        ) : null}
+      </div>
     </div>
   );
 }
-

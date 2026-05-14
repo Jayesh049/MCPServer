@@ -180,3 +180,37 @@ model DiseaseTrainedModel {
 
   @@index([configId, trainedAt])
 }
+
+/// Dev-only: remembered fixes for self-healing orchestrator (`npm run healer`).
+enum HealerTechStack {
+  NODE_TS
+  NEXT
+  PYTHON
+}
+
+enum HealerFixSource {
+  LLM
+  MANUAL
+  CACHE
+}
+
+/// Normalized error fingerprint → structured search/replace edits (JSON).
+model ErrorFixPattern {
+  id                 String          @id @default(cuid())
+  techStack          HealerTechStack
+  patternHash        String
+  primaryFilePath    String?
+  normalizedSnippet  String          @db.Text
+  rawSnippetPreview  String?         @db.Text
+  fixPayload         Json
+  createdFrom        HealerFixSource @default(LLM)
+  successCount       Int             @default(0)
+  missCount          Int             @default(0)
+  lastAppliedAt      DateTime?
+  createdAt          DateTime        @default(now())
+  updatedAt          DateTime        @updatedAt
+
+  @@unique([techStack, patternHash])
+  @@index([techStack])
+  @@index([patternHash])
+}

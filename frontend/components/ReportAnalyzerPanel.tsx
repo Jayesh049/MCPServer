@@ -44,7 +44,7 @@ export function ReportAnalyzerPanel() {
   return (
     <div style={{ display: "grid", gap: 14 }}>
       <div className="panel">
-        <h2>Report analysis (PDF / Excel / CSV)</h2>
+        <div className="det-section-title">Report analysis (PDF / Excel / CSV)</div>
         <p className="subtle">
           Upload a synthetic / de-identified report. The backend extracts text, runs
           keyword-based disease matching, then returns details + a synthetic care plan.
@@ -78,7 +78,7 @@ export function ReportAnalyzerPanel() {
       {result ? (
         <>
           <div className="panel">
-            <h2>Detected diseases</h2>
+            <div className="det-section-title">Detected diseases</div>
             {result.primaryDisease ? (
               <p className="subtle">
                 Primary: <strong>{result.primaryDisease.name}</strong> (
@@ -126,7 +126,7 @@ export function ReportAnalyzerPanel() {
           </div>
 
           <div className="panel">
-            <h2>Extracted text preview</h2>
+            <div className="det-section-title">Extracted text preview</div>
             <div className="subtle" style={{ marginBottom: 10 }}>
               Characters: <strong>{result.extracted.charCount}</strong>
               {result.extracted.pages ? (
@@ -157,7 +157,7 @@ export function ReportAnalyzerPanel() {
             <CarePlanPanel plan={result.carePlan} />
           ) : (
             <div className="panel">
-              <h2>Care plan</h2>
+              <div className="det-section-title">Care plan</div>
               <p className="subtle">
                 No care plan available (no primary disease detected).
               </p>

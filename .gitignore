@@ -33,6 +33,10 @@ npm-debug.log*
 Thumbs.db
 .cursor/
 
+# Local scratch copies (duplicates; real sources live under src/)
+files (1)/
+files (2)/
+
 # Python ML generated artifacts (see ml/README.md)
 ml/artifacts/
 **/__pycache__/

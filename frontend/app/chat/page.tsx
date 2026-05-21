@@ -4,14 +4,14 @@ import Link from "next/link";
 import { useCallback, useState } from "react";
 
 const LANGUAGES = [
-  { value: "English", label: "English (output is plain English)" },
-  { value: "Hindi", label: "Hindi — we still reply in English; translate locally" },
-  { value: "Tamil", label: "Tamil — we still reply in English; translate locally" },
-  { value: "Telugu", label: "Telugu — we still reply in English; translate locally" },
-  { value: "Bengali", label: "Bengali — we still reply in English; translate locally" },
-  { value: "Spanish", label: "Spanish — we still reply in English; translate locally" },
-  { value: "French", label: "French — we still reply in English; translate locally" },
-  { value: "Arabic", label: "Arabic — we still reply in English; translate locally" }
+  { value: "English", label: "English (simple)" },
+  { value: "Hindi", label: "Hindi (needs GEMINI_API_KEY or other LLM key)" },
+  { value: "Tamil", label: "Tamil (needs LLM key)" },
+  { value: "Telugu", label: "Telugu (needs LLM key)" },
+  { value: "Bengali", label: "Bengali (needs LLM key)" },
+  { value: "Spanish", label: "Spanish (needs LLM key)" },
+  { value: "French", label: "French (needs LLM key)" },
+  { value: "Arabic", label: "Arabic (needs LLM key)" }
 ];
 
 type PatientChatApi = {
@@ -19,6 +19,7 @@ type PatientChatApi = {
   patientText?: string;
   requestedLanguage?: string;
   sourcesUsed?: string[];
+  llmProvider?: string;
   disclaimer?: string;
   languageNote?: string;
   error?: string;
@@ -47,6 +48,8 @@ export default function PatientChatPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [reply, setReply] = useState<PatientChatApi | null>(null);
+  /** Remounts file inputs so "Choose file" resets after a successful send. */
+  const [fileInputKey, setFileInputKey] = useState(0);
 
   const onSubmit = useCallback(async () => {
     setError(null);
@@ -83,6 +86,10 @@ export default function PatientChatPage() {
         return;
       }
       setReply(data);
+      setMessage("");
+      setPdfFile(null);
+      setImageFile(null);
+      setFileInputKey((k) => k + 1);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Request failed.");
     } finally {
@@ -97,7 +104,9 @@ export default function PatientChatPage() {
           <div className="bubble-src">🏥 Agents Assemble — Patient Chat</div>
           Ask in your own words. You can add a PDF (text is read) or attach an image (we{" "}
           <strong>cannot</strong> read the picture in this mode — describe it if it matters). Answers use{" "}
-          <strong>very simple English</strong> from Wikipedia-style notes. <em>Not medical advice.</em>
+          <strong>very simple</strong> wording grounded in Wikipedia-style retrieval. If{" "}
+          <code>GEMINI_API_KEY</code> (or another supported key) is set on the server, an LLM rewrites the answer
+          (and can follow the language you pick). <em>Not medical advice.</em>
         </div>
 
         {error ? (
@@ -115,6 +124,7 @@ export default function PatientChatPage() {
             {reply.sourcesUsed?.length ? (
               <p className="muted" style={{ marginTop: 8 }}>
                 Sources: {reply.sourcesUsed.join(", ")}
+                {reply.llmProvider ? ` · LLM: ${reply.llmProvider}` : ""}
               </p>
             ) : null}
             <p className="muted" style={{ marginTop: 12, fontWeight: 600 }}>
@@ -166,6 +176,7 @@ export default function PatientChatPage() {
           <label className="muted" style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12 }}>
             PDF (optional)
             <input
+              key={`pdf-${fileInputKey}`}
               type="file"
               accept="application/pdf,.pdf"
               onChange={(e) => setPdfFile(e.target.files?.[0] ?? null)}
@@ -174,6 +185,7 @@ export default function PatientChatPage() {
           <label className="muted" style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12 }}>
             Image (optional)
             <input
+              key={`img-${fileInputKey}`}
               type="file"
               accept="image/jpeg,image/png,image/webp"
               onChange={(e) => setImageFile(e.target.files?.[0] ?? null)}
@@ -199,9 +211,21 @@ export default function PatientChatPage() {
             rows={3}
             value={message}
             onChange={(e) => setMessage(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                if (!loading) void onSubmit();
+              }
+            }}
             placeholder="Ask in your own words, e.g. 'What is high blood pressure?'"
           />
-          <button type="button" className="chat-send" onClick={onSubmit} disabled={loading} aria-label="Send">
+          <button
+            type="button"
+            className="chat-send"
+            onClick={() => void onSubmit()}
+            disabled={loading}
+            aria-label="Send"
+          >
             {loading ? (
               <span className="spinner" style={{ width: 16, height: 16, borderWidth: 2 }} />
             ) : (

@@ -24,6 +24,8 @@
     "train:diabetes": "tsx src/training/trainDiabetes.ts",
     "lint": "eslint .",
     "healer": "tsx src/healer/cli.ts",
+    "dev:heal": "tsx src/healer/cli.ts -- npm run dev",
+    "dev:plan": "tsx src/healer/cli.ts --plan-only -- npm run dev",
     "smoke:health": "node scripts/smoke-http-health.mjs"
   },
   "dependencies": {

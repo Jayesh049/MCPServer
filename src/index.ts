@@ -1,3 +1,5 @@
+import "dotenv/config";
+
 import { createMcpServer, startStdioServer } from "./mcp/server.js";
 import { startHttpTransport } from "./mcp/httpServer.js";
 

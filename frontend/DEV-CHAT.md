@@ -37,5 +37,5 @@ The Next app rewrites `/api/*` to `MCP_API_BASE_URL` (see `frontend/next.config.
 
 ## Notes
 
-- Answers are **plain English** templates + Wikipedia RAG; **no external LLM** on this path (`skipGeminiSynthesis` on the server).
+- Answers use **RAG** then an **optional LLM** if `GEMINI_API_KEY`, `GROQ_API_KEY`, etc. are set in **root** `.env` (see `.env.example`). Set **`PATIENT_CHAT_DISABLE_LLM=1`** for template-only.
 - **Images** are not read visually; upload a **PDF with text** or describe an image in words.

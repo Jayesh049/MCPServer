@@ -16,6 +16,7 @@ import {
 } from "../answers/manualFlows.js";
 import { executeUnifiedAsk, getUnifiedAskApiInfo } from "./qaAsk.js";
 import { executePatientChat } from "./patientChat.js";
+import { handleHealerApiRequest } from "./healerApi.js";
 
 function setCors(res: ServerResponse) {
   res.setHeader("Access-Control-Allow-Origin", "*");
@@ -350,6 +351,9 @@ export async function handleApiRequest(
     }
     return true;
   }
+
+  const healerHandled = await handleHealerApiRequest(req, res);
+  if (healerHandled) return true;
 
   sendJson(res, 404, { error: "Not Found" });
   return true;

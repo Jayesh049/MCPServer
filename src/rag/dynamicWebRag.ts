@@ -102,23 +102,43 @@ export async function answerQuestionWithWebRag(
   }
 
   const queryVec = await embedText(question, { purpose: "query" });
-  const corpus = await prisma.ragChunk.findMany({
+  let corpus = await prisma.ragChunk.findMany({
     where: { questionId: row.id }
   });
 
-  const scored: WebRagMatch[] = [];
-  for (const c of corpus) {
-    const emb = embeddingFromJson(c.embedding);
-    if (!emb?.length || emb.length !== queryVec.length) continue;
-    scored.push({
-      id: c.id,
-      score: cosineSimilarity(queryVec, emb),
-      content: c.content,
-      meta: c.meta,
-      createdAt: c.createdAt.toISOString()
-    });
+  function scoreCorpus(chunks: typeof corpus): WebRagMatch[] {
+    const matches: WebRagMatch[] = [];
+    for (const c of chunks) {
+      const emb = embeddingFromJson(c.embedding);
+      if (!emb?.length || emb.length !== queryVec.length) continue;
+      matches.push({
+        id: c.id,
+        score: cosineSimilarity(queryVec, emb),
+        content: c.content,
+        meta: c.meta,
+        createdAt: c.createdAt.toISOString()
+      });
+    }
+    matches.sort((a, b) => b.score - a.score);
+    return matches;
   }
-  scored.sort((a, b) => b.score - a.score);
+
+  let scored = scoreCorpus(corpus);
+
+  // Chunks indexed with a different provider/model (e.g. local 384-d vs Gemini 3072-d).
+  if (scored.length === 0 && corpus.length > 0 && !refresh) {
+    const sample = embeddingFromJson(corpus[0]?.embedding ?? null);
+    if (sample?.length && sample.length !== queryVec.length) {
+      console.warn(
+        `[dynamicWebRag] Embedding dimension mismatch (${sample.length} vs ${queryVec.length}) for slug=${slug}; re-indexing with ${getActiveEmbedProvider()}.`
+      );
+      indexedChunks = await rebuildWikipediaCorpusForQuestion(row.id, question);
+      refreshed = true;
+      corpus = await prisma.ragChunk.findMany({ where: { questionId: row.id } });
+      scored = scoreCorpus(corpus);
+    }
+  }
+
   const topMatches = scored.slice(0, TOP_K);
 
   const answerPreview = topMatches

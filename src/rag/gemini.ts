@@ -19,6 +19,27 @@ export function hasGeminiApiKey(): boolean {
   return !!apiKey();
 }
 
+const DEPRECATED_EMBED_ALIASES: Record<string, string> = {
+  "text-embedding-004": "gemini-embedding-001",
+  "embedding-001": "gemini-embedding-001"
+};
+
+let loggedEmbedModelAlias = false;
+
+/** Active Gemini embedding model (v1beta embedContent). */
+export function resolveGeminiEmbedModel(): string {
+  const raw = process.env.GEMINI_EMBED_MODEL?.trim() || "gemini-embedding-001";
+  const id = raw.replace(/^models\//, "");
+  const mapped = DEPRECATED_EMBED_ALIASES[id] ?? id;
+  if (mapped !== id && !loggedEmbedModelAlias) {
+    loggedEmbedModelAlias = true;
+    console.warn(
+      `[gemini] GEMINI_EMBED_MODEL=${id} is not supported; using ${mapped} instead.`
+    );
+  }
+  return mapped;
+}
+
 type GeminiEmbedTask =
   | "RETRIEVAL_DOCUMENT"
   | "RETRIEVAL_QUERY"
@@ -43,8 +64,7 @@ export async function geminiEmbedText(
   if (!key) {
     throw new Error("GEMINI_API_KEY (or GOOGLE_API_KEY) is required for Gemini embeddings.");
   }
-  const model =
-    process.env.GEMINI_EMBED_MODEL?.trim() || "text-embedding-004";
+  const model = resolveGeminiEmbedModel();
   const input = text.length > MAX_INPUT_CHARS ? text.slice(0, MAX_INPUT_CHARS) : text;
   const taskType: GeminiEmbedTask =
     purpose === "query" ? "RETRIEVAL_QUERY" : "RETRIEVAL_DOCUMENT";

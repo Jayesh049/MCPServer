@@ -36,9 +36,12 @@ Thumbs.db
 # Local scratch copies (duplicates; real sources live under src/)
 files (1)/
 files (2)/
+files (5)/
 
-# Python ML generated artifacts (see ml/README.md)
-ml/artifacts/
+# Python ML generated artifacts (see ml/README.md); keep trained TB sklearn pipeline in git
+ml/artifacts/*
+!ml/artifacts/tuberculosis/
+!ml/artifacts/tuberculosis/**
 **/__pycache__/
 *.py[cod]
 ml/scripts/__pycache__/

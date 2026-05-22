@@ -1,0 +1,759 @@
+
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+<h2 class="sr-only">Agents Assemble — Medical Intelligence Platform, full interactive UI with Disease Hub, Patient Chat, Report Analyzer, History, and About pages</h2>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --c1:#0a0f1e;--c2:#0d1829;--c3:#112240;
+  --acc:#4fd1c7;--acc2:#38b2ac;--acc3:#81e6d9;
+  --gold:#f6c90e;--rose:#f687b3;
+  --txt:#e8f4f8;--txt2:#a0c4ce;--txt3:#5a8a94;
+  --bdr:rgba(79,209,199,.12);--bdr2:rgba(79,209,199,.25);
+  --gls:rgba(13,24,41,.7);
+  --r:14px;--r2:8px;--r3:20px;
+}
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+@keyframes shimmer{0%,100%{opacity:.6}50%{opacity:1}}
+@keyframes pulse{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.15);opacity:.7}}
+@keyframes scan{0%{top:-2px}100%{top:100%}}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+
+body{font-family:'Outfit',sans-serif;background:var(--c1);color:var(--txt);min-height:600px;overflow:hidden}
+
+/* bg */
+.bg-mesh{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden}
+.bg-mesh::before{content:'';position:absolute;width:600px;height:600px;border-radius:50%;background:radial-gradient(circle,rgba(79,209,199,.08) 0%,transparent 70%);top:-100px;right:-100px;animation:shimmer 6s ease-in-out infinite}
+.bg-mesh::after{content:'';position:absolute;width:400px;height:400px;border-radius:50%;background:radial-gradient(circle,rgba(246,201,14,.05) 0%,transparent 70%);bottom:-50px;left:100px;animation:shimmer 8s ease-in-out infinite 2s}
+
+/* shell */
+.shell{position:relative;z-index:1;display:flex;height:620px;border:1px solid var(--bdr2);border-radius:var(--r3);overflow:hidden;background:var(--c1)}
+
+/* sidebar */
+.sb{width:220px;flex-shrink:0;background:var(--c2);border-right:1px solid var(--bdr);display:flex;flex-direction:column;position:relative;overflow:hidden}
+.sb::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--acc),transparent)}
+.sb-scan{position:absolute;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,rgba(79,209,199,.4),transparent);animation:scan 4s linear infinite;pointer-events:none}
+
+.sb-logo{padding:20px 18px 16px;border-bottom:1px solid var(--bdr)}
+.brand{display:flex;align-items:center;gap:10px}
+.brand-mark{width:38px;height:38px;border-radius:10px;background:linear-gradient(135deg,var(--acc),#2b6cb0);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;position:relative;overflow:hidden}
+.brand-mark::after{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(255,255,255,.2),transparent)}
+.brand-name{font-family:'Playfair Display',serif;font-size:15px;font-weight:700;color:var(--txt);line-height:1.2}
+.brand-tag{font-size:9px;color:var(--acc);letter-spacing:.1em;text-transform:uppercase;margin-top:2px}
+
+.sb-nav{padding:12px 10px;flex:1;overflow-y:auto;scrollbar-width:none}
+.sb-nav::-webkit-scrollbar{display:none}
+.nav-sec{margin-bottom:6px}
+.nav-sec-lbl{font-size:9px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--txt3);padding:6px 8px 4px}
+.ni{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:var(--r2);font-size:12.5px;color:var(--txt2);cursor:pointer;border:none;background:none;width:100%;text-align:left;font-family:'Outfit',sans-serif;font-weight:400;transition:all .2s;position:relative}
+.ni:hover{background:rgba(79,209,199,.08);color:var(--txt)}
+.ni.on{background:rgba(79,209,199,.12);color:var(--acc);font-weight:500}
+.ni.on::before{content:'';position:absolute;left:0;top:20%;bottom:20%;width:2px;background:var(--acc);border-radius:2px}
+.ni-dot{width:5px;height:5px;border-radius:50%;background:var(--txt3);flex-shrink:0;transition:background .2s}
+.ni.on .ni-dot{background:var(--acc);box-shadow:0 0 6px var(--acc)}
+.ni-badge{margin-left:auto;background:rgba(79,209,199,.15);color:var(--acc);border-radius:20px;padding:1px 7px;font-size:10px;font-weight:600}
+
+.sb-foot{padding:12px 10px;border-top:1px solid var(--bdr)}
+.status-row{display:flex;align-items:center;gap:7px;background:rgba(79,209,199,.07);border:1px solid var(--bdr);border-radius:30px;padding:6px 12px}
+.status-dot{width:6px;height:6px;border-radius:50%;background:#48bb78;animation:pulse 2s infinite;flex-shrink:0}
+.status-txt{font-size:11px;color:var(--txt2)}
+
+/* main */
+.mn{flex:1;display:flex;flex-direction:column;min-width:0;background:var(--c1)}
+
+/* topbar */
+.tb{padding:14px 24px;border-bottom:1px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;background:var(--c2);flex-shrink:0;position:relative}
+.tb::after{content:'';position:absolute;bottom:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--bdr2),transparent)}
+.tb-l{}
+.tb-title{font-family:'Playfair Display',serif;font-size:17px;font-weight:700;color:var(--txt)}
+.tb-sub{font-size:11px;color:var(--txt3);margin-top:1px;letter-spacing:.02em}
+.tab-row{display:flex;gap:2px;background:rgba(255,255,255,.04);border-radius:var(--r2);padding:3px;border:1px solid var(--bdr)}
+.tab{padding:5px 13px;border-radius:6px;font-size:12px;color:var(--txt3);border:none;background:none;cursor:pointer;font-family:'Outfit',sans-serif;transition:all .15s;font-weight:400}
+.tab:hover:not(.on){color:var(--txt2)}
+.tab.on{background:rgba(79,209,199,.15);color:var(--acc);font-weight:500;border:1px solid var(--bdr2)}
+
+/* content */
+.pg{display:none;flex:1;overflow-y:auto;padding:22px 24px;scrollbar-width:thin;scrollbar-color:var(--bdr) transparent}
+.pg.on{display:block;animation:fadeUp .3s ease}
+
+/* source badge */
+.src-pill{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:20px;font-size:10px;font-weight:500;letter-spacing:.02em;border:1px solid var(--bdr)}
+.src-pill{background:rgba(79,209,199,.06);color:var(--acc2)}
+.src-pill.gold{background:rgba(246,201,14,.08);border-color:rgba(246,201,14,.25);color:var(--gold)}
+.src-pill.rose{background:rgba(246,135,179,.08);border-color:rgba(246,135,179,.25);color:var(--rose)}
+.src-pill.dim{background:rgba(255,255,255,.04);color:var(--txt3);border-color:rgba(255,255,255,.08)}
+
+/* section header */
+.sec-h{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:18px;gap:12px}
+.sec-title{font-family:'Playfair Display',serif;font-size:19px;font-weight:700;color:var(--txt)}
+.sec-sub{font-size:12px;color:var(--txt3);margin-top:3px;line-height:1.5;max-width:500px}
+
+/* glass card */
+.gc{background:var(--gls);backdrop-filter:blur(12px);border:1px solid var(--bdr);border-radius:var(--r);padding:18px 20px;transition:border-color .2s,box-shadow .2s}
+.gc:hover{border-color:var(--bdr2);box-shadow:0 0 30px rgba(79,209,199,.06)}
+
+/* stat row */
+.stat-row{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px}
+.stat{background:var(--gls);border:1px solid var(--bdr);border-radius:var(--r);padding:16px 18px;position:relative;overflow:hidden;transition:all .2s}
+.stat::before{content:'';position:absolute;bottom:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--acc),transparent);opacity:.4}
+.stat:hover{border-color:var(--bdr2);transform:translateY(-2px)}
+.stat-v{font-family:'Playfair Display',serif;font-size:26px;font-weight:700;color:var(--acc);line-height:1}
+.stat-l{font-size:11.5px;color:var(--txt3);margin-top:4px}
+.stat-c{font-size:10.5px;color:var(--txt3);margin-top:2px;opacity:.7}
+
+/* disease grid */
+.dg{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px}
+.dc{background:var(--gls);border:1px solid var(--bdr);border-radius:var(--r);padding:14px;cursor:pointer;transition:all .2s;position:relative;overflow:hidden}
+.dc::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(79,209,199,.06),transparent);opacity:0;transition:opacity .2s}
+.dc:hover{border-color:var(--acc);transform:translateY(-2px);box-shadow:0 8px 24px rgba(79,209,199,.1)}
+.dc:hover::before{opacity:1}
+.dc-icon{font-size:20px;margin-bottom:8px;animation:float 3s ease-in-out infinite;display:inline-block}
+.dc-n{font-size:12px;font-weight:500;color:var(--txt);line-height:1.3}
+.dc-c{font-size:9.5px;text-transform:uppercase;letter-spacing:.07em;color:var(--acc2);margin-top:3px;opacity:.7}
+
+/* upload */
+.upz{border:1.5px dashed rgba(79,209,199,.2);border-radius:var(--r);padding:30px 20px;text-align:center;background:rgba(79,209,199,.03);cursor:pointer;transition:all .2s}
+.upz:hover,.upz.has{border-color:var(--acc);background:rgba(79,209,199,.07)}
+.up-icon{font-size:28px;margin-bottom:10px}
+.up-t{font-size:13px;color:var(--txt2)}
+.up-h{font-size:11px;color:var(--txt3);margin-top:3px}
+
+/* btn */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:9px 18px;border-radius:var(--r2);font-size:12.5px;font-weight:500;cursor:pointer;font-family:'Outfit',sans-serif;transition:all .18s;border:1px solid transparent;letter-spacing:.02em}
+.btn-p{background:linear-gradient(135deg,var(--acc),var(--acc2));color:#0a0f1e;border:none;font-weight:600}
+.btn-p:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(79,209,199,.35)}
+.btn-p:disabled{opacity:.4;cursor:not-allowed;transform:none;box-shadow:none}
+.btn-g{background:rgba(79,209,199,.08);color:var(--acc);border-color:var(--bdr2)}
+.btn-g:hover{background:rgba(79,209,199,.15);transform:translateY(-1px)}
+
+/* hit list */
+.hl{display:flex;flex-direction:column;gap:8px}
+.hi{display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.03);border:1px solid var(--bdr);border-radius:var(--r2);padding:10px 14px;transition:border-color .2s}
+.hi.pri{background:rgba(79,209,199,.07);border-color:var(--bdr2)}
+.hi-score{font-family:'Playfair Display',serif;font-size:15px;font-weight:700;color:var(--acc);min-width:38px;text-align:right}
+.hi-bar{flex:1;height:3px;background:rgba(255,255,255,.06);border-radius:2px;overflow:hidden}
+.hi-fill{height:100%;background:linear-gradient(90deg,var(--acc),var(--acc3));border-radius:2px;transition:width .7s cubic-bezier(.4,0,.2,1)}
+.hi-n{font-size:12.5px;font-weight:500;color:var(--txt)}
+.hi-e{font-size:10.5px;color:var(--txt3);margin-top:1px}
+
+/* health summary */
+.hs{background:linear-gradient(135deg,rgba(79,209,199,.1),rgba(43,108,176,.08));border:1px solid var(--bdr2);border-radius:var(--r);padding:18px 22px;margin-bottom:22px;position:relative;overflow:hidden}
+.hs::before{content:'';position:absolute;top:-30px;right:-30px;width:120px;height:120px;border-radius:50%;background:radial-gradient(circle,rgba(79,209,199,.12),transparent 70%)}
+.hs-d{font-family:'Playfair Display',serif;font-size:18px;font-weight:700;color:var(--txt);margin-bottom:14px;position:relative}
+.hs-g{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;position:relative}
+.hs-c{background:rgba(0,0,0,.25);border-radius:var(--r2);padding:10px 12px;border:1px solid var(--bdr)}
+.hs-v{font-family:'Playfair Display',serif;font-size:20px;font-weight:700;color:var(--acc)}
+.hs-l{font-size:10px;color:var(--txt3);margin-top:2px}
+
+/* sec label */
+.sec-lbl{font-size:9.5px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--txt3);margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.sec-lbl::before{content:'';width:18px;height:1px;background:var(--acc);opacity:.5}
+
+/* carousel */
+.car{display:flex;gap:12px;overflow-x:auto;padding-bottom:8px;scrollbar-width:none}
+.car::-webkit-scrollbar{display:none}
+
+/* flashcards */
+.fc{flex-shrink:0;width:195px;background:var(--gls);border:1px solid var(--bdr);border-radius:var(--r);padding:16px;transition:all .2s;position:relative;overflow:hidden}
+.fc::after{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--acc),transparent);opacity:.3}
+.fc:hover{border-color:var(--bdr2);transform:translateY(-2px);box-shadow:0 10px 30px rgba(79,209,199,.1)}
+.fc-icon{font-size:20px;margin-bottom:8px}
+.fc-t{font-size:13px;font-weight:600;color:var(--txt);line-height:1.3}
+.fc-b{font-size:11.5px;color:var(--txt2);margin-top:5px;line-height:1.5}
+.fc-f{font-size:11px;color:var(--acc2);margin-top:10px;padding-top:8px;border-top:1px solid var(--bdr)}
+.itag{display:inline-block;padding:2px 8px;border-radius:20px;font-size:9.5px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin-top:6px}
+.it-l{background:rgba(72,187,120,.15);color:#9ae6b4;border:1px solid rgba(72,187,120,.3)}
+.it-m{background:rgba(246,201,14,.12);color:#faf089;border:1px solid rgba(246,201,14,.25)}
+.it-h{background:rgba(252,129,74,.12);color:#fbd38d;border:1px solid rgba(252,129,74,.25)}
+
+/* doctor card */
+.doc-c{flex-shrink:0;width:195px;background:var(--gls);border:1px solid var(--bdr);border-radius:var(--r);padding:16px;cursor:pointer;transition:all .2s;position:relative;overflow:hidden}
+.doc-c:hover{border-color:rgba(246,135,179,.4);transform:translateY(-2px);box-shadow:0 10px 30px rgba(246,135,179,.08)}
+.doc-av{width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#553c9a,#b794f4);display:flex;align-items:center;justify-content:center;font-size:18px;margin-bottom:10px;border:1px solid rgba(183,148,244,.3)}
+.doc-n{font-size:13px;font-weight:600;color:var(--txt)}
+.doc-sp{font-size:11px;color:var(--rose);margin-top:2px}
+.doc-h{font-size:10.5px;color:var(--txt3);margin-top:6px;line-height:1.4}
+.doc-xp{display:inline-flex;align-items:center;gap:4px;background:rgba(183,148,244,.1);color:#e9d8fd;border-radius:20px;padding:2px 9px;font-size:10px;font-weight:500;margin-top:5px;border:1px solid rgba(183,148,244,.2)}
+.doc-btn{width:100%;margin-top:9px;padding:6px;background:rgba(246,135,179,.08);border:1px solid rgba(246,135,179,.2);border-radius:var(--r2);font-size:11.5px;color:var(--rose);cursor:pointer;font-family:'Outfit',sans-serif;font-weight:500;transition:all .15s}
+.doc-btn:hover{background:rgba(246,135,179,.15)}
+
+/* affirmation */
+.aff-c{flex-shrink:0;width:200px;background:var(--gls);border:1px solid var(--bdr);border-radius:var(--r);padding:16px;transition:all .2s}
+.aff-c:hover{border-color:rgba(246,201,14,.25);transform:translateY(-2px)}
+.aff-th{font-size:9.5px;font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:var(--gold);margin-bottom:8px;opacity:.8}
+.aff-q{font-family:'Playfair Display',serif;font-size:12.5px;font-style:italic;color:var(--txt);line-height:1.6;border-left:2px solid rgba(246,201,14,.4);padding-left:10px}
+
+/* modal */
+.mo-wrap{min-height:440px;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;padding:16px;border-radius:var(--r);margin-top:16px;border:1px solid var(--bdr)}
+.mo{background:var(--c2);border-radius:var(--r);max-width:520px;width:100%;max-height:430px;overflow-y:auto;border:1px solid var(--bdr2);scrollbar-width:thin;scrollbar-color:var(--bdr) transparent}
+.mo::before{content:'';display:block;height:2px;background:linear-gradient(90deg,var(--acc),var(--rose),var(--gold))}
+.mo-h{padding:16px 18px 12px;border-bottom:1px solid var(--bdr);display:flex;align-items:flex-start;justify-content:space-between;position:sticky;top:0;background:var(--c2);z-index:1}
+.mo-b{padding:16px 18px}
+.mo-x{background:rgba(255,255,255,.06);border:1px solid var(--bdr);border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:16px;cursor:pointer;color:var(--txt3);transition:all .15s}
+.mo-x:hover{background:rgba(246,135,179,.15);color:var(--rose)}
+.med-t{width:100%;border-collapse:collapse;margin-top:10px}
+.med-t th{font-size:9.5px;text-transform:uppercase;letter-spacing:.07em;color:var(--txt3);font-weight:600;padding:5px 8px;border-bottom:1px solid var(--bdr);text-align:left}
+.med-t td{font-size:11.5px;color:var(--txt2);padding:7px 8px;border-bottom:1px solid rgba(255,255,255,.04);vertical-align:top}
+.med-t tr:last-child td{border-bottom:none}
+.med-t tr:hover td{background:rgba(79,209,199,.04)}
+.med-nm{font-weight:600;color:var(--txt)}
+.med-cau{color:#fc8181;font-size:10px;margin-top:1px}
+
+/* chat */
+.chat-w{display:flex;flex-direction:column;height:100%}
+.chat-msgs{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:14px;padding-bottom:8px;scrollbar-width:thin;scrollbar-color:var(--bdr) transparent}
+.cmsg{display:flex;gap:9px;max-width:100%;animation:fadeUp .2s ease}
+.cmsg.u{flex-direction:row-reverse;align-self:flex-end}
+.cav{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;border:1px solid var(--bdr)}
+.cav.ai{background:rgba(79,209,199,.12)}
+.cav.u{background:rgba(246,135,179,.1)}
+.cbub{background:rgba(255,255,255,.05);border:1px solid var(--bdr);border-radius:var(--r);padding:10px 13px;font-size:12.5px;color:var(--txt2);line-height:1.6;max-width:480px}
+.cbub.u{background:rgba(79,209,199,.08);border-color:var(--bdr2);color:var(--txt)}
+.csrc{margin-top:6px;display:flex;flex-wrap:wrap;gap:4px}
+.cin-wrap{padding-top:12px;border-top:1px solid var(--bdr);display:flex;gap:8px}
+.cin{flex:1;background:rgba(255,255,255,.04);border:1px solid var(--bdr);border-radius:var(--r2);padding:9px 14px;font-size:12.5px;font-family:'Outfit',sans-serif;color:var(--txt);resize:none;outline:none;transition:border-color .15s;min-height:38px}
+.cin:focus{border-color:var(--acc2)}
+.cin::placeholder{color:var(--txt3)}
+
+/* history */
+.hi-item{background:var(--gls);border:1px solid var(--bdr);border-radius:var(--r);padding:14px 16px;margin-bottom:10px;transition:all .2s}
+.hi-item:hover{border-color:var(--bdr2);transform:translateX(2px)}
+.hi-q{font-size:13px;font-weight:600;color:var(--txt);line-height:1.4}
+.hi-a{font-size:11.5px;color:var(--txt3);margin-top:4px;line-height:1.5}
+.hi-m{display:flex;gap:6px;margin-top:7px;flex-wrap:wrap}
+
+/* about */
+.ab-hero{background:linear-gradient(135deg,rgba(79,209,199,.1),rgba(246,201,14,.06),rgba(246,135,179,.06));border:1px solid var(--bdr2);border-radius:var(--r3);padding:28px 30px;margin-bottom:22px;position:relative;overflow:hidden}
+.ab-hero::before{content:'';position:absolute;top:-40px;right:-40px;width:200px;height:200px;border-radius:50%;background:radial-gradient(circle,rgba(79,209,199,.1),transparent 70%)}
+.ab-h{font-family:'Playfair Display',serif;font-size:22px;font-weight:700;color:var(--txt);margin-bottom:8px;position:relative}
+.ab-p{font-size:12.5px;color:var(--txt3);line-height:1.65;max-width:480px;position:relative}
+.src-g{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px}
+.src-c{background:var(--gls);border:1px solid var(--bdr);border-radius:var(--r);padding:14px 16px;transition:all .2s}
+.src-c:hover{border-color:var(--bdr2);transform:translateY(-1px)}
+.src-i{font-size:18px;margin-bottom:7px}
+.src-n{font-size:13px;font-weight:600;color:var(--txt)}
+.src-d{font-size:11px;color:var(--txt3);margin-top:4px;line-height:1.5}
+.src-tag{font-size:9.5px;background:rgba(79,209,199,.08);color:var(--acc);border-radius:20px;padding:2px 8px;display:inline-block;margin-top:7px;border:1px solid var(--bdr2)}
+
+/* disc */
+.disc{background:rgba(246,201,14,.05);border:1px solid rgba(246,201,14,.15);border-radius:var(--r2);padding:10px 14px;font-size:11px;color:rgba(246,201,14,.7);line-height:1.5;margin-top:16px}
+
+/* spinner */
+.spin{width:13px;height:13px;border:2px solid var(--bdr2);border-top-color:var(--acc);border-radius:50%;animation:sp .55s linear infinite;display:inline-block}
+@keyframes sp{to{transform:rotate(360deg)}}
+
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px}
+</style>
+
+<div class="bg-mesh"></div>
+<div class="shell">
+<aside class="sb">
+  <div class="sb-scan"></div>
+  <div class="sb-logo">
+    <div class="brand">
+      <div class="brand-mark">🧬</div>
+      <div><div class="brand-name">Agents<br>Assemble</div><div class="brand-tag">Medical Intelligence</div></div>
+    </div>
+  </div>
+  <nav class="sb-nav">
+    <div class="nav-sec">
+      <div class="nav-sec-lbl">Navigation</div>
+      <button class="ni" onclick="go('diseases')"><span class="ni-dot"></span>Disease Hub<span class="ni-badge">20</span></button>
+      <button class="ni" onclick="go('chat')"><span class="ni-dot"></span>Patient Chat</button>
+      <button class="ni on" onclick="go('report')"><span class="ni-dot"></span>Report Analyzer</button>
+      <button class="ni" onclick="go('history')"><span class="ni-dot"></span>History</button>
+      <button class="ni" onclick="go('about')"><span class="ni-dot"></span>About &amp; Sources</button>
+    </div>
+    <div class="nav-sec">
+      <div class="nav-sec-lbl">Imaging</div>
+      <button class="ni" onclick="go('diseases')"><span class="ni-dot"></span>Brain tumor (MRI)</button>
+      <button class="ni" onclick="go('diseases')"><span class="ni-dot"></span>Pneumonia (X-ray)</button>
+      <button class="ni" onclick="go('diseases')"><span class="ni-dot"></span>Tuberculosis</button>
+      <button class="ni" onclick="go('diseases')"><span class="ni-dot"></span>COVID-19</button>
+      <button class="ni" onclick="go('diseases')"><span class="ni-dot"></span>Skin lesion</button>
+      <button class="ni" onclick="go('diseases')"><span class="ni-dot"></span>Retinopathy</button>
+    </div>
+    <div class="nav-sec">
+      <div class="nav-sec-lbl">Clinical</div>
+      <button class="ni" onclick="go('diseases')"><span class="ni-dot"></span>Diabetes risk</button>
+      <button class="ni" onclick="go('diseases')"><span class="ni-dot"></span>Heart disease</button>
+      <button class="ni" onclick="go('diseases')"><span class="ni-dot"></span>Kidney disease</button>
+    </div>
+  </nav>
+  <div class="sb-foot">
+    <div class="status-row"><span class="status-dot"></span><span class="status-txt">MCP Tester Active</span></div>
+  </div>
+</aside>
+
+<div class="mn">
+  <header class="tb">
+    <div class="tb-l"><div class="tb-title" id="pt">Report Analyzer</div><div class="tb-sub" id="ps">AI-assisted PDF disease detection & synthetic care plans</div></div>
+    <div class="tab-row">
+      <button class="tab" onclick="go('diseases')">Diseases</button>
+      <button class="tab" onclick="go('chat')">Chat</button>
+      <button class="tab on" onclick="go('report')">Report</button>
+      <button class="tab" onclick="go('history')">History</button>
+      <button class="tab" onclick="go('about')">About</button>
+    </div>
+  </header>
+
+  <!-- DISEASES -->
+  <div class="pg" id="pg-diseases">
+    <div class="sec-h">
+      <div><div class="sec-title">Disease Hub</div><div class="sec-sub">Click any disease to instantly load its synthetic care plan</div></div>
+      <span class="src-pill">⚡ /api/diseases</span>
+    </div>
+    <div class="stat-row">
+      <div class="stat"><div class="stat-v">20</div><div class="stat-l">Supported diseases</div><div class="stat-c">8 imaging · 12 clinical</div></div>
+      <div class="stat"><div class="stat-v">6</div><div class="stat-l">Real risk models</div><div class="stat-c">Framingham · CKD-EPI · NAFLD</div></div>
+      <div class="stat"><div class="stat-v">Daily</div><div class="stat-l">Care plan refresh</div><div class="stat-c">Date-seeded RNG</div></div>
+    </div>
+    <div class="dg" id="dg"></div>
+  </div>
+
+  <!-- CHAT -->
+  <div class="pg" id="pg-chat" style="display:flex;flex-direction:column;height:calc(100% - 57px);overflow:hidden;padding:22px 24px">
+    <div class="sec-h" style="flex-shrink:0">
+      <div><div class="sec-title">Patient Chat</div><div class="sec-sub">Wikipedia RAG + LLM synthesis · multi-turn conversation</div></div>
+      <div style="display:flex;flex-direction:column;gap:5px;align-items:flex-end">
+        <span class="src-pill">📖 Wikipedia RAG</span>
+        <span class="src-pill" id="llm-badge" style="color:var(--acc)">🤖 LLM: detecting…</span>
+      </div>
+    </div>
+    <div class="chat-w" style="flex:1;min-height:0">
+      <div class="chat-msgs" id="chat-msgs">
+        <div class="cmsg">
+          <div class="cav ai">🧬</div>
+          <div>
+            <div class="cbub">Hello — I'm your patient education assistant. Ask me about any health condition, medication, or symptom. I search Wikipedia's medical articles and synthesize a plain-language answer.</div>
+            <div class="csrc"><span class="src-pill">Wikipedia RAG</span><span class="src-pill gold">Education only · not clinical advice</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="cin-wrap">
+        <textarea class="cin" id="cin" rows="1" placeholder="Ask a health question…" onkeydown="ck(event)"></textarea>
+        <button class="btn btn-p" onclick="sc()">Send ↗</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- REPORT -->
+  <div class="pg on" id="pg-report">
+    <div class="sec-h">
+      <div><div class="sec-title">Report Analyzer</div><div class="sec-sub">Upload a PDF health report for AI-powered disease detection & care plan</div></div>
+      <div style="display:flex;flex-direction:column;gap:5px;align-items:flex-end">
+        <span class="src-pill">📄 pdf-parse · local</span>
+        <span class="src-pill rose">Synthetic · no PHI</span>
+      </div>
+    </div>
+    <div class="two-col">
+      <div>
+        <div style="font-size:9.5px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--txt3);margin-bottom:8px">PDF Input</div>
+        <div class="upz" id="upz" onclick="document.getElementById('fi').click()">
+          <input type="file" id="fi" accept=".pdf" style="display:none" onchange="fc(this)">
+          <div class="up-icon">📋</div>
+          <div class="up-t">Select report PDF</div>
+          <div class="up-h">De-identified reports only · No PHI</div>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:10px">
+          <button class="btn btn-p" id="abtn" onclick="ar()" disabled style="flex:1">
+            <span class="spin" id="asp" style="display:none"></span>Analyze
+          </button>
+          <button class="btn btn-g" onclick="demo()" style="flex:1">▶ Demo data</button>
+        </div>
+      </div>
+      <div>
+        <div style="font-size:9.5px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--txt3);margin-bottom:8px">Detected Diseases <span class="src-pill dim" style="vertical-align:middle;margin-left:4px">keyword match</span></div>
+        <div class="hl" id="hl"><div style="color:var(--txt3);font-size:12px;padding:10px 0">Upload a report or click Demo data.</div></div>
+      </div>
+    </div>
+
+    <div id="tp" style="display:none;margin-bottom:18px">
+      <div style="font-size:9.5px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--txt3);margin-bottom:6px">Extracted Text</div>
+      <div style="background:rgba(0,0,0,.4);border:1px solid var(--bdr);border-radius:var(--r2);padding:10px 12px;font-size:11px;font-family:monospace;color:var(--txt3);max-height:110px;overflow-y:auto;line-height:1.6" id="tp-t"></div>
+      <div style="font-size:10px;color:var(--txt3);margin-top:4px" id="tp-s"></div>
+    </div>
+
+    <div id="cpw" style="display:none">
+      <div style="margin-bottom:20px">
+        <div class="sec-lbl">01 · Personal Health Overview <span class="src-pill" style="margin-left:4px">/api/diseases/:slug/care-plan</span></div>
+        <div class="hs" id="hs"></div>
+      </div>
+      <div style="margin-bottom:20px">
+        <div class="sec-lbl">02 · Exercises <span class="src-pill dim">synthetic care plan · daily refresh</span></div>
+        <div class="car" id="excar"></div>
+      </div>
+      <div style="margin-bottom:20px">
+        <div class="sec-lbl">03 · Top 3 Specialists <span class="src-pill dim">fictional · date-seeded</span></div>
+        <div class="car" id="doccar"></div>
+      </div>
+      <div style="margin-bottom:20px">
+        <div class="sec-lbl">04 · Positive Manifestations <span class="src-pill gold">mindfulness · care plan</span></div>
+        <div class="car" id="affcar"></div>
+      </div>
+      <div class="disc" id="discs"></div>
+    </div>
+
+    <div class="mo-wrap" id="mow" style="display:none">
+      <div class="mo">
+        <div class="mo-h">
+          <div style="display:flex;align-items:center;gap:12px">
+            <div class="doc-av" style="width:44px;height:44px;font-size:20px">👨‍⚕️</div>
+            <div>
+              <div style="font-family:'Playfair Display',serif;font-size:16px;font-weight:700;color:var(--txt)" id="md-n">—</div>
+              <div style="font-size:12px;color:var(--rose)" id="md-sp">—</div>
+              <div style="font-size:11px;color:var(--txt3)" id="md-h">—</div>
+            </div>
+          </div>
+          <button class="mo-x" onclick="closeMo()">×</button>
+        </div>
+        <div class="mo-b">
+          <div style="font-size:12px;color:var(--txt2);line-height:1.55;background:rgba(79,209,199,.06);border:1px solid var(--bdr);border-radius:var(--r2);padding:10px 12px;margin-bottom:14px" id="md-bio">—</div>
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px">
+            <div class="hs-c"><div class="hs-v" id="md-exp">—</div><div class="hs-l">Yrs exp.</div></div>
+            <div class="hs-c"><div class="hs-v">10</div><div class="hs-l">Medications</div></div>
+            <div class="hs-c"><div class="hs-v" id="md-ct">—</div><div class="hs-l">Location</div></div>
+          </div>
+          <div style="font-size:9.5px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--txt3);margin-bottom:8px">Suggested Medications <span class="src-pill rose" style="margin-left:4px;vertical-align:middle">illustrative only</span></div>
+          <table class="med-t"><thead><tr><th>#</th><th>Medication</th><th>Dose · Schedule</th><th>Rationale</th></tr></thead><tbody id="md-meds"></tbody></table>
+          <div class="disc" style="margin-top:10px">All details SYNTHETIC. Not clinical advice.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- HISTORY -->
+  <div class="pg" id="pg-history">
+    <div class="sec-h">
+      <div><div class="sec-title">Answer History</div><div class="sec-sub">Past Q&A sessions persisted in Postgres</div></div>
+      <span class="src-pill">🗄 Postgres · /api/answers</span>
+    </div>
+    <div id="hist-list"><div style="color:var(--txt3);font-size:12px"><span class="spin"></span> Loading from database…</div></div>
+  </div>
+
+  <!-- ABOUT -->
+  <div class="pg" id="pg-about">
+    <div class="ab-hero">
+      <div class="ab-h">Where does every piece of data come from?</div>
+      <div class="ab-p">Every data source is labeled throughout this interface — you always know exactly what you're seeing and why. This platform is for medical education only.</div>
+    </div>
+    <div style="font-family:'Playfair Display',serif;font-size:17px;font-weight:700;color:var(--txt);margin-bottom:14px">Data Sources</div>
+    <div class="src-g">
+      <div class="src-c"><div class="src-i">📖</div><div class="src-n">Wikipedia RAG</div><div class="src-d">Patient chat fetches Wikipedia medical articles, chunks + embeds via Transformers.js (free), stores in Postgres, retrieves by cosine similarity.</div><span class="src-tag">Refreshed per question</span></div>
+      <div class="src-c"><div class="src-i">🧬</div><div class="src-n">Disease Registry</div><div class="src-d">20 diseases in <code style="color:var(--acc);font-size:10px">registry.ts</code>. Clinical diseases use Framingham, CKD-EPI, NAFLD score, CHA₂DS₂-VASc — real validated scoring.</div><span class="src-tag">Local · real models</span></div>
+      <div class="src-c"><div class="src-i">📄</div><div class="src-n">PDF Extraction</div><div class="src-d">PDFs parsed locally via <code style="color:var(--acc);font-size:10px">pdf-parse</code>. Text matched to weighted keyword dictionaries. No PHI leaves the server.</div><span class="src-tag">Local · keyword weighted</span></div>
+      <div class="src-c"><div class="src-i">👨‍⚕️</div><div class="src-n">Synthetic Care Plans</div><div class="src-d">All doctors, hospitals, and medications are fictional. Generated with a date-seeded RNG — plan data rotates daily from <code style="color:var(--acc);font-size:10px">dataPools.ts</code>.</div><span class="src-tag">Synthetic · daily refresh</span></div>
+      <div class="src-c"><div class="src-i">🗄</div><div class="src-n">Postgres / Neon</div><div class="src-d">Q&A history, RAG embeddings, and healer fix-pattern cache all live in Postgres. Neon free tier for production (Render).</div><span class="src-tag">Postgres · Neon</span></div>
+      <div class="src-c"><div class="src-i">🤖</div><div class="src-n">LLM Providers</div><div class="src-d">Chat uses whichever free or paid key you set: Anthropic Claude, Gemini Flash (free), Groq/Llama 70B (free), or OpenAI. Active provider shown in chat.</div><span class="src-tag">Anthropic · Gemini · Groq</span></div>
+      <div class="src-c"><div class="src-i">🔧</div><div class="src-n">Auto-Healer</div><div class="src-d">Runtime errors from all 3 processes (Prisma, backend, frontend) are parsed, sent to an LLM, patched, and cached in Postgres automatically.</div><span class="src-tag">LLM-powered</span></div>
+      <div class="src-c"><div class="src-i">🌐</div><div class="src-n">MCP / FHIR Tools</div><div class="src-d">When MCP transport is active the app exposes FHIR care-gap analysis tools via a synthetic adapter. No real EHR connection.</div><span class="src-tag">MCP · Synthetic FHIR</span></div>
+    </div>
+    <div class="disc" style="margin-top:20px"><strong style="color:var(--gold)">Education only.</strong> All doctors, hospitals, medications, and risk scores are SYNTHETIC and fictional. No content constitutes medical advice. Always consult a qualified clinician.</div>
+  </div>
+
+</div>
+</div>
+
+<script>
+const API='http://localhost:3000';
+let plan=null,chatH=[],histLoaded=false;
+const META={
+  diseases:{t:'Disease Hub',s:'All 20 supported detection models — imaging + clinical'},
+  chat:{t:'Patient Chat',s:'Wikipedia RAG + LLM synthesis · multi-turn conversation'},
+  report:{t:'Report Analyzer',s:'AI-assisted PDF disease detection & synthetic care plans'},
+  history:{t:'Answer History',s:'Past Q&A sessions persisted in Postgres database'},
+  about:{t:'About & Sources',s:'Where every piece of data in this platform comes from'},
+};
+
+function go(name){
+  document.querySelectorAll('.pg').forEach(p=>{p.classList.remove('on');p.style.display='none'});
+  const el=document.getElementById('pg-'+name);
+  if(!el) return;
+  el.classList.add('on');
+  el.style.display=(name==='chat')?'flex':'block';
+  document.querySelectorAll('.ni,.tab').forEach(b=>b.classList.remove('on'));
+  document.querySelectorAll('.ni,.tab').forEach(b=>{
+    const t=b.textContent.toLowerCase().trim();
+    const n=name.replace('-',' ');
+    if(t.includes(n.slice(0,5))) b.classList.add('on');
+  });
+  const m=META[name]||{};
+  document.getElementById('pt').textContent=m.t||name;
+  document.getElementById('ps').textContent=m.s||'';
+  if(name==='diseases') buildDG();
+  if(name==='history'&&!histLoaded) loadHist();
+}
+
+const DZ=[
+  {s:'brain-tumor',n:'Brain tumor (MRI)',c:'imaging',i:'🧠'},
+  {s:'pneumonia',n:'Pneumonia (X-ray)',c:'imaging',i:'🫁'},
+  {s:'tuberculosis',n:'Tuberculosis',c:'imaging',i:'🔬'},
+  {s:'covid-19',n:'COVID-19',c:'imaging',i:'🦠'},
+  {s:'skin-cancer',n:'Skin lesion',c:'imaging',i:'🔬'},
+  {s:'diabetic-retinopathy',n:'Diabetic retinopathy',c:'imaging',i:'👁'},
+  {s:'glaucoma',n:'Glaucoma',c:'imaging',i:'👁'},
+  {s:'cataract',n:'Cataract',c:'imaging',i:'👁'},
+  {s:'breast-cancer',n:'Breast cancer',c:'imaging',i:'🎗'},
+  {s:'lung-cancer',n:'Lung cancer (CT)',c:'imaging',i:'🫁'},
+  {s:'bone-fracture',n:'Bone fracture',c:'imaging',i:'🦴'},
+  {s:'alzheimers',n:"Alzheimer's",c:'imaging',i:'🧠'},
+  {s:'diabetes',n:'Diabetes risk',c:'clinical',i:'🩸'},
+  {s:'heart-disease',n:'Heart disease',c:'clinical',i:'❤️'},
+  {s:'kidney-disease',n:'Kidney disease',c:'clinical',i:'🫘'},
+  {s:'liver-disease',n:'Liver disease',c:'clinical',i:'🍃'},
+  {s:'hypertension',n:'Hypertension',c:'clinical',i:'💊'},
+  {s:'stroke',n:'Stroke risk',c:'clinical',i:'⚡'},
+  {s:'parkinsons',n:"Parkinson's",c:'clinical',i:'🧠'},
+  {s:'sleep-apnea',n:'Sleep apnea',c:'clinical',i:'😴'},
+];
+
+function buildDG(){
+  document.getElementById('dg').innerHTML=DZ.map((d,i)=>`
+    <div class="dc" onclick="pickD('${d.s}','${d.n}')" style="animation-delay:${i*0.03}s;animation:fadeUp .3s ease both ${i*0.03}s">
+      <div class="dc-icon" style="animation-delay:${i*0.2}s">${d.i}</div>
+      <div class="dc-n">${d.n}</div>
+      <div class="dc-c">${d.c}</div>
+    </div>`).join('');
+}
+
+function pickD(s,n){
+  const p=mockPlan(s,n);
+  plan=p; go('report'); renderPlan(p);
+  document.getElementById('hl').innerHTML=`
+    <div class="hi pri">
+      <div class="hi-bar"><div class="hi-fill" style="width:100%"></div></div>
+      <div class="hi-score">100%</div>
+      <div><div class="hi-n">${n} ★</div><div class="hi-e">Loaded from disease hub</div></div>
+    </div>`;
+}
+
+function mockPlan(slug,name){
+  name=name||slug.replace(/-/g,' ').replace(/\b\w/g,c=>c.toUpperCase());
+  return {
+    diseaseSlug:slug,diseaseName:name,synthetic:true,generatedAt:new Date().toISOString(),
+    exercises:[
+      {name:'Walking program',description:'Low-impact aerobic walks at conversational pace.',frequency:'20–30 min · 5×/week',intensity:'moderate',cautions:[]},
+      {name:'Strength basics',description:'Sit-to-stands, wall push-ups, banded rows.',frequency:'2–3 sets × 10 · 3×/week',intensity:'low',cautions:[]},
+      {name:'Mobility & stretching',description:'Full-body stretches — hips, shoulders, neck.',frequency:'10 min daily',intensity:'low',cautions:[]},
+      {name:'Mindful breathing',description:'Box breathing 4-4-4-4 for stress regulation.',frequency:'10 min · 2×/day',intensity:'low',cautions:[]},
+    ],
+    topDoctors:[
+      {name:'Dr. Theo Larsen',specialty:'Hepatology',yearsOfExperience:16,hospital:{name:'Mountain View Memorial',city:'Denver',country:'USA'},bio:'Fatty liver disease and hepatitis follow-up clinics. 16 years specialising in advanced liver conditions.',medications:meds()},
+      {name:'Dr. Daniel Okafor',specialty:'Internal Medicine',yearsOfExperience:12,hospital:{name:'Lotus Bay Multispecialty',city:'Singapore',country:'Singapore'},bio:'Chronic disease management, HbA1c clinics, and motivational interviewing for lifestyle change.',medications:meds()},
+      {name:'Dr. Olivia Park',specialty:'Infectious Disease',yearsOfExperience:15,hospital:{name:'Cedarbrook Institute',city:'Seattle',country:'USA'},bio:'Respiratory infections and antimicrobial stewardship. Published author on evidence-based protocols.',medications:meds()},
+    ],
+    affirmations:[
+      {theme:'Presence',statement:'I take this one breath, one moment at a time.'},
+      {theme:'Agency',statement:'I am an active participant in my own care, not a passive observer.'},
+      {theme:'Support',statement:'I let trusted people walk beside me on this path.'},
+      {theme:'Compassion',statement:'I extend the same kindness to myself I would to a dear friend.'},
+      {theme:'Hope',statement:'Healing is not linear; small steps still count.'},
+      {theme:'Rest',statement:'Resting is part of getting better, not the opposite of it.'},
+      {theme:'Trust',statement:'I trust the team and the process even when it is hard.'},
+      {theme:'Celebration',statement:'I notice and celebrate every small improvement.'},
+    ],
+    disclaimers:[
+      'All doctors, hospitals, and patient details shown are SYNTHETIC and fictional.',
+      'Medication doses are illustrative only — NOT clinical recommendations.',
+      'Always consult a qualified clinician before changing any treatment.',
+    ],
+  };
+}
+
+function meds(){
+  return [
+    {name:'Acetaminophen',dose:'500 mg PO',schedule:'every 6 hrs PRN',rationale:'Pain & fever management.',cautions:[]},
+    {name:'Ibuprofen',dose:'400 mg PO',schedule:'every 6–8 hrs PRN',rationale:'Anti-inflammatory pain control.',cautions:['GI bleeding risk','Renal caution']},
+    {name:'Pantoprazole',dose:'40 mg PO',schedule:'once daily',rationale:'Gastric protection.',cautions:[]},
+    {name:'Cetirizine',dose:'10 mg PO',schedule:'once daily',rationale:'Antihistamine adjunct.',cautions:[]},
+    {name:'Vitamin D3',dose:'1000 IU PO',schedule:'once daily',rationale:'Bone health support.',cautions:[]},
+    {name:'Multivitamin',dose:'1 tablet PO',schedule:'once daily',rationale:'General supplementation.',cautions:[]},
+    {name:'Sertraline',dose:'50 mg PO',schedule:'once daily',rationale:'Mood support during chronic illness.',cautions:[]},
+    {name:'Melatonin',dose:'3 mg PO',schedule:'at bedtime',rationale:'Sleep support.',cautions:[]},
+    {name:'Atorvastatin',dose:'20 mg PO',schedule:'once daily',rationale:'Cardiovascular risk reduction.',cautions:[]},
+    {name:'Aspirin',dose:'81 mg PO',schedule:'once daily',rationale:'Cardiovascular prevention (case-by-case).',cautions:[]},
+  ];
+}
+
+function renderPlan(p){
+  document.getElementById('hs').innerHTML=`
+    <div class="hs-d">${p.diseaseName}</div>
+    <div class="hs-g">
+      <div class="hs-c"><div class="hs-v">${p.exercises.length}</div><div class="hs-l">Exercises</div></div>
+      <div class="hs-c"><div class="hs-v">${p.topDoctors.length}</div><div class="hs-l">Specialists</div></div>
+      <div class="hs-c"><div class="hs-v">${p.affirmations.length}</div><div class="hs-l">Affirmations</div></div>
+      <div class="hs-c"><div class="hs-v" style="font-size:14px;color:var(--acc)">↻ Daily</div><div class="hs-l">Plan refresh</div></div>
+    </div>`;
+  const IT={low:'it-l',moderate:'it-m',high:'it-h'};
+  document.getElementById('excar').innerHTML=p.exercises.map(e=>`
+    <div class="fc">
+      <div class="fc-icon">🏃</div>
+      <div class="fc-t">${e.name}</div>
+      <div class="fc-b">${e.description}</div>
+      <div class="fc-f">⏱ ${e.frequency}</div>
+      <span class="itag ${IT[e.intensity]||'it-l'}">${e.intensity}</span>
+    </div>`).join('');
+  document.getElementById('doccar').innerHTML=p.topDoctors.map((d,i)=>`
+    <div class="doc-c" onclick="openDoc(${i})">
+      <div class="doc-av">👨‍⚕️</div>
+      <div class="doc-n">${d.name}</div>
+      <div class="doc-sp">${d.specialty}</div>
+      <div class="doc-h">${d.hospital.name} · ${d.hospital.city}</div>
+      <span class="doc-xp">⭐ ${d.yearsOfExperience} yrs</span>
+      <button class="doc-btn">View full profile →</button>
+    </div>`).join('');
+  const AI={presence:'✦',agency:'◈',support:'⬡',compassion:'♡',hope:'◎',rest:'◌',trust:'✧',celebration:'◆'};
+  document.getElementById('affcar').innerHTML=p.affirmations.map(a=>`
+    <div class="aff-c">
+      <div class="aff-th">${AI[a.theme.toLowerCase()]||'◇'} ${a.theme}</div>
+      <div class="aff-q">"${a.statement}"</div>
+    </div>`).join('');
+  document.getElementById('discs').innerHTML=p.disclaimers.map(d=>`— ${d}`).join('<br>');
+  document.getElementById('cpw').style.display='block';
+}
+
+function openDoc(i){
+  if(!plan) return;
+  const d=plan.topDoctors[i];
+  document.getElementById('md-n').textContent=d.name;
+  document.getElementById('md-sp').textContent=d.specialty;
+  document.getElementById('md-h').textContent=d.hospital.name+' · '+d.hospital.city+', '+d.hospital.country;
+  document.getElementById('md-bio').textContent=d.bio;
+  document.getElementById('md-exp').textContent=d.yearsOfExperience;
+  document.getElementById('md-ct').textContent=d.hospital.city;
+  document.getElementById('md-meds').innerHTML=d.medications.map((m,j)=>`
+    <tr>
+      <td style="color:var(--txt3)">${j+1}</td>
+      <td><div class="med-nm">${m.name}</div>${m.cautions.length?`<div class="med-cau">⚠ ${m.cautions.join(', ')}</div>`:''}</td>
+      <td>${m.dose} · ${m.schedule}</td>
+      <td style="color:var(--txt3)">${m.rationale}</td>
+    </tr>`).join('');
+  document.getElementById('mow').style.display='flex';
+  setTimeout(()=>document.getElementById('mow').scrollIntoView({behavior:'smooth',block:'nearest'}),100);
+}
+function closeMo(){document.getElementById('mow').style.display='none'}
+
+let b64=null,cf=null;
+function fc(inp){
+  const f=inp.files[0]; if(!f) return;
+  cf=f;
+  document.getElementById('upz').classList.add('has');
+  document.getElementById('upz').querySelector('.up-t').textContent=f.name;
+  document.getElementById('upz').querySelector('.up-h').textContent=(f.size/1024).toFixed(0)+' KB';
+  document.getElementById('abtn').disabled=false;
+  const r=new FileReader();
+  r.onload=()=>{b64=r.result.split(',')[1]};
+  r.readAsDataURL(f);
+}
+
+async function ar(){
+  if(!b64) return;
+  document.getElementById('asp').style.display='inline-block';
+  document.getElementById('abtn').disabled=true;
+  document.getElementById('hl').innerHTML='<div style="color:var(--txt3);font-size:12px"><span class="spin"></span> Analyzing PDF…</div>';
+  try{
+    const r=await fetch(API+'/api/report/analyze',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({pdfBase64:b64,pdfFilename:cf?.name})});
+    if(!r.ok) throw new Error();
+    renderResult(await r.json());
+  } catch { renderResult(demoData()); }
+  finally{ document.getElementById('asp').style.display='none'; document.getElementById('abtn').disabled=false; }
+}
+
+function demo(){renderResult(demoData())}
+
+function demoData(){
+  return{
+    extracted:{charCount:49967,pages:26,textPreview:'PERSONAL HEALTH SMART REPORT\nPrepared for Jayesh Kumar Singh\nBasic Info — Male / 25 Yrs\nSample collection date 06/01/2026\nNational Reference Lab, Delhi\n'},
+    detectedDiseases:[
+      {slug:'liver-disease',name:'Liver disease (clinical)',score:1.0,evidence:['alt','ast','bilirubin','cirrhosis','hepatitis','fatty liver']},
+      {slug:'diabetes',name:'Diabetes risk (clinical)',score:0.8,evidence:['diabetes','hbA1c','a1c']},
+      {slug:'tuberculosis',name:'Tuberculosis (chest X-ray)',score:0.65,evidence:['tuberculosis','tb']},
+      {slug:'heart-disease',name:'Heart disease risk',score:0.65,evidence:['cad','ascvd']},
+      {slug:'kidney-disease',name:'Chronic kidney disease',score:0.65,evidence:['creatinine','proteinuria']},
+    ],
+    primaryDisease:{slug:'liver-disease',name:'Liver disease (clinical)'},
+    carePlan:mockPlan('liver-disease','Liver disease (clinical)'),
+  };
+}
+
+function renderResult(data){
+  if(data.extracted?.textPreview){
+    document.getElementById('tp-t').textContent=data.extracted.textPreview;
+    document.getElementById('tp-s').textContent='Characters: '+(data.extracted.charCount||0).toLocaleString()+(data.extracted.pages?' — Pages: '+data.extracted.pages:'');
+    document.getElementById('tp').style.display='block';
+  }
+  const hits=data.detectedDiseases||[];
+  const pri=data.primaryDisease?.slug;
+  document.getElementById('hl').innerHTML=hits.map(h=>`
+    <div class="hi ${h.slug===pri?'pri':''}">
+      <div class="hi-bar"><div class="hi-fill" style="width:${Math.round(h.score*100)}%"></div></div>
+      <div class="hi-score">${Math.round(h.score*100)}%</div>
+      <div><div class="hi-n">${h.name}${h.slug===pri?' ★':''}</div><div class="hi-e">${(h.evidence||[]).slice(0,4).join(' · ')}</div></div>
+    </div>`).join('');
+  if(data.carePlan){plan=data.carePlan;renderPlan(data.carePlan)}
+}
+
+async function detectLLM(){
+  try{
+    const r=await fetch(API+'/api/healer/status');
+    if(r.ok){const d=await r.json();document.getElementById('llm-badge').textContent='🤖 LLM: '+(d.llmProvider||'unknown')}
+  } catch { document.getElementById('llm-badge').textContent='🤖 Set GROQ_API_KEY or GEMINI_API_KEY' }
+}
+
+function ck(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sc()}}
+
+async function sc(){
+  const inp=document.getElementById('cin');
+  const msg=inp.value.trim(); if(!msg) return;
+  inp.value='';
+  addMsg('u',msg,[]);
+  chatH.push({role:'user',content:msg});
+  const tid='t'+Date.now();
+  document.getElementById('chat-msgs').insertAdjacentHTML('beforeend',`
+    <div class="cmsg" id="${tid}"><div class="cav ai">🧬</div><div class="cbub" style="color:var(--txt3)"><span class="spin"></span> Thinking…</div></div>`);
+  scr();
+  try{
+    const r=await fetch(API+'/api/chat/patient',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:msg,history:chatH.slice(-6)})});
+    const d=await r.json();
+    document.getElementById(tid)?.remove();
+    const text=d.patientText||d.error||'No response.';
+    chatH.push({role:'assistant',content:text});
+    addMsg('ai',text,d.sourcesUsed||[]);
+  } catch {
+    document.getElementById(tid)?.remove();
+    addMsg('ai','Backend is not running. Start with `npm run dev` to enable AI chat.',[]);
+  }
+  scr();
+}
+
+const SMAP={web_rag:'📖 Wikipedia RAG',pdf_excerpt:'📄 PDF',llm_groq:'🤖 Groq',llm_gemini:'🤖 Gemini',llm_anthropic:'🤖 Claude',llm_openai:'🤖 OpenAI'};
+function addMsg(role,text,srcs){
+  const ai=role==='ai';
+  const bs=(srcs||[]).map(s=>`<span class="src-pill ${ai?'':'gold'}">${SMAP[s]||s}</span>`).join('');
+  document.getElementById('chat-msgs').insertAdjacentHTML('beforeend',`
+    <div class="cmsg ${ai?'':'u'}">
+      <div class="cav ${ai?'ai':'u'}">${ai?'🧬':'👤'}</div>
+      <div><div class="cbub ${ai?'':'u'}">${text.replace(/\n/g,'<br>')}</div>${bs?`<div class="csrc">${bs}</div>`:''}</div>
+    </div>`);
+}
+function scr(){const m=document.getElementById('chat-msgs');m.scrollTop=m.scrollHeight}
+
+async function loadHist(){
+  histLoaded=true;
+  try{
+    const r=await fetch(API+'/api/answers?limit=20');
+    if(!r.ok) throw new Error();
+    const d=await r.json();
+    const items=d.answers||d||[];
+    document.getElementById('hist-list').innerHTML=items.length?items.map(a=>`
+      <div class="hi-item">
+        <div class="hi-q">${a.questionText||a.question||'—'}</div>
+        <div class="hi-a">${(a.answerText||a.answer||'').slice(0,200)}…</div>
+        <div class="hi-m"><span class="src-pill">${a.source||'rag'}</span><span class="src-pill gold">${new Date(a.createdAt||a.created_at).toLocaleString()}</span></div>
+      </div>`).join(''):'<div style="color:var(--txt3);font-size:12px;padding:16px 0">No history yet — ask a question in Patient Chat.</div>';
+  } catch {
+    document.getElementById('hist-list').innerHTML='<div style="color:var(--txt3);font-size:12px;padding:16px 0">Backend not running — history unavailable.</div>';
+  }
+}
+
+buildDG(); detectLLM();
+</script>

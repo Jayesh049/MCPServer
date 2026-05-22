@@ -9,47 +9,50 @@ type Star = {
   o: number;
 };
 
+function initStars(cvs: HTMLCanvasElement): Star[] {
+  const w = window.innerWidth;
+  const h = window.innerHeight;
+  cvs.width = w;
+  cvs.height = h;
+  return Array.from({ length: 160 }, () => ({
+    x: Math.random() * w,
+    y: Math.random() * h,
+    r: Math.random() * 1.2 + 0.2,
+    o: Math.random() * 0.5 + 0.1
+  }));
+}
+
 export function Starfield() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
+    const cvsEl = canvasRef.current;
+    if (!cvsEl) return;
+    const cvs: HTMLCanvasElement = cvsEl;
+    const ctxRaw = cvs.getContext("2d");
+    if (!ctxRaw) return;
+    const context: CanvasRenderingContext2D = ctxRaw;
 
-    let stars: Star[] = [];
+    let stars = initStars(cvs);
     let raf = 0;
 
-    function initStars() {
-      const w = window.innerWidth;
-      const h = window.innerHeight;
-      canvas.width = w;
-      canvas.height = h;
-      stars = Array.from({ length: 160 }, () => ({
-        x: Math.random() * w,
-        y: Math.random() * h,
-        r: Math.random() * 1.2 + 0.2,
-        o: Math.random() * 0.5 + 0.1
-      }));
-    }
-
     function drawStars() {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      context.clearRect(0, 0, cvs.width, cvs.height);
       for (const s of stars) {
         s.o += (Math.random() - 0.5) * 0.02;
         s.o = Math.max(0.05, Math.min(0.6, s.o));
-        ctx.beginPath();
-        ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(180,200,255,${s.o})`;
-        ctx.fill();
+        context.beginPath();
+        context.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+        context.fillStyle = `rgba(180,200,255,${s.o})`;
+        context.fill();
       }
       raf = requestAnimationFrame(drawStars);
     }
 
-    initStars();
     drawStars();
-    const onResize = () => initStars();
+    const onResize = () => {
+      stars = initStars(cvs);
+    };
     window.addEventListener("resize", onResize);
     return () => {
       window.removeEventListener("resize", onResize);

@@ -1,0 +1,1354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Agents Assemble — Medical Intelligence Platform</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+/* ── Reset ── */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+
+/* ── Palette ── */
+:root{
+  --sage:       #a8b5a2;
+  --sage-light: #dce8d6;
+  --sage-dark:  #6b7f67;
+  --mist:       #c9d4e0;
+  --mist-light: #edf2f7;
+  --mist-dark:  #8fa3b8;
+  --warm:       #e8ddd1;
+  --warm-light: #f5f0ea;
+  --warm-dark:  #c4a882;
+  --sand:       #f7f4ef;
+  --ink:        #2c3a2e;
+  --ink-light:  #4a5e4c;
+  --ink-muted:  #7a8f7c;
+  --white:      #fdfcfb;
+  --border:     rgba(44,58,46,0.1);
+  --border-med: rgba(44,58,46,0.16);
+  --shadow-sm:  0 2px 12px rgba(44,58,46,0.06);
+  --shadow-md:  0 6px 30px rgba(44,58,46,0.09);
+  --shadow-lg:  0 16px 60px rgba(44,58,46,0.12);
+  --r:          14px;
+  --r-sm:       8px;
+  --r-lg:       20px;
+}
+
+body{
+  font-family:'DM Sans',sans-serif;
+  background:var(--sand);
+  color:var(--ink);
+  min-height:100vh;
+  overflow-x:hidden;
+}
+
+/* ── Typography ── */
+h1,h2,h3,.serif{font-family:'Lora',serif}
+.label{font-size:11px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-muted)}
+
+/* ── Layout ── */
+.shell{display:flex;min-height:100vh}
+
+/* ── Sidebar ── */
+.sidebar{
+  width:248px;flex-shrink:0;
+  background:var(--white);
+  border-right:1px solid var(--border);
+  display:flex;flex-direction:column;
+  position:sticky;top:0;height:100vh;overflow-y:auto;
+  scrollbar-width:none;
+}
+.sidebar::-webkit-scrollbar{display:none}
+
+.sidebar-head{
+  padding:26px 22px 20px;
+  border-bottom:1px solid var(--border);
+}
+.brand{display:flex;align-items:center;gap:10px}
+.brand-mark{
+  width:36px;height:36px;border-radius:10px;
+  background:linear-gradient(135deg,var(--sage),var(--mist-dark));
+  display:flex;align-items:center;justify-content:center;
+  font-size:18px;flex-shrink:0;
+}
+.brand-name{font-family:'Lora',serif;font-size:16px;font-weight:600;color:var(--ink);line-height:1.2}
+.brand-tag{font-size:10px;color:var(--ink-muted);margin-top:1px;font-weight:400}
+
+.nav-section{padding:16px 14px 8px}
+.nav-section-label{
+  font-size:10px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--ink-muted);padding:0 8px;margin-bottom:6px;
+}
+.nav-item{
+  display:flex;align-items:center;gap:9px;
+  padding:9px 10px;border-radius:var(--r-sm);
+  font-size:13.5px;color:var(--ink-light);font-weight:400;
+  cursor:pointer;transition:background .15s,color .15s;
+  text-decoration:none;border:none;background:none;width:100%;text-align:left;
+}
+.nav-item:hover{background:var(--sage-light);color:var(--ink)}
+.nav-item.active{background:var(--sage-light);color:var(--sage-dark);font-weight:500}
+.nav-item .dot{
+  width:7px;height:7px;border-radius:50%;flex-shrink:0;
+  background:var(--sage);opacity:.5;
+}
+.nav-item.active .dot{opacity:1;background:var(--sage-dark)}
+.nav-badge{
+  margin-left:auto;background:var(--sage-light);color:var(--sage-dark);
+  border-radius:20px;padding:1px 7px;font-size:10px;font-weight:600;
+}
+
+.sidebar-footer{
+  margin-top:auto;padding:16px 14px;border-top:1px solid var(--border);
+}
+.status-pill{
+  display:flex;align-items:center;gap:7px;
+  background:var(--mist-light);border-radius:30px;
+  padding:7px 12px;font-size:12px;color:var(--ink-muted);
+}
+.status-dot{width:6px;height:6px;border-radius:50%;background:#7ecf7e;flex-shrink:0;
+  animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+
+/* ── Main ── */
+.main{flex:1;min-width:0;display:flex;flex-direction:column}
+
+/* ── Top bar ── */
+.topbar{
+  padding:16px 36px;
+  background:var(--white);border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;
+  position:sticky;top:0;z-index:20;
+}
+.topbar-left{display:flex;align-items:center;gap:12px}
+.topbar-title{font-family:'Lora',serif;font-size:17px;font-weight:600;color:var(--ink)}
+.topbar-sub{font-size:12px;color:var(--ink-muted);margin-top:1px}
+.topbar-right{display:flex;align-items:center;gap:12px}
+
+.tab-nav{display:flex;gap:2px;background:var(--sand);border-radius:var(--r-sm);padding:3px}
+.tab-btn{
+  padding:7px 16px;border-radius:6px;font-size:13px;font-weight:400;
+  color:var(--ink-muted);border:none;background:none;cursor:pointer;
+  transition:all .15s;font-family:'DM Sans',sans-serif;
+}
+.tab-btn.active{background:var(--white);color:var(--ink);font-weight:500;box-shadow:var(--shadow-sm)}
+.tab-btn:hover:not(.active){color:var(--ink)}
+
+/* ── Content ── */
+.content{flex:1;padding:36px;overflow-y:auto}
+.page{display:none}
+.page.active{display:block}
+
+/* ── Cards ── */
+.card{
+  background:var(--white);border:1px solid var(--border);
+  border-radius:var(--r);box-shadow:var(--shadow-sm);
+}
+.card-pad{padding:24px}
+.card-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
+.card-row-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:16px}
+
+/* ── Source badge ── */
+.source-badge{
+  display:inline-flex;align-items:center;gap:5px;
+  background:var(--mist-light);border:1px solid var(--mist);
+  color:var(--mist-dark);border-radius:20px;
+  padding:3px 10px;font-size:11px;font-weight:500;
+}
+.source-badge.sage{background:var(--sage-light);border-color:var(--sage);color:var(--sage-dark)}
+.source-badge.warm{background:var(--warm-light);border-color:var(--warm-dark);color:#8a6340}
+
+/* ── Stat cards ── */
+.stat-card{
+  background:var(--white);border:1px solid var(--border);
+  border-radius:var(--r);padding:20px 22px;
+  transition:box-shadow .2s;
+}
+.stat-card:hover{box-shadow:var(--shadow-md)}
+.stat-val{font-family:'Lora',serif;font-size:28px;font-weight:600;color:var(--ink);line-height:1}
+.stat-label{font-size:12px;color:var(--ink-muted);margin-top:5px}
+.stat-change{font-size:11px;margin-top:4px;color:var(--sage-dark)}
+
+/* ── Disease list ── */
+.disease-grid{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));
+  gap:12px;margin-top:20px;
+}
+.disease-card{
+  background:var(--white);border:1px solid var(--border);
+  border-radius:var(--r);padding:16px 18px;cursor:pointer;
+  transition:all .2s;position:relative;overflow:hidden;
+}
+.disease-card::before{
+  content:'';position:absolute;inset:0;
+  background:linear-gradient(135deg,var(--sage-light),transparent);
+  opacity:0;transition:opacity .2s;
+}
+.disease-card:hover{box-shadow:var(--shadow-md);border-color:var(--sage);transform:translateY(-1px)}
+.disease-card:hover::before{opacity:1}
+.disease-name{font-size:13.5px;font-weight:500;color:var(--ink);position:relative;z-index:1;line-height:1.35}
+.disease-cat{
+  font-size:10px;text-transform:uppercase;letter-spacing:.06em;
+  color:var(--ink-muted);margin-top:4px;position:relative;z-index:1;
+}
+.disease-icon{font-size:20px;margin-bottom:8px;display:block}
+
+/* ── Section header ── */
+.section-head{
+  display:flex;align-items:flex-start;justify-content:space-between;
+  margin-bottom:20px;
+}
+.section-title{font-family:'Lora',serif;font-size:20px;font-weight:600;color:var(--ink)}
+.section-sub{font-size:13px;color:var(--ink-muted);margin-top:3px;font-weight:400;max-width:560px;line-height:1.5}
+
+/* ── Report Analyzer ── */
+.upload-zone{
+  border:1.5px dashed var(--border-med);border-radius:var(--r);
+  padding:40px;text-align:center;background:var(--sand);
+  transition:all .2s;cursor:pointer;
+}
+.upload-zone:hover{border-color:var(--sage);background:var(--sage-light)}
+.upload-zone.has-file{border-style:solid;border-color:var(--sage);background:var(--sage-light)}
+.upload-icon{font-size:32px;margin-bottom:12px;display:block}
+.upload-text{font-size:14px;color:var(--ink-muted)}
+.upload-hint{font-size:12px;color:var(--ink-muted);opacity:.7;margin-top:4px}
+
+.btn{
+  display:inline-flex;align-items:center;gap:7px;
+  padding:10px 20px;border-radius:var(--r-sm);
+  font-size:13.5px;font-weight:500;cursor:pointer;
+  font-family:'DM Sans',sans-serif;transition:all .18s;border:1px solid transparent;
+}
+.btn-primary{background:var(--sage-dark);color:var(--white);border-color:var(--sage-dark)}
+.btn-primary:hover{background:var(--ink-light);border-color:var(--ink-light)}
+.btn-secondary{background:var(--white);color:var(--ink);border-color:var(--border-med)}
+.btn-secondary:hover{background:var(--sand);border-color:var(--sage)}
+.btn-sm{padding:6px 14px;font-size:12.5px}
+
+/* ── Detected diseases ── */
+.hit-list{display:flex;flex-direction:column;gap:10px;margin-top:8px}
+.hit-item{
+  background:var(--sand);border:1px solid var(--border);
+  border-radius:var(--r-sm);padding:12px 16px;
+  display:flex;align-items:center;gap:12px;
+}
+.hit-item.primary{background:var(--sage-light);border-color:var(--sage)}
+.hit-score{
+  font-family:'Lora',serif;font-size:16px;font-weight:600;
+  color:var(--sage-dark);min-width:44px;text-align:right;
+}
+.hit-name{font-size:13.5px;font-weight:500;color:var(--ink)}
+.hit-evidence{font-size:11.5px;color:var(--ink-muted);margin-top:2px}
+.progress-bar{
+  height:4px;border-radius:2px;background:var(--border);
+  flex:1;overflow:hidden;
+}
+.progress-fill{height:100%;border-radius:2px;background:var(--sage-dark);transition:width .6s ease}
+
+/* ── Flashcards ── */
+.flashcard-section{margin-bottom:30px}
+.carousel{
+  display:flex;gap:14px;overflow-x:auto;
+  padding-bottom:8px;scrollbar-width:none;
+  scroll-behavior:smooth;
+}
+.carousel::-webkit-scrollbar{display:none}
+
+.flashcard{
+  flex-shrink:0;width:240px;
+  background:var(--white);border:1px solid var(--border);
+  border-radius:var(--r);padding:18px 20px;
+  transition:all .2s;cursor:default;
+}
+.flashcard:hover{box-shadow:var(--shadow-md);transform:translateY(-2px)}
+.flashcard-icon{font-size:22px;margin-bottom:10px}
+.flashcard-title{font-size:14px;font-weight:500;color:var(--ink);line-height:1.35}
+.flashcard-body{font-size:12.5px;color:var(--ink-muted);margin-top:6px;line-height:1.55}
+.flashcard-foot{
+  margin-top:12px;padding-top:10px;border-top:1px solid var(--border);
+  font-size:11.5px;color:var(--ink-muted);
+}
+.intensity{
+  display:inline-block;padding:2px 9px;border-radius:20px;
+  font-size:10px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;
+  margin-top:6px;
+}
+.intensity-low{background:#e8f5e9;color:#388e3c}
+.intensity-mod{background:#fff3e0;color:#e65100}
+.intensity-high{background:#fce4ec;color:#c62828}
+
+/* Health summary card */
+.health-summary{
+  background:linear-gradient(135deg,var(--sage-light),var(--mist-light));
+  border:1px solid var(--sage);border-radius:var(--r);padding:22px 26px;
+  margin-bottom:24px;max-width:520px;
+}
+.hs-disease{font-family:'Lora',serif;font-size:19px;font-weight:600;color:var(--ink);margin-bottom:12px}
+.hs-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.hs-cell{background:rgba(255,255,255,.65);border-radius:var(--r-sm);padding:10px 12px}
+.hs-num{font-family:'Lora',serif;font-size:20px;font-weight:600;color:var(--sage-dark)}
+.hs-lbl{font-size:11px;color:var(--ink-muted);margin-top:2px}
+
+/* Doctor card */
+.doctor-card{
+  flex-shrink:0;width:230px;
+  background:var(--white);border:1px solid var(--border);
+  border-radius:var(--r);padding:18px;
+  transition:all .2s;cursor:pointer;
+}
+.doctor-card:hover{box-shadow:var(--shadow-md);border-color:var(--mist-dark);transform:translateY(-2px)}
+.doc-avatar{
+  width:40px;height:40px;border-radius:50%;
+  background:linear-gradient(135deg,var(--mist),var(--sage));
+  display:flex;align-items:center;justify-content:center;
+  font-size:18px;margin-bottom:10px;
+}
+.doc-name{font-size:13.5px;font-weight:500;color:var(--ink)}
+.doc-spec{font-size:11.5px;color:var(--mist-dark);margin-top:2px}
+.doc-hospital{font-size:11px;color:var(--ink-muted);margin-top:6px;line-height:1.4}
+.doc-exp{
+  display:inline-block;background:var(--mist-light);color:var(--mist-dark);
+  border-radius:20px;padding:2px 9px;font-size:10.5px;font-weight:500;margin-top:6px;
+}
+.doc-btn{
+  width:100%;margin-top:10px;padding:7px;
+  background:var(--sand);border:1px solid var(--border-med);
+  border-radius:var(--r-sm);font-size:12px;color:var(--ink-muted);
+  cursor:pointer;font-family:'DM Sans',sans-serif;font-weight:500;
+  transition:all .15s;
+}
+.doc-btn:hover{background:var(--mist-light);color:var(--mist-dark);border-color:var(--mist)}
+
+/* ── Doctor modal ── */
+.modal-overlay{
+  position:fixed;inset:0;background:rgba(44,58,46,.4);
+  backdrop-filter:blur(6px);z-index:100;
+  display:flex;align-items:center;justify-content:center;padding:24px;
+  opacity:0;pointer-events:none;transition:opacity .2s;
+}
+.modal-overlay.open{opacity:1;pointer-events:auto}
+.modal{
+  background:var(--white);border-radius:var(--r-lg);
+  max-width:640px;width:100%;max-height:88vh;overflow-y:auto;
+  box-shadow:var(--shadow-lg);
+  transform:translateY(12px);transition:transform .25s;
+}
+.modal-overlay.open .modal{transform:translateY(0)}
+.modal-head{
+  padding:26px 28px 20px;border-bottom:1px solid var(--border);
+  display:flex;align-items:flex-start;justify-content:space-between;
+  position:sticky;top:0;background:var(--white);z-index:1;border-radius:var(--r-lg) var(--r-lg) 0 0;
+}
+.modal-body{padding:24px 28px}
+.modal-close{
+  background:var(--sand);border:1px solid var(--border);
+  border-radius:50%;width:32px;height:32px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:18px;cursor:pointer;color:var(--ink-muted);
+  transition:all .15s;flex-shrink:0;
+}
+.modal-close:hover{background:var(--sage-light);color:var(--ink)}
+
+.med-table{width:100%;border-collapse:collapse;margin-top:12px}
+.med-table th{
+  font-size:11px;text-transform:uppercase;letter-spacing:.06em;
+  color:var(--ink-muted);font-weight:500;padding:6px 10px;
+  border-bottom:1px solid var(--border);text-align:left;
+}
+.med-table td{
+  font-size:12.5px;color:var(--ink-light);padding:9px 10px;
+  border-bottom:1px solid var(--border);vertical-align:top;
+}
+.med-table tr:last-child td{border-bottom:none}
+.med-name{font-weight:500;color:var(--ink)}
+.med-caution{color:#c0553a;font-size:11px;margin-top:2px}
+
+/* ── Patient Chat ── */
+.chat-wrap{display:flex;flex-direction:column;height:calc(100vh - 160px)}
+.chat-msgs{
+  flex:1;overflow-y:auto;padding:20px 0;
+  display:flex;flex-direction:column;gap:16px;
+  scrollbar-width:thin;scrollbar-color:var(--border) transparent;
+}
+.chat-msg{display:flex;gap:12px;max-width:680px}
+.chat-msg.user{flex-direction:row-reverse;align-self:flex-end}
+.msg-avatar{
+  width:34px;height:34px;border-radius:50%;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;font-size:15px;
+}
+.msg-avatar.ai{background:var(--sage-light)}
+.msg-avatar.user{background:var(--mist-light)}
+.msg-bubble{
+  background:var(--white);border:1px solid var(--border);
+  border-radius:var(--r);padding:12px 16px;
+  font-size:13.5px;color:var(--ink-light);line-height:1.6;max-width:560px;
+}
+.msg-bubble.user{background:var(--sage-light);border-color:var(--sage)}
+.msg-source{margin-top:8px;display:flex;flex-wrap:wrap;gap:5px}
+
+.chat-input-row{
+  padding-top:16px;border-top:1px solid var(--border);
+  display:flex;gap:10px;align-items:flex-end;
+}
+.chat-input{
+  flex:1;border:1px solid var(--border-med);border-radius:var(--r);
+  padding:11px 16px;font-size:13.5px;font-family:'DM Sans',sans-serif;
+  color:var(--ink);background:var(--white);resize:none;
+  line-height:1.5;outline:none;transition:border-color .15s;
+  min-height:44px;max-height:120px;overflow-y:auto;
+}
+.chat-input:focus{border-color:var(--sage-dark)}
+.chat-input::placeholder{color:var(--ink-muted)}
+
+/* ── History ── */
+.history-item{
+  background:var(--white);border:1px solid var(--border);
+  border-radius:var(--r);padding:16px 20px;margin-bottom:10px;
+  transition:box-shadow .15s;
+}
+.history-item:hover{box-shadow:var(--shadow-sm)}
+.hist-q{font-size:14px;font-weight:500;color:var(--ink);line-height:1.4}
+.hist-a{font-size:13px;color:var(--ink-muted);margin-top:6px;line-height:1.55}
+.hist-meta{display:flex;align-items:center;gap:8px;margin-top:8px;flex-wrap:wrap}
+
+/* ── About ── */
+.about-hero{
+  background:linear-gradient(135deg,var(--sage-light) 0%,var(--mist-light) 100%);
+  border:1px solid var(--sage);border-radius:var(--r-lg);
+  padding:36px 40px;margin-bottom:28px;
+}
+.about-hero h1{font-family:'Lora',serif;font-size:28px;font-weight:600;color:var(--ink);line-height:1.25}
+.about-hero p{font-size:14px;color:var(--ink-muted);margin-top:10px;max-width:560px;line-height:1.65}
+
+.source-row{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px;
+  margin-top:18px;
+}
+.source-card{
+  background:var(--white);border:1px solid var(--border);
+  border-radius:var(--r);padding:18px 20px;
+}
+.sc-icon{font-size:20px;margin-bottom:8px}
+.sc-name{font-size:14px;font-weight:500;color:var(--ink)}
+.sc-desc{font-size:12.5px;color:var(--ink-muted);margin-top:5px;line-height:1.5}
+.sc-note{font-size:11px;color:var(--sage-dark);margin-top:8px;background:var(--sage-light);padding:3px 9px;border-radius:20px;display:inline-block}
+
+/* ── Disclaimer ── */
+.disclaimer{
+  background:var(--warm-light);border:1px solid var(--warm-dark);
+  border-radius:var(--r-sm);padding:12px 16px;
+  font-size:12px;color:#8a6340;line-height:1.55;margin-top:20px;
+}
+
+/* ── Loading spinner ── */
+.spinner{
+  width:20px;height:20px;border:2px solid var(--border-med);
+  border-top-color:var(--sage-dark);border-radius:50%;
+  animation:spin .6s linear infinite;display:inline-block;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ── Toast ── */
+.toast{
+  position:fixed;bottom:28px;right:28px;
+  background:var(--ink);color:var(--white);
+  border-radius:var(--r-sm);padding:11px 18px;
+  font-size:13px;z-index:200;
+  opacity:0;transform:translateY(8px);
+  transition:all .25s;pointer-events:none;
+}
+.toast.show{opacity:1;transform:translateY(0)}
+
+/* ── Responsive ── */
+@media(max-width:900px){
+  .sidebar{width:200px}
+  .content{padding:24px}
+  .topbar{padding:14px 24px}
+}
+@media(max-width:680px){
+  .sidebar{display:none}
+  .card-row,.card-row-3,.hs-grid{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<div class="shell">
+
+<!-- ── Sidebar ── -->
+<aside class="sidebar">
+  <div class="sidebar-head">
+    <div class="brand">
+      <div class="brand-mark">🌿</div>
+      <div>
+        <div class="brand-name">Agents Assemble</div>
+        <div class="brand-tag">Medical Intelligence</div>
+      </div>
+    </div>
+  </div>
+
+  <nav>
+    <div class="nav-section">
+      <div class="nav-section-label">Navigation</div>
+      <button class="nav-item" onclick="goto('diseases')">
+        <span class="dot"></span> Disease Hub
+        <span class="nav-badge" id="nb-diseases">20</span>
+      </button>
+      <button class="nav-item" onclick="goto('chat')">
+        <span class="dot"></span> Patient Chat
+      </button>
+      <button class="nav-item active" onclick="goto('report')">
+        <span class="dot"></span> Report Analyzer
+      </button>
+      <button class="nav-item" onclick="goto('history')">
+        <span class="dot"></span> History
+      </button>
+      <button class="nav-item" onclick="goto('about')">
+        <span class="dot"></span> About & Sources
+      </button>
+    </div>
+
+    <div class="nav-section">
+      <div class="nav-section-label">Imaging</div>
+      <button class="nav-item" onclick="goto('diseases')"><span class="dot"></span>Brain tumor (MRI)</button>
+      <button class="nav-item" onclick="goto('diseases')"><span class="dot"></span>Pneumonia (X-ray)</button>
+      <button class="nav-item" onclick="goto('diseases')"><span class="dot"></span>Tuberculosis (X-ray)</button>
+      <button class="nav-item" onclick="goto('diseases')"><span class="dot"></span>COVID-19 (X-ray)</button>
+      <button class="nav-item" onclick="goto('diseases')"><span class="dot"></span>Skin lesion</button>
+      <button class="nav-item" onclick="goto('diseases')"><span class="dot"></span>Diabetic retinopathy</button>
+      <button class="nav-item" onclick="goto('diseases')"><span class="dot"></span>Glaucoma</button>
+      <button class="nav-item" onclick="goto('diseases')"><span class="dot"></span>Cataract</button>
+    </div>
+
+    <div class="nav-section">
+      <div class="nav-section-label">Clinical</div>
+      <button class="nav-item" onclick="goto('diseases')"><span class="dot"></span>Diabetes risk</button>
+      <button class="nav-item" onclick="goto('diseases')"><span class="dot"></span>Heart disease risk</button>
+      <button class="nav-item" onclick="goto('diseases')"><span class="dot"></span>Kidney disease</button>
+    </div>
+  </nav>
+
+  <div class="sidebar-footer">
+    <div class="status-pill">
+      <span class="status-dot"></span>
+      MCP Tester Active
+    </div>
+  </div>
+</aside>
+
+<!-- ── Main ── -->
+<main class="main">
+
+  <!-- Topbar -->
+  <header class="topbar">
+    <div class="topbar-left">
+      <div>
+        <div class="topbar-title" id="page-title">Report Analyzer</div>
+        <div class="topbar-sub" id="page-sub">AI-assisted PDF disease detection</div>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <div class="tab-nav">
+        <button class="tab-btn" onclick="goto('diseases')">Diseases</button>
+        <button class="tab-btn" onclick="goto('chat')">Patient Chat</button>
+        <button class="tab-btn active" onclick="goto('report')">Report Analyzer</button>
+        <button class="tab-btn" onclick="goto('history')">History</button>
+        <button class="tab-btn" onclick="goto('about')">About</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="content">
+
+    <!-- ═══════════════════════════════════════════════
+         PAGE: DISEASES
+    ═══════════════════════════════════════════════ -->
+    <div class="page" id="page-diseases">
+      <div class="section-head">
+        <div>
+          <div class="section-title">Disease Hub</div>
+          <div class="section-sub">Explore all supported detection models. Imaging uses image input; clinical uses form fields.</div>
+        </div>
+        <div class="source-badge sage">📡 Source: Backend /api/diseases</div>
+      </div>
+
+      <div class="card-row-3">
+        <div class="stat-card">
+          <div class="stat-val">20</div>
+          <div class="stat-label">Supported diseases</div>
+          <div class="stat-change">↑ 8 imaging · 12 clinical</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-val">15+</div>
+          <div class="stat-label">Risk models active</div>
+          <div class="stat-change">Logistic · Framingham · eGFR</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-val">Daily</div>
+          <div class="stat-label">Care plan refresh</div>
+          <div class="stat-change">Date-seeded deterministic RNG</div>
+        </div>
+      </div>
+
+      <div class="disease-grid" id="disease-grid">
+        <!-- populated by JS -->
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════
+         PAGE: PATIENT CHAT
+    ═══════════════════════════════════════════════ -->
+    <div class="page" id="page-chat">
+      <div class="section-head">
+        <div>
+          <div class="section-title">Patient Chat</div>
+          <div class="section-sub">Ask any health question in plain language. Answers are grounded in Wikipedia medical articles via RAG.</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end">
+          <span class="source-badge">📖 Wikipedia RAG</span>
+          <span class="source-badge sage" id="llm-provider-badge">🤖 LLM: detecting…</span>
+        </div>
+      </div>
+
+      <div class="card card-pad chat-wrap">
+        <div class="chat-msgs" id="chat-msgs">
+          <div class="chat-msg">
+            <div class="msg-avatar ai">🌿</div>
+            <div>
+              <div class="msg-bubble">
+                Hello! I'm your patient education assistant. Ask me anything about a health condition, medication, or symptom — I'll search trusted medical sources and explain it in plain language.
+              </div>
+              <div class="msg-source">
+                <span class="source-badge">📖 Wikipedia RAG</span>
+                <span class="source-badge warm">Education only · not clinical advice</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="chat-input-row">
+          <textarea class="chat-input" id="chat-input" rows="1" placeholder="Ask a health question… e.g. What is HbA1c?" onkeydown="chatKey(event)"></textarea>
+          <button class="btn btn-primary" onclick="sendChat()" id="chat-send-btn">
+            <span>Send</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════
+         PAGE: REPORT ANALYZER
+    ═══════════════════════════════════════════════ -->
+    <div class="page active" id="page-report">
+
+      <div class="section-head">
+        <div>
+          <div class="section-title">Report Analyzer</div>
+          <div class="section-sub">Upload a PDF health report. We extract text, match disease keywords, and build a synthetic care plan.</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end">
+          <span class="source-badge">📄 PDF text extraction</span>
+          <span class="source-badge warm">Synthetic · de-identified only</span>
+        </div>
+      </div>
+
+      <div class="card-row">
+        <!-- Upload -->
+        <div>
+          <div class="label" style="margin-bottom:10px">PDF Input</div>
+          <div class="upload-zone" id="upload-zone" onclick="document.getElementById('pdf-input').click()">
+            <input type="file" id="pdf-input" accept=".pdf" style="display:none" onchange="fileChosen(this)">
+            <span class="upload-icon">🌿</span>
+            <div class="upload-text">Select report PDF</div>
+            <div class="upload-hint">De-identified / synthetic reports only · No PHI</div>
+          </div>
+          <div id="chosen-file" style="margin-top:10px;font-size:12.5px;color:var(--ink-muted);display:none"></div>
+          <button class="btn btn-primary" style="margin-top:14px;width:100%" id="analyze-btn" onclick="analyzeReport()" disabled>
+            <span class="spinner" id="analyze-spinner" style="display:none"></span>
+            <span>Analyze report</span>
+          </button>
+        </div>
+
+        <!-- Detected diseases -->
+        <div>
+          <div class="label" style="margin-bottom:10px">Detected Diseases
+            <span class="source-badge" style="margin-left:8px;vertical-align:middle">Keyword matching · local</span>
+          </div>
+          <div id="hit-list" class="hit-list">
+            <div style="color:var(--ink-muted);font-size:13px;padding:16px 0">Upload and analyze a report to see results.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Text preview -->
+      <div id="text-preview-wrap" style="display:none;margin-bottom:24px">
+        <div class="label" style="margin-bottom:8px">Extracted Text Preview</div>
+        <div style="background:var(--sand);border:1px solid var(--border);border-radius:var(--r-sm);padding:14px 16px;font-size:12px;font-family:monospace;color:var(--ink-muted);max-height:160px;overflow-y:auto;line-height:1.6" id="text-preview"></div>
+        <div style="font-size:11px;color:var(--ink-muted);margin-top:5px" id="text-stats"></div>
+      </div>
+
+      <!-- Care plan output -->
+      <div id="care-plan-wrap" style="display:none">
+
+        <!-- Health summary flashcard -->
+        <div class="flashcard-section">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+            <div class="label">01 — Personal Health Overview
+              <span class="source-badge sage" style="margin-left:8px;vertical-align:middle">Backend: /api/diseases/:slug/care-plan</span>
+            </div>
+          </div>
+          <div class="health-summary" id="health-summary"></div>
+        </div>
+
+        <!-- Exercises -->
+        <div class="flashcard-section">
+          <div class="label" style="margin-bottom:12px">02 — Exercises for the Healing Phase
+            <span class="source-badge sage" style="margin-left:8px;vertical-align:middle">Care plan · synthetic</span>
+          </div>
+          <div class="carousel" id="exercise-carousel"></div>
+        </div>
+
+        <!-- Doctors -->
+        <div class="flashcard-section">
+          <div class="label" style="margin-bottom:12px">03 — Top 3 Specialists
+            <span class="source-badge" style="margin-left:8px;vertical-align:middle">Synthetic · fictional doctors</span>
+          </div>
+          <div class="carousel" id="doctor-carousel"></div>
+        </div>
+
+        <!-- Affirmations -->
+        <div class="flashcard-section">
+          <div class="label" style="margin-bottom:12px">04 — Positive Manifestations
+            <span class="source-badge" style="margin-left:8px;vertical-align:middle">Mindfulness · care plan</span>
+          </div>
+          <div class="carousel" id="affirmation-carousel"></div>
+        </div>
+
+        <div class="disclaimer" id="care-disclaimers"></div>
+      </div>
+
+    </div>
+
+    <!-- ═══════════════════════════════════════════════
+         PAGE: HISTORY
+    ═══════════════════════════════════════════════ -->
+    <div class="page" id="page-history">
+      <div class="section-head">
+        <div>
+          <div class="section-title">Answer History</div>
+          <div class="section-sub">Past Q&A sessions stored in Postgres. Persisted across sessions.</div>
+        </div>
+        <span class="source-badge sage">🗄 Source: Postgres · /api/answers</span>
+      </div>
+      <div id="history-list">
+        <div style="color:var(--ink-muted);font-size:13px">Loading history…</div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════
+         PAGE: ABOUT
+    ═══════════════════════════════════════════════ -->
+    <div class="page" id="page-about">
+      <div class="about-hero">
+        <h1>Where does the data come from?</h1>
+        <p>This platform is a medical education demo. All data sources are clearly labeled throughout the interface so you always know what you're seeing and why.</p>
+      </div>
+
+      <div class="section-title" style="margin-bottom:16px">Data Sources</div>
+      <div class="source-row">
+
+        <div class="source-card">
+          <div class="sc-icon">📖</div>
+          <div class="sc-name">Wikipedia — Medical Articles</div>
+          <div class="sc-desc">Patient chat answers are grounded using Wikipedia's medical articles. Articles are fetched, chunked, embedded (Transformers.js or OpenAI), and stored in Postgres for semantic retrieval.</div>
+          <span class="sc-note">RAG · Refreshed on each new question</span>
+        </div>
+
+        <div class="source-card">
+          <div class="sc-icon">🧬</div>
+          <div class="sc-name">Disease Registry</div>
+          <div class="sc-desc">20 diseases defined in <code>src/diseases/registry.ts</code>. Imaging diseases use deterministic image scoring (no real CNN in demo mode). Clinical diseases use validated scoring rules (Framingham, CKD-EPI, NAFLD score).</div>
+          <span class="sc-note">Local · src/diseases/registry.ts</span>
+        </div>
+
+        <div class="source-card">
+          <div class="sc-icon">📄</div>
+          <div class="sc-name">PDF Report Extraction</div>
+          <div class="sc-desc">Uploaded PDFs are parsed locally using <code>pdf-parse</code>. Text is matched against disease keyword dictionaries. No PHI leaves the server.</div>
+          <span class="sc-note">Local · pdf-parse library</span>
+        </div>
+
+        <div class="source-card">
+          <div class="sc-icon">👨‍⚕️</div>
+          <div class="sc-name">Synthetic Care Plans</div>
+          <div class="sc-desc">All doctors, hospitals, medications, and care plans are completely synthetic and fictional. Generated deterministically from a date-seeded RNG so they refresh daily. Defined in <code>src/care/dataPools.ts</code>.</div>
+          <span class="sc-note">Synthetic · daily refresh</span>
+        </div>
+
+        <div class="source-card">
+          <div class="sc-icon">🗄</div>
+          <div class="sc-name">Postgres / Neon</div>
+          <div class="sc-desc">All Q&A history, RAG embeddings, and healer fix-pattern cache are stored in Postgres (Neon for production). The answer history page reads directly from <code>/api/answers</code>.</div>
+          <span class="sc-note">Postgres · Neon (free tier prod)</span>
+        </div>
+
+        <div class="source-card">
+          <div class="sc-icon">🤖</div>
+          <div class="sc-name">LLM Providers</div>
+          <div class="sc-desc">Patient chat synthesis uses whichever LLM API key you set: Anthropic Claude, Google Gemini (free), Groq/Llama (free), or OpenAI. The active provider is shown in the chat header.</div>
+          <span class="sc-note">Anthropic · Gemini · Groq · OpenAI</span>
+        </div>
+
+        <div class="source-card">
+          <div class="sc-icon">🔧</div>
+          <div class="sc-name">Auto-Healer (LLM-powered)</div>
+          <div class="sc-desc">Runtime errors are parsed, sent to an LLM with file context, and a search/replace patch is generated and applied. Fix patterns are cached in Postgres. Source: <code>src/healer/</code>.</div>
+          <span class="sc-note">LLM · Postgres cache</span>
+        </div>
+
+        <div class="source-card">
+          <div class="sc-icon">🌐</div>
+          <div class="sc-name">MCP Tools (FHIR)</div>
+          <div class="sc-desc">When MCP transport is active, the app exposes FHIR care-gap analysis tools using a synthetic FHIR adapter. Patient data is synthetic; no real EHR connection.</div>
+          <span class="sc-note">MCP · Synthetic FHIR adapter</span>
+        </div>
+
+      </div>
+
+      <div class="disclaimer" style="margin-top:28px">
+        <strong>Education-only platform.</strong> All doctors, hospitals, medications, risk scores, and care plans shown are SYNTHETIC and fictional. No content constitutes medical advice. Always consult a qualified clinician for any health concern.
+      </div>
+    </div>
+
+  </div><!-- /content -->
+</main>
+</div><!-- /shell -->
+
+<!-- Doctor detail modal -->
+<div class="modal-overlay" id="doc-modal" onclick="closeModal(event)">
+  <div class="modal" id="doc-modal-inner">
+    <div class="modal-head">
+      <div style="display:flex;align-items:center;gap:14px">
+        <div class="doc-avatar" style="width:48px;height:48px;font-size:22px" id="md-avatar">👨‍⚕️</div>
+        <div>
+          <div style="font-family:'Lora',serif;font-size:18px;font-weight:600;color:var(--ink)" id="md-name">—</div>
+          <div style="font-size:13px;color:var(--mist-dark);margin-top:2px" id="md-spec">—</div>
+          <div style="font-size:12px;color:var(--ink-muted);margin-top:2px" id="md-hospital">—</div>
+        </div>
+      </div>
+      <button class="modal-close" onclick="document.getElementById('doc-modal').classList.remove('open')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="label" style="margin-bottom:8px">About</div>
+      <div style="font-size:13.5px;color:var(--ink-muted);line-height:1.6;background:var(--sage-light);border-radius:var(--r-sm);padding:12px 14px;margin-bottom:20px" id="md-bio">—</div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:20px">
+        <div class="hs-cell">
+          <div class="hs-num" id="md-exp">—</div>
+          <div class="hs-lbl">Years experience</div>
+        </div>
+        <div class="hs-cell">
+          <div class="hs-num" id="md-meds-count">10</div>
+          <div class="hs-lbl">Medications</div>
+        </div>
+        <div class="hs-cell">
+          <div class="hs-num" id="md-city">—</div>
+          <div class="hs-lbl">Location</div>
+        </div>
+      </div>
+
+      <div class="label" style="margin-bottom:8px">Suggested Medications
+        <span class="source-badge warm" style="margin-left:6px;vertical-align:middle">Illustrative only · not clinical advice</span>
+      </div>
+      <table class="med-table" id="md-med-table">
+        <thead>
+          <tr>
+            <th>#</th><th>Medication</th><th>Dose · Schedule</th><th>Rationale</th>
+          </tr>
+        </thead>
+        <tbody id="md-med-body"></tbody>
+      </table>
+
+      <div class="disclaimer" style="margin-top:16px">All details are SYNTHETIC. Medication doses are illustrative only and are NOT clinical recommendations.</div>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ─── API Base ───
+const API = (location.hostname === 'localhost' || location.hostname === '127.0.0.1')
+  ? 'http://localhost:3000'
+  : '';
+
+// ─── State ───
+let currentPlan = null;
+let chatHistory = [];
+const THREE_DAYS = 3 * 24 * 60 * 60 * 1000;
+
+// ─── Navigation ───
+const PAGE_META = {
+  diseases: { title: 'Disease Hub', sub: 'All 20 supported detection models' },
+  chat:     { title: 'Patient Chat', sub: 'AI-powered health Q&A — Wikipedia RAG' },
+  report:   { title: 'Report Analyzer', sub: 'AI-assisted PDF disease detection' },
+  history:  { title: 'Answer History', sub: 'Past sessions from Postgres database' },
+  about:    { title: 'About & Sources', sub: 'Where the data comes from' },
+};
+
+function goto(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  document.querySelectorAll('.nav-item, .tab-btn').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.nav-item, .tab-btn').forEach(el => {
+    if (el.textContent.toLowerCase().includes(name.replace('-', ' ').slice(0, 8))) el.classList.add('active');
+  });
+  const m = PAGE_META[name] || {};
+  document.getElementById('page-title').textContent = m.title || name;
+  document.getElementById('page-sub').textContent = m.sub || '';
+  if (name === 'diseases') loadDiseases();
+  if (name === 'history') loadHistory();
+}
+
+// ─── Disease Hub ───
+const DISEASE_DATA = [
+  {slug:'brain-tumor',name:'Brain tumor (MRI)',cat:'imaging',icon:'🧠'},
+  {slug:'pneumonia',name:'Pneumonia (chest X-ray)',cat:'imaging',icon:'🫁'},
+  {slug:'tuberculosis',name:'Tuberculosis (chest X-ray)',cat:'imaging',icon:'🫁'},
+  {slug:'covid-19',name:'COVID-19 (chest X-ray)',cat:'imaging',icon:'🦠'},
+  {slug:'skin-cancer',name:'Skin lesion (dermatology)',cat:'imaging',icon:'🔬'},
+  {slug:'diabetic-retinopathy',name:'Diabetic retinopathy',cat:'imaging',icon:'👁'},
+  {slug:'glaucoma',name:'Glaucoma (retina)',cat:'imaging',icon:'👁'},
+  {slug:'cataract',name:'Cataract (eye)',cat:'imaging',icon:'👁'},
+  {slug:'breast-cancer',name:'Breast cancer (mammogram)',cat:'imaging',icon:'🎗'},
+  {slug:'lung-cancer',name:'Lung cancer (CT)',cat:'imaging',icon:'🫁'},
+  {slug:'bone-fracture',name:'Bone fracture (X-ray)',cat:'imaging',icon:'🦴'},
+  {slug:'alzheimers',name:'Alzheimer\'s (brain MRI)',cat:'imaging',icon:'🧠'},
+  {slug:'diabetes',name:'Diabetes risk (clinical)',cat:'clinical',icon:'🩸'},
+  {slug:'heart-disease',name:'Heart disease risk',cat:'clinical',icon:'❤️'},
+  {slug:'kidney-disease',name:'Chronic kidney disease',cat:'clinical',icon:'🫘'},
+  {slug:'liver-disease',name:'Liver disease',cat:'clinical',icon:'🍃'},
+  {slug:'hypertension',name:'Hypertension',cat:'clinical',icon:'💊'},
+  {slug:'stroke',name:'Stroke risk',cat:'clinical',icon:'⚡'},
+  {slug:'parkinsons',name:'Parkinson\'s',cat:'clinical',icon:'🧠'},
+  {slug:'sleep-apnea',name:'Sleep apnea',cat:'clinical',icon:'😴'},
+];
+
+function loadDiseases() {
+  const g = document.getElementById('disease-grid');
+  g.innerHTML = DISEASE_DATA.map(d => `
+    <div class="disease-card" onclick="loadDiseasePlan('${d.slug}','${d.name}')">
+      <span class="disease-icon">${d.icon}</span>
+      <div class="disease-name">${d.name}</div>
+      <div class="disease-cat">${d.cat}</div>
+    </div>
+  `).join('');
+}
+
+async function loadDiseasePlan(slug, name) {
+  toast('Loading care plan for ' + name + '…');
+  const plan = await fetchCarePlan(slug);
+  if (plan) {
+    currentPlan = plan;
+    goto('report');
+    renderCarePlan(plan);
+    document.getElementById('care-plan-wrap').style.display = 'block';
+    document.getElementById('text-preview-wrap').style.display = 'none';
+    document.getElementById('hit-list').innerHTML = `<div class="hit-item primary">
+      <div class="hit-score">100%</div>
+      <div><div class="hit-name">${name}</div><div class="hit-evidence">Loaded from disease hub</div></div>
+    </div>`;
+  }
+}
+
+// ─── Care plan cache (3 days) ───
+function getPlanCache(slug) {
+  try {
+    const raw = localStorage.getItem('cp_' + slug);
+    if (!raw) return null;
+    const { data, at } = JSON.parse(raw);
+    if (Date.now() - at > THREE_DAYS) return null;
+    return data;
+  } catch { return null; }
+}
+function setPlanCache(slug, data) {
+  try { localStorage.setItem('cp_' + slug, JSON.stringify({ data, at: Date.now() })); } catch {}
+}
+
+async function fetchCarePlan(slug) {
+  const cached = getPlanCache(slug);
+  if (cached) return cached;
+  try {
+    const r = await fetch(API + '/api/diseases/' + slug + '/care-plan');
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const j = await r.json();
+    const plan = j.carePlan || j;
+    setPlanCache(slug, plan);
+    return plan;
+  } catch (e) {
+    // Return mock plan when backend not running (demo mode)
+    return mockCarePlan(slug);
+  }
+}
+
+function mockCarePlan(slug) {
+  return {
+    diseaseSlug: slug,
+    diseaseName: slug.replace(/-/g,' ').replace(/\b\w/g,c=>c.toUpperCase()),
+    synthetic: true,
+    generatedAt: new Date().toISOString(),
+    exercises: [
+      { name:'Walking program', description:'Low-impact aerobic walks at conversational pace.', frequency:'20-30 min, 5x/week', intensity:'moderate', cautions:[] },
+      { name:'Strength basics', description:'Sit-to-stands, wall push-ups, banded rows.', frequency:'2-3 sets × 10, 2-3x/week', intensity:'low', cautions:[] },
+      { name:'Mobility & stretching', description:'Full-body stretches focused on hips, shoulders, neck.', frequency:'10 min daily', intensity:'low', cautions:[] },
+      { name:'Mindful breathing', description:'Box breathing 4-4-4-4 for stress regulation.', frequency:'10 min, 2x/day', intensity:'low', cautions:[] },
+    ],
+    topDoctors: [
+      { name:'Dr. Theo Larsen', specialty:'Hepatology', yearsOfExperience:16, hospital:{ name:'Mountain View Memorial Hospital', city:'Denver', country:'USA' }, bio:'Fatty liver disease and hepatitis follow-up clinics.', medications: getMockMeds() },
+      { name:'Dr. Daniel Okafor', specialty:'Internal Medicine', yearsOfExperience:12, hospital:{ name:'Lotus Bay Multispecialty Hospital', city:'Singapore', country:'Singapore' }, bio:'Chronic disease management, HbA1c clinics, motivational interviewing.', medications: getMockMeds() },
+      { name:'Dr. Olivia Park', specialty:'Infectious Disease', yearsOfExperience:15, hospital:{ name:'Cedarbrook Cancer Institute', city:'Seattle', country:'USA' }, bio:'Respiratory infections and antimicrobial stewardship.', medications: getMockMeds() },
+      { name:'Dr. Beatrice Lin', specialty:'Geriatric Medicine', yearsOfExperience:18, hospital:{ name:'Greenfield Research Hospital', city:'Berlin', country:'Germany' }, bio:'Dementia care, falls prevention, polypharmacy reviews.', medications: getMockMeds() },
+      { name:'Dr. Samir Choudhury', specialty:'Psychiatry', yearsOfExperience:12, hospital:{ name:'Banyan Tree Medical Center', city:'Bengaluru', country:'India' }, bio:'Mood disorders co-occurring with chronic disease.', medications: getMockMeds() },
+    ],
+    affirmations: [
+      { theme:'Presence', statement:'I take this one breath, one moment at a time.' },
+      { theme:'Agency', statement:'I am an active participant in my own care, not a passive observer.' },
+      { theme:'Support', statement:'I let trusted people walk beside me on this path.' },
+      { theme:'Compassion', statement:'I extend the same kindness to myself that I would to a dear friend.' },
+      { theme:'Hope', statement:'Healing is not linear; small steps still count.' },
+      { theme:'Rest', statement:'Resting is part of getting better, not the opposite of it.' },
+      { theme:'Trust', statement:'I trust the team and the process even when it is hard.' },
+      { theme:'Celebration', statement:'I notice and celebrate every small improvement.' },
+    ],
+    disclaimers: [
+      'All doctors, hospitals, and patient details shown are SYNTHETIC and fictional.',
+      'Medication names are real but doses/regimens are illustrative only and NOT a clinical recommendation.',
+      'Always consult a qualified clinician before starting, stopping, or changing any treatment.',
+    ],
+  };
+}
+
+function getMockMeds() {
+  return [
+    { name:'Acetaminophen', dose:'500 mg PO', schedule:'every 6 hours PRN', rationale:'Pain and fever management.', cautions:[] },
+    { name:'Ibuprofen', dose:'400 mg PO', schedule:'every 6-8 hours PRN', rationale:'Anti-inflammatory pain control.', cautions:['GI bleeding','Renal caution'] },
+    { name:'Pantoprazole', dose:'40 mg PO', schedule:'once daily', rationale:'Gastric protection.', cautions:[] },
+    { name:'Cetirizine', dose:'10 mg PO', schedule:'once daily', rationale:'Antihistamine adjunct.', cautions:[] },
+    { name:'Vitamin D3', dose:'1000 IU PO', schedule:'once daily', rationale:'Bone health support.', cautions:[] },
+    { name:'Multivitamin', dose:'1 tablet PO', schedule:'once daily', rationale:'General supplementation.', cautions:[] },
+    { name:'Sertraline', dose:'50 mg PO', schedule:'once daily', rationale:'Mood support during chronic illness.', cautions:[] },
+    { name:'Melatonin', dose:'3 mg PO', schedule:'at bedtime', rationale:'Sleep support.', cautions:[] },
+    { name:'Atorvastatin', dose:'20 mg PO', schedule:'once daily', rationale:'Cardiovascular risk reduction.', cautions:[] },
+    { name:'Aspirin', dose:'81 mg PO', schedule:'once daily', rationale:'Cardiovascular prevention (case-by-case).', cautions:[] },
+  ];
+}
+
+// ─── Render care plan ───
+function renderCarePlan(plan) {
+  // Health summary
+  document.getElementById('health-summary').innerHTML = `
+    <div class="hs-disease">${plan.diseaseName}</div>
+    <div class="hs-grid">
+      <div class="hs-cell"><div class="hs-num">${plan.exercises.length}</div><div class="hs-lbl">Exercises</div></div>
+      <div class="hs-cell"><div class="hs-num">${plan.topDoctors.length}</div><div class="hs-lbl">Specialists</div></div>
+      <div class="hs-cell"><div class="hs-num">${plan.affirmations.length}</div><div class="hs-lbl">Affirmations</div></div>
+      <div class="hs-cell"><div class="hs-num" style="color:var(--sage-dark);font-size:16px">✓ Daily</div><div class="hs-lbl">Plan refresh</div></div>
+    </div>
+  `;
+
+  // Exercises
+  const INTENSITY_CLASS = { low:'intensity-low', moderate:'intensity-mod', high:'intensity-high' };
+  document.getElementById('exercise-carousel').innerHTML = plan.exercises.map(ex => `
+    <div class="flashcard">
+      <div class="flashcard-icon">🏃</div>
+      <div class="flashcard-title">${ex.name}</div>
+      <div class="flashcard-body">${ex.description}</div>
+      <div class="flashcard-foot">⏱ ${ex.frequency}</div>
+      <span class="intensity ${INTENSITY_CLASS[ex.intensity] || 'intensity-low'}">${ex.intensity}</span>
+      ${ex.cautions.length ? `<div style="font-size:11px;color:#c0553a;margin-top:6px">⚠ ${ex.cautions[0]}</div>` : ''}
+    </div>
+  `).join('');
+
+  // Doctors (first 3)
+  document.getElementById('doctor-carousel').innerHTML = plan.topDoctors.slice(0,3).map((doc,i) => `
+    <div class="doctor-card" onclick="openDoc(${i})">
+      <div class="doc-avatar">👨‍⚕️</div>
+      <div class="doc-name">${doc.name}</div>
+      <div class="doc-spec">${doc.specialty}</div>
+      <div class="doc-hospital">${doc.hospital.name} · ${doc.hospital.city}</div>
+      <span class="doc-exp">${doc.yearsOfExperience} yrs experience</span>
+      <button class="doc-btn">View full profile →</button>
+    </div>
+  `).join('');
+
+  // Affirmations
+  const AFFY_ICONS = {presence:'🧘',agency:'💪',support:'🤝',compassion:'💙',hope:'🌱',rest:'😌',trust:'🌟',celebration:'🎉'};
+  document.getElementById('affirmation-carousel').innerHTML = plan.affirmations.map(a => `
+    <div class="flashcard">
+      <div class="flashcard-icon">${AFFY_ICONS[a.theme.toLowerCase()] || '✨'}</div>
+      <div class="flashcard-title" style="color:var(--ink-muted);font-size:11px;text-transform:uppercase;letter-spacing:.07em">${a.theme}</div>
+      <div class="flashcard-body" style="font-style:italic;font-size:13.5px;color:var(--ink);line-height:1.6">"${a.statement}"</div>
+    </div>
+  `).join('');
+
+  // Disclaimers
+  document.getElementById('care-disclaimers').innerHTML = plan.disclaimers.map(d => `— ${d}`).join('<br>');
+  document.getElementById('care-plan-wrap').style.display = 'block';
+}
+
+function openDoc(idx) {
+  if (!currentPlan) return;
+  const doc = currentPlan.topDoctors[idx];
+  if (!doc) return;
+  document.getElementById('md-name').textContent = doc.name;
+  document.getElementById('md-spec').textContent = doc.specialty;
+  document.getElementById('md-hospital').textContent = doc.hospital.name + ' · ' + doc.hospital.city + ', ' + doc.hospital.country;
+  document.getElementById('md-bio').textContent = doc.bio;
+  document.getElementById('md-exp').textContent = doc.yearsOfExperience;
+  document.getElementById('md-city').textContent = doc.hospital.city;
+  document.getElementById('md-med-body').innerHTML = doc.medications.map((m,i) => `
+    <tr>
+      <td style="color:var(--ink-muted)">${i+1}</td>
+      <td><div class="med-name">${m.name}</div>${m.cautions.length ? `<div class="med-caution">⚠ ${m.cautions.join(', ')}</div>` : ''}</td>
+      <td style="color:var(--ink-light)">${m.dose} · ${m.schedule}</td>
+      <td style="color:var(--ink-muted)">${m.rationale}</td>
+    </tr>
+  `).join('');
+  document.getElementById('doc-modal').classList.add('open');
+}
+
+function closeModal(e) {
+  if (e.target === document.getElementById('doc-modal')) {
+    document.getElementById('doc-modal').classList.remove('open');
+  }
+}
+
+// ─── Report Analyzer ───
+let chosenFile = null;
+let chosenB64 = null;
+
+function fileChosen(input) {
+  const f = input.files[0];
+  if (!f) return;
+  chosenFile = f;
+  const z = document.getElementById('upload-zone');
+  z.classList.add('has-file');
+  z.querySelector('.upload-text').textContent = f.name;
+  z.querySelector('.upload-hint').textContent = (f.size / 1024).toFixed(0) + ' KB';
+  document.getElementById('chosen-file').style.display = 'block';
+  document.getElementById('chosen-file').textContent = '✓ ' + f.name + ' ready to analyze';
+  document.getElementById('analyze-btn').disabled = false;
+  // Read as base64
+  const reader = new FileReader();
+  reader.onload = () => { chosenB64 = reader.result.split(',')[1]; };
+  reader.readAsDataURL(f);
+}
+
+async function analyzeReport() {
+  if (!chosenB64) return;
+  const sp = document.getElementById('analyze-spinner');
+  const btn = document.getElementById('analyze-btn');
+  sp.style.display = 'inline-block';
+  btn.disabled = true;
+  document.getElementById('hit-list').innerHTML = '<div style="color:var(--ink-muted);font-size:13px;padding:12px 0"><span class="spinner"></span> Analyzing…</div>';
+
+  try {
+    const res = await fetch(API + '/api/report/analyze', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ pdfBase64: chosenB64, pdfFilename: chosenFile?.name }),
+    });
+
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const data = await res.json();
+    renderReportResult(data);
+  } catch (e) {
+    // Demo fallback
+    renderReportResult(mockReportResult());
+    toast('Backend not running — showing demo data');
+  } finally {
+    sp.style.display = 'none';
+    btn.disabled = false;
+  }
+}
+
+function mockReportResult() {
+  return {
+    extracted: { charCount: 49967, pages: 26, textPreview: 'PERSONAL HEALTH\nSMART REPORT\nPrepared for\nJayesh Kumar Singh\nBasic Info\nMale /25 Yrs\n' },
+    detectedDiseases: [
+      { slug:'liver-disease', name:'Liver disease (clinical)', score:1.0, evidence:['alt','ast','bilirubin','cirrhosis','hepatitis','fatty liver'] },
+      { slug:'diabetes', name:'Diabetes risk (clinical)', score:0.8, evidence:['diabetes','hbA1c','a1c'] },
+      { slug:'tuberculosis', name:'Tuberculosis (chest X-ray)', score:0.65, evidence:['tuberculosis','tb'] },
+      { slug:'heart-disease', name:'Heart disease risk', score:0.65, evidence:['cad','ascvd'] },
+      { slug:'kidney-disease', name:'Chronic kidney disease', score:0.65, evidence:['creatinine','proteinuria'] },
+    ],
+    primaryDisease: { slug:'liver-disease', name:'Liver disease (clinical)', score:1.0, evidence:['alt','ast','bilirubin'] },
+    carePlan: mockCarePlan('liver-disease'),
+    notes: ['Keyword-based detection only.','Use synthetic/de-identified reports only.'],
+  };
+}
+
+function renderReportResult(data) {
+  // Text preview
+  if (data.extracted?.textPreview) {
+    document.getElementById('text-preview').textContent = data.extracted.textPreview;
+    document.getElementById('text-stats').textContent =
+      'Characters: ' + (data.extracted.charCount||0).toLocaleString() +
+      (data.extracted.pages ? ' — Pages: ' + data.extracted.pages : '');
+    document.getElementById('text-preview-wrap').style.display = 'block';
+  }
+
+  // Hit list
+  const hits = data.detectedDiseases || [];
+  if (hits.length === 0) {
+    document.getElementById('hit-list').innerHTML = '<div style="color:var(--ink-muted);font-size:13px">No diseases detected.</div>';
+  } else {
+    const primary = data.primaryDisease?.slug;
+    document.getElementById('hit-list').innerHTML = hits.map((h,i) => `
+      <div class="hit-item ${h.slug === primary ? 'primary' : ''}">
+        <div>
+          <div class="progress-bar"><div class="progress-fill" style="width:${Math.round(h.score*100)}%"></div></div>
+        </div>
+        <div class="hit-score">${Math.round(h.score*100)}%</div>
+        <div>
+          <div class="hit-name">${h.name} ${h.slug === primary ? '★' : ''}</div>
+          <div class="hit-evidence">${(h.evidence||[]).join(', ')}</div>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  // Care plan
+  if (data.carePlan) {
+    currentPlan = data.carePlan;
+    renderCarePlan(data.carePlan);
+  }
+}
+
+// ─── Patient Chat ───
+async function detectLLMProvider() {
+  try {
+    const r = await fetch(API + '/api/healer/status');
+    if (r.ok) {
+      const d = await r.json();
+      document.getElementById('llm-provider-badge').textContent = '🤖 LLM: ' + (d.llmProvider || 'unknown');
+    }
+  } catch {
+    document.getElementById('llm-provider-badge').textContent = '🤖 LLM: not detected';
+  }
+}
+
+function chatKey(e) {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendChat(); }
+}
+
+async function sendChat() {
+  const inp = document.getElementById('chat-input');
+  const msg = inp.value.trim();
+  if (!msg) return;
+  inp.value = '';
+
+  // User bubble
+  appendMsg('user', msg, []);
+  chatHistory.push({ role:'user', content: msg });
+
+  // Typing indicator
+  const typingId = 'typing-' + Date.now();
+  document.getElementById('chat-msgs').insertAdjacentHTML('beforeend', `
+    <div class="chat-msg" id="${typingId}">
+      <div class="msg-avatar ai">🌿</div>
+      <div class="msg-bubble" style="color:var(--ink-muted)"><span class="spinner"></span> Thinking…</div>
+    </div>
+  `);
+  scrollChat();
+
+  try {
+    const res = await fetch(API + '/api/chat/patient', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: msg, history: chatHistory.slice(-6) }),
+    });
+    const data = await res.json();
+    document.getElementById(typingId)?.remove();
+
+    const text = data.patientText || data.error || 'Sorry, no response received.';
+    const sources = data.sourcesUsed || [];
+    chatHistory.push({ role:'assistant', content: text });
+    appendMsg('ai', text, sources);
+  } catch {
+    document.getElementById(typingId)?.remove();
+    appendMsg('ai', 'Backend is not running. Start the server with `npm run dev` to enable AI chat.', []);
+  }
+  scrollChat();
+}
+
+function appendMsg(role, text, sources) {
+  const isAI = role === 'ai';
+  const sourceBadges = sources.map(s => {
+    const map = { web_rag:'📖 Wikipedia RAG', pdf_excerpt:'📄 PDF', llm_groq:'🤖 Groq (free)', llm_gemini:'🤖 Gemini (free)', llm_anthropic:'🤖 Claude', llm_openai:'🤖 OpenAI', image_attachment_meta:'🖼 Image' };
+    return `<span class="source-badge">${map[s]||s}</span>`;
+  }).join('');
+
+  document.getElementById('chat-msgs').insertAdjacentHTML('beforeend', `
+    <div class="chat-msg ${isAI ? '' : 'user'}">
+      <div class="msg-avatar ${isAI ? 'ai' : 'user'}">${isAI ? '🌿' : '👤'}</div>
+      <div>
+        <div class="msg-bubble ${isAI ? '' : 'user'}">${text.replace(/\n/g,'<br>')}</div>
+        ${sourceBadges ? `<div class="msg-source">${sourceBadges}</div>` : ''}
+      </div>
+    </div>
+  `);
+}
+
+function scrollChat() {
+  const m = document.getElementById('chat-msgs');
+  m.scrollTop = m.scrollHeight;
+}
+
+// ─── History ───
+async function loadHistory() {
+  document.getElementById('history-list').innerHTML = '<div style="color:var(--ink-muted);font-size:13px"><span class="spinner"></span> Loading from Postgres…</div>';
+  try {
+    const r = await fetch(API + '/api/answers?limit=30');
+    if (!r.ok) throw new Error();
+    const d = await r.json();
+    const items = d.answers || d || [];
+    if (!items.length) {
+      document.getElementById('history-list').innerHTML = '<div style="color:var(--ink-muted);font-size:13px;padding:20px 0">No history yet. Ask a question in Patient Chat.</div>';
+      return;
+    }
+    document.getElementById('history-list').innerHTML = items.map(a => `
+      <div class="history-item">
+        <div class="hist-q">${a.questionText || a.question || '—'}</div>
+        <div class="hist-a">${(a.answerText || a.answer || '').slice(0,220)}${(a.answerText || a.answer || '').length > 220 ? '…' : ''}</div>
+        <div class="hist-meta">
+          <span class="source-badge">${a.source || a.answerSource || 'rag'}</span>
+          <span class="source-badge warm">${new Date(a.createdAt || a.created_at).toLocaleString()}</span>
+        </div>
+      </div>
+    `).join('');
+  } catch {
+    document.getElementById('history-list').innerHTML = '<div style="color:var(--ink-muted);font-size:13px;padding:20px 0">Could not load history — backend not running.</div>';
+  }
+}
+
+// ─── Toast ───
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+// ─── Boot ───
+loadDiseases();
+detectLLMProvider();
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') document.getElementById('doc-modal').classList.remove('open');
+});
+</script>
+</body>
+</html>

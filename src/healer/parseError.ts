@@ -41,6 +41,16 @@ function tryParseTypeScript(buffer: string): ParsedHealerError | null {
   };
 }
 
+const MODULE_NOT_FOUND =
+  /Module not found: Can't resolve '([^']+)'(?:\s+in\s+'([^']+)')?/i;
+const INVALID_ELEMENT =
+  /Element type is invalid: expected a string \(for built-in components\) or a class\/function/i;
+const UNHANDLED_RUNTIME =
+  /Unhandled Runtime Error\s*\n\s*([^\n]+)/i;
+const CANNOT_READ_PROP =
+  /TypeError: Cannot read propert(?:y|ies) of (\S+) \(reading '([^']+)'\)/i;
+const VITE_PRETRANSFORM = /\[vite\] Pre-transform error:\s*(.+)/i;
+
 function tryParseNext(buffer: string): ParsedHealerError | null {
   if (!classifyNext(buffer)) return null;
   const ts = tryParseTypeScript(buffer);
@@ -63,6 +73,62 @@ function tryParseNext(buffer: string): ParsedHealerError | null {
     const pm = buffer.match(NEXT_PATH);
     file = pm?.[1]?.trim() ?? null;
   }
+  const mod = buffer.match(MODULE_NOT_FOUND);
+  if (mod) {
+    return {
+      techStack: "NEXT",
+      primaryFilePath: mod[2]?.trim() ?? null,
+      primaryLine: null,
+      normalizedMessage: `Module not found: Cannot resolve '${mod[1]}'`,
+      rawExcerpt: excerpt(buffer)
+    };
+  }
+
+  const unhandled = buffer.match(UNHANDLED_RUNTIME);
+  if (unhandled) {
+    const pathM = buffer.match(/([^/\s]+\.(?:tsx?|jsx?)):(\d+)/);
+    return {
+      techStack: "NEXT",
+      primaryFilePath: pathM?.[1] ?? file,
+      primaryLine: pathM?.[2] ? Number(pathM[2]) : null,
+      normalizedMessage: unhandled[1]!.trim().slice(0, 500),
+      rawExcerpt: excerpt(buffer)
+    };
+  }
+
+  const readProp = buffer.match(CANNOT_READ_PROP);
+  if (readProp) {
+    const pathM = buffer.match(/\(([^:]+):(\d+):\d+\)/);
+    return {
+      techStack: "NEXT",
+      primaryFilePath: pathM?.[1]?.trim() ?? file,
+      primaryLine: pathM?.[2] ? Number(pathM[2]) : null,
+      normalizedMessage: `TypeError: Cannot read property '${readProp[2]}' of ${readProp[1]}`,
+      rawExcerpt: excerpt(buffer)
+    };
+  }
+
+  if (INVALID_ELEMENT.test(buffer)) {
+    return {
+      techStack: "NEXT",
+      primaryFilePath: file,
+      primaryLine: null,
+      normalizedMessage: "Element type is invalid (check default vs named exports).",
+      rawExcerpt: excerpt(buffer)
+    };
+  }
+
+  const vite = buffer.match(VITE_PRETRANSFORM);
+  if (vite) {
+    return {
+      techStack: "NEXT",
+      primaryFilePath: file,
+      primaryLine: null,
+      normalizedMessage: `Vite pre-transform error: ${vite[1]!.trim().slice(0, 400)}`,
+      rawExcerpt: excerpt(buffer)
+    };
+  }
+
   const oneLine = buffer
     .split("\n")
     .map((l) => l.trim())

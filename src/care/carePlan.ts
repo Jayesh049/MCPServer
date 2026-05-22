@@ -115,11 +115,14 @@ function buildMedicationsForDoctor(
   return out;
 }
 
-export function buildCarePlan(slug: string): CarePlan {
+const PLAN_CACHE = new Map<string, { plan: CarePlan; cachedAt: number }>();
+const ONE_DAY_MS = 24 * 60 * 60 * 1000;
+
+function buildCarePlanForDate(slug: string, dateSalt: string): CarePlan {
   const disease = getDiseaseBySlug(slug);
   if (!disease) throw new Error(`Unknown disease slug: ${slug}`);
 
-  const seed = hashStringToSeed(`careplan::${slug}`);
+  const seed = hashStringToSeed(`careplan::${slug}::${dateSalt}`);
   const rng = mulberry32(seed);
 
   const exercisePool: ExerciseTemplate[] =
@@ -177,6 +180,24 @@ export function buildCarePlan(slug: string): CarePlan {
       "Always consult a qualified clinician before starting, stopping, or changing any treatment."
     ]
   };
+}
+
+/** In-memory daily cache — plan content rotates by calendar day (YYYY-MM-DD). */
+export function buildCarePlan(slug: string): CarePlan {
+  const today = new Date().toISOString().slice(0, 10);
+  const cacheKey = `${slug}::${today}`;
+  const cached = PLAN_CACHE.get(cacheKey);
+  if (cached && Date.now() - cached.cachedAt < ONE_DAY_MS) {
+    return cached.plan;
+  }
+  const plan = buildCarePlanForDate(slug, today);
+  PLAN_CACHE.set(cacheKey, { plan, cachedAt: Date.now() });
+  for (const [key, val] of PLAN_CACHE.entries()) {
+    if (!key.endsWith(today) && Date.now() - val.cachedAt > ONE_DAY_MS * 2) {
+      PLAN_CACHE.delete(key);
+    }
+  }
+  return plan;
 }
 
 /**

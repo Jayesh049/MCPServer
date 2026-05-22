@@ -1,0 +1,295 @@
+/* White / sage theme — from index.html (Lora + DM Sans, sand palette) */
+
+[data-theme="light"] {
+  --font-display: var(--font-lora), "Lora", serif;
+  --font-body: var(--font-dm), "DM Sans", system-ui, sans-serif;
+  --c1: #f7f4ef;
+  --c2: #fdfcfb;
+  --c3: #edf2f7;
+  --acc: #6b7f67;
+  --acc2: #6b7f67;
+  --acc3: #a8b5a2;
+  --gold: #c4a882;
+  --rose: #8fa3b8;
+  --txt: #2c3a2e;
+  --txt2: #4a5e4c;
+  --txt3: #7a8f7c;
+  --bdr: rgba(44, 58, 46, 0.1);
+  --bdr2: rgba(44, 58, 46, 0.16);
+  --gls: #fdfcfb;
+  --void: var(--c1);
+  --text: var(--txt);
+  --muted: var(--txt2);
+  --border: var(--bdr);
+  --accent: var(--acc);
+  --shadow-sm: 0 2px 12px rgba(44, 58, 46, 0.06);
+  --shadow-md: 0 6px 30px rgba(44, 58, 46, 0.09);
+}
+
+[data-theme="light"] body {
+  background: var(--c1);
+  color: var(--txt);
+}
+
+[data-theme="light"] .bg-mesh::before {
+  background: radial-gradient(circle, rgba(168, 181, 162, 0.25) 0%, transparent 70%);
+}
+[data-theme="light"] .bg-mesh::after {
+  background: radial-gradient(circle, rgba(201, 212, 224, 0.2) 0%, transparent 70%);
+}
+
+[data-theme="light"] .stunning-app {
+  padding: 0;
+  max-width: none;
+}
+
+[data-theme="light"] .stunning-shell {
+  border: none;
+  border-radius: 0;
+  min-height: 100vh;
+  box-shadow: none;
+}
+
+[data-theme="light"] .sb-scan {
+  display: none;
+}
+
+[data-theme="light"] .stunning-sb::before {
+  background: linear-gradient(90deg, transparent, var(--sage, #a8b5a2), transparent);
+}
+
+[data-theme="light"] .brand-mark {
+  background: linear-gradient(135deg, #a8b5a2, #8fa3b8);
+}
+
+[data-theme="light"] .brand-tag {
+  color: var(--txt3);
+}
+
+[data-theme="light"] .ni:hover {
+  background: #dce8d6;
+}
+[data-theme="light"] .ni.on {
+  background: #dce8d6;
+  color: var(--acc);
+}
+[data-theme="light"] .ni.on::before {
+  background: var(--acc);
+}
+[data-theme="light"] .ni-badge {
+  background: #dce8d6;
+  color: var(--acc);
+}
+
+[data-theme="light"] .status-row {
+  background: #edf2f7;
+  border-color: var(--bdr);
+}
+
+[data-theme="light"] .tab-row {
+  background: var(--c1);
+  border-color: var(--bdr);
+}
+[data-theme="light"] .tab.on {
+  background: var(--c2);
+  color: var(--txt);
+  box-shadow: var(--shadow-sm);
+  border-color: var(--bdr);
+}
+
+[data-theme="light"] .stat,
+[data-theme="light"] .dc,
+[data-theme="light"] .fc,
+[data-theme="light"] .doc-c,
+[data-theme="light"] .aff-c,
+[data-theme="light"] .hi-item,
+[data-theme="light"] .src-c {
+  background: var(--c2);
+  box-shadow: var(--shadow-sm);
+}
+[data-theme="light"] .stat:hover,
+[data-theme="light"] .dc:hover,
+[data-theme="light"] .fc:hover {
+  box-shadow: var(--shadow-md);
+  border-color: #a8b5a2;
+}
+[data-theme="light"] .dc:hover {
+  border-color: var(--acc);
+}
+
+[data-theme="light"] .stat-v,
+[data-theme="light"] .hi-score,
+[data-theme="light"] .hs-v {
+  color: var(--acc);
+}
+
+[data-theme="light"] .btn-p {
+  background: var(--acc);
+  color: #fdfcfb;
+}
+[data-theme="light"] .btn-p:hover:not(:disabled) {
+  background: var(--txt2);
+  box-shadow: var(--shadow-md);
+}
+[data-theme="light"] .btn-g {
+  background: var(--c2);
+  color: var(--acc);
+}
+
+[data-theme="light"] .upz {
+  background: var(--c1);
+  border-color: var(--bdr2);
+}
+[data-theme="light"] .upz:hover,
+[data-theme="light"] .upz.has {
+  background: #dce8d6;
+  border-color: var(--acc);
+}
+
+[data-theme="light"] .hi {
+  background: var(--c1);
+}
+[data-theme="light"] .hi.pri {
+  background: #dce8d6;
+  border-color: #a8b5a2;
+}
+[data-theme="light"] .hi-fill {
+  background: linear-gradient(90deg, var(--acc), #a8b5a2);
+}
+
+[data-theme="light"] .hs {
+  background: linear-gradient(135deg, #dce8d6, #edf2f7);
+  border-color: #a8b5a2;
+}
+[data-theme="light"] .hs-c {
+  background: rgba(255, 255, 255, 0.65);
+}
+
+[data-theme="light"] .src-pill {
+  background: #edf2f7;
+  color: #8fa3b8;
+  border-color: #c9d4e0;
+}
+[data-theme="light"] .src-pill.gold {
+  background: #f5f0ea;
+  border-color: #c4a882;
+  color: #8a6340;
+}
+[data-theme="light"] .src-pill.rose {
+  background: #edf2f7;
+  border-color: #c9d4e0;
+  color: #8fa3b8;
+}
+
+[data-theme="light"] .it-l {
+  background: #e8f5e9;
+  color: #388e3c;
+  border-color: #c8e6c9;
+}
+[data-theme="light"] .it-m {
+  background: #fff3e0;
+  color: #e65100;
+  border-color: #ffe0b2;
+}
+[data-theme="light"] .it-h {
+  background: #fce4ec;
+  color: #c62828;
+  border-color: #f8bbd9;
+}
+
+[data-theme="light"] .doc-c:hover {
+  border-color: #8fa3b8;
+  box-shadow: var(--shadow-md);
+}
+[data-theme="light"] .doc-av {
+  background: linear-gradient(135deg, #c9d4e0, #a8b5a2);
+}
+[data-theme="light"] .doc-sp {
+  color: #8fa3b8;
+}
+[data-theme="light"] .doc-btn {
+  background: var(--c1);
+  border-color: var(--bdr2);
+  color: var(--txt3);
+}
+[data-theme="light"] .doc-btn:hover {
+  background: #edf2f7;
+  color: #8fa3b8;
+}
+
+[data-theme="light"] .cbub {
+  background: var(--c2);
+  color: var(--txt2);
+}
+[data-theme="light"] .cbub.u {
+  background: #dce8d6;
+  border-color: #a8b5a2;
+  color: var(--txt);
+}
+[data-theme="light"] .cav.ai {
+  background: #dce8d6;
+}
+[data-theme="light"] .cav.u {
+  background: #edf2f7;
+}
+[data-theme="light"] .cin {
+  background: var(--c2);
+}
+
+[data-theme="light"] .mo-wrap {
+  background: rgba(44, 58, 46, 0.4);
+  backdrop-filter: blur(6px);
+}
+[data-theme="light"] .mo {
+  box-shadow: 0 16px 60px rgba(44, 58, 46, 0.12);
+}
+[data-theme="light"] .mo::before {
+  background: linear-gradient(90deg, var(--acc), #8fa3b8, var(--gold));
+}
+
+[data-theme="light"] .disc {
+  background: #f5f0ea;
+  border-color: #c4a882;
+  color: #8a6340;
+}
+
+[data-theme="light"] .ab-hero {
+  background: linear-gradient(135deg, #dce8d6 0%, #edf2f7 100%);
+  border-color: #a8b5a2;
+}
+
+[data-theme="light"] .spin {
+  border-color: var(--bdr2);
+  border-top-color: var(--acc);
+}
+
+[data-theme="light"] .theme-toggle {
+  border-color: var(--bdr2);
+  background: var(--c2);
+  color: var(--txt2);
+}
+[data-theme="light"] .theme-toggle:hover {
+  background: #dce8d6;
+  border-color: #a8b5a2;
+}
+[data-theme="light"] .theme-toggle-track {
+  background: #dce8d6;
+}
+[data-theme="light"] .theme-toggle-thumb.light {
+  background: var(--acc);
+}
+
+/* Disease detail pages (legacy classes) */
+[data-theme="light"] .hero,
+[data-theme="light"] .result-card,
+[data-theme="light"] .disease-card,
+[data-theme="light"] .history-item {
+  background: var(--c2);
+  border-color: var(--bdr);
+  color: var(--txt);
+}
+[data-theme="light"] .hero-sub,
+[data-theme="light"] .subtle,
+[data-theme="light"] .muted {
+  color: var(--txt3);
+}

@@ -107,6 +107,7 @@ export type DiseaseHit = {
   slug: string;
   name: string;
   score: number;
+  riskLevel?: "low" | "medium" | "high";
   evidence: string[];
   evidenceSnippets: string[];
 };

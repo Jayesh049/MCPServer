@@ -2,7 +2,7 @@ import type { IncomingMessage, ServerResponse } from "node:http";
 import { listDiseases, runDiseasePipeline } from "../diseases/registry.js";
 import { buildCarePlan, shouldAttachCarePlan } from "../care/carePlan.js";
 import { extractTextFromPdfBase64 } from "../report/pdfText.js";
-import { analyzeReportText } from "../report/analyzeReport.js";
+import { analyzeReportText, analyzeReportTextAsync } from "../report/analyzeReport.js";
 import { extractTextFromCsvText, extractTextFromXlsxBase64 } from "../report/tabularText.js";
 import { prisma } from "../lib/prisma.js";
 import { answerQuestionByBankSlug, answerQuestionWithWebRag } from "../rag/dynamicWebRag.js";
@@ -17,6 +17,8 @@ import {
 import { executeUnifiedAsk, getUnifiedAskApiInfo } from "./qaAsk.js";
 import { executePatientChat } from "./patientChat.js";
 import { handleHealerApiRequest } from "./healerApi.js";
+import { getTbLexiconMeta, loadTbLexicon } from "../report/tbLexicon.js";
+import { isTbSklearnModelAvailable, loadTbSklearnMeta } from "../diseases/predictors/tuberculosisSklearn.js";
 
 function setCors(res: ServerResponse) {
   res.setHeader("Access-Control-Allow-Origin", "*");
@@ -67,6 +69,26 @@ export async function handleApiRequest(
 
   if (req.method === "GET" && url.pathname === "/api/diseases") {
     sendJson(res, 200, { diseases: listDiseases() });
+    return true;
+  }
+
+  if (req.method === "GET" && url.pathname === "/api/diseases/tuberculosis/lexicon") {
+    const model = loadTbLexicon();
+    sendJson(res, 200, {
+      ok: true,
+      keywordLexicon: getTbLexiconMeta(),
+      sklearnMl: isTbSklearnModelAvailable() ? loadTbSklearnMeta() : null,
+      lexicon: model
+        ? {
+            trainedAt: model.trainedAt,
+            sourcePdf: model.sourcePdf,
+            sourceCitation: model.sourceCitation,
+            logicSummary: model.logicSummary,
+            diagnosticPillars: model.diagnosticPillars,
+            topTerms: model.weightedTerms.slice(0, 15)
+          }
+        : null
+    });
     return true;
   }
 
@@ -247,7 +269,7 @@ export async function handleApiRequest(
 
     try {
       if (body.pdfText && body.pdfText.trim().length > 0) {
-        const analysis = analyzeReportText(body.pdfText);
+        const analysis = await analyzeReportTextAsync(body.pdfText);
         sendJson(res, 200, { ...analysis, input: { kind: "text", filename: body.pdfFilename } });
         return true;
       }
@@ -258,7 +280,7 @@ export async function handleApiRequest(
       // Back-compat: pdfBase64 / pdfFilename
       if (body.pdfBase64) {
         const extracted = await extractTextFromPdfBase64(body.pdfBase64);
-        const analysis = analyzeReportText(extracted.text, extracted.pages);
+        const analysis = await analyzeReportTextAsync(extracted.text, extracted.pages);
         sendJson(res, 200, {
           ...analysis,
           input: { kind: "pdf", filename: body.pdfFilename, pages: extracted.pages }
@@ -270,7 +292,7 @@ export async function handleApiRequest(
       if (body.fileBase64) {
         if (ext.endsWith(".pdf")) {
           const extracted = await extractTextFromPdfBase64(body.fileBase64);
-          const analysis = analyzeReportText(extracted.text, extracted.pages);
+          const analysis = await analyzeReportTextAsync(extracted.text, extracted.pages);
           sendJson(res, 200, {
             ...analysis,
             input: { kind: "pdf", filename, pages: extracted.pages }
@@ -279,7 +301,7 @@ export async function handleApiRequest(
         }
         if (ext.endsWith(".xlsx") || ext.endsWith(".xls")) {
           const extracted = extractTextFromXlsxBase64(body.fileBase64);
-          const analysis = analyzeReportText(extracted.text);
+          const analysis = await analyzeReportTextAsync(extracted.text);
           sendJson(res, 200, { ...analysis, input: { kind: "xlsx", filename } });
           return true;
         }
@@ -290,7 +312,7 @@ export async function handleApiRequest(
       // New: CSV can be passed as text (either directly or base64 if you prefer)
       if (body.csvText && body.csvText.trim().length > 0) {
         const extracted = extractTextFromCsvText(body.csvText);
-        const analysis = analyzeReportText(extracted.text);
+        const analysis = await analyzeReportTextAsync(extracted.text);
         sendJson(res, 200, { ...analysis, input: { kind: "csv", filename } });
         return true;
       }

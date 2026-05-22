@@ -3,7 +3,8 @@
 import { useState } from "react";
 import { analyzeReportFile } from "../lib/api";
 import type { ReportAnalysisResult } from "../lib/types";
-import { CarePlanPanel } from "./CarePlanPanel";
+import { ReportFlashCards } from "./ReportFlashCards";
+import { ReportDetectedList } from "./ReportDetectedList";
 
 function toBase64(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -79,39 +80,10 @@ export function ReportAnalyzerPanel() {
         <>
           <div className="panel">
             <div className="det-section-title">Detected diseases</div>
-            {result.primaryDisease ? (
-              <p className="subtle">
-                Primary: <strong>{result.primaryDisease.name}</strong> (
-                <code>{result.primaryDisease.slug}</code>) score{" "}
-                {(result.primaryDisease.score * 100).toFixed(0)}%
-              </p>
-            ) : (
-              <p className="subtle">No disease keywords found.</p>
-            )}
-
-            {result.detectedDiseases.length > 0 && (
-              <ul className="list">
-                {result.detectedDiseases.map((d) => (
-                  <li key={d.slug}>
-                    <strong>{d.name}</strong> <span className="subtle">({d.slug})</span> —{" "}
-                    {(d.score * 100).toFixed(0)}% — evidence:{" "}
-                    <span className="subtle">{d.evidence.join(", ")}</span>
-                    {d.evidenceSnippets?.length ? (
-                      <div className="subtle" style={{ marginTop: 6 }}>
-                        Matches:
-                        <ul className="list">
-                          {d.evidenceSnippets.slice(0, 3).map((s, idx) => (
-                            <li key={idx}>
-                              <code>{s}</code>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    ) : null}
-                  </li>
-                ))}
-              </ul>
-            )}
+            <ReportDetectedList
+              detected={result.detectedDiseases}
+              primarySlug={result.primaryDisease?.slug}
+            />
 
             {result.notes?.length ? (
               <div style={{ marginTop: 10 }}>
@@ -154,7 +126,7 @@ export function ReportAnalyzerPanel() {
           </div>
 
           {result.carePlan ? (
-            <CarePlanPanel plan={result.carePlan} />
+            <ReportFlashCards carePlan={result.carePlan} />
           ) : (
             <div className="panel">
               <div className="det-section-title">Care plan</div>

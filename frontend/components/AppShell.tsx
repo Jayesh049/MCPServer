@@ -3,85 +3,25 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { metaForPath } from "../lib/page-meta";
+import { ThemeToggle, useTheme } from "../lib/theme";
 import type { DiseaseSummary } from "../lib/types";
 
-const nav = [
-  { href: "/", label: "Diseases", match: (p: string) => p === "/" },
+const MAIN_NAV = [
+  { href: "/", label: "Disease Hub", match: (p: string) => p === "/" },
   { href: "/chat", label: "Patient Chat", match: (p: string) => p.startsWith("/chat") },
   { href: "/report", label: "Report Analyzer", match: (p: string) => p.startsWith("/report") },
   { href: "/history", label: "History", match: (p: string) => p.startsWith("/history") },
-  { href: "/about", label: "About", match: (p: string) => p.startsWith("/about") }
+  { href: "/about", label: "About & Sources", match: (p: string) => p.startsWith("/about") }
 ];
 
-function IconDiseases() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
-      <circle cx="12" cy="12" r="3" />
-      <path d="M3 9h3M18 9h3M3 15h3M18 15h3M9 3v3M9 18v3M15 3v3M15 18v3" />
-    </svg>
-  );
-}
-
-function IconChat() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
-      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-    </svg>
-  );
-}
-
-function IconReport() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
-      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-      <polyline points="14 2 14 8 20 8" />
-      <line x1="16" y1="13" x2="8" y2="13" />
-      <line x1="16" y1="17" x2="8" y2="17" />
-      <polyline points="10 9 9 9 8 9" />
-    </svg>
-  );
-}
-
-function IconHistory() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
-      <circle cx="12" cy="12" r="10" />
-      <polyline points="12 6 12 12 16 14" />
-    </svg>
-  );
-}
-
-function IconAbout() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
-      <circle cx="12" cy="12" r="10" />
-      <line x1="12" y1="8" x2="12" y2="12" />
-      <line x1="12" y1="16" x2="12.01" y2="16" />
-    </svg>
-  );
-}
-
-function IconHome() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16" aria-hidden>
-      <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
-    </svg>
-  );
-}
-
-const topIcons: Record<string, React.ReactNode> = {
-  "/": <IconDiseases />,
-  "/chat": <IconChat />,
-  "/report": <IconReport />,
-  "/history": <IconHistory />,
-  "/about": <IconAbout />
-};
-
-function categoryDot(category: DiseaseSummary["category"]): string {
-  if (category === "imaging") return "#5b8dff";
-  if (category === "clinical") return "#f5c76e";
-  return "#3ddba0";
-}
+const TOP_TABS = [
+  { href: "/", label: "Diseases" },
+  { href: "/chat", label: "Chat" },
+  { href: "/report", label: "Report" },
+  { href: "/history", label: "History" },
+  { href: "/about", label: "About" }
+];
 
 export function AppShell({
   diseases,
@@ -91,87 +31,102 @@ export function AppShell({
   children: ReactNode;
 }) {
   const pathname = usePathname() ?? "/";
+  const meta = metaForPath(pathname);
+  const { theme } = useTheme();
   const imaging = diseases.filter((d) => d.category === "imaging");
   const clinical = diseases.filter((d) => d.category === "clinical");
-  const signal = diseases.filter((d) => d.category === "signal");
+  const brandIcon = theme === "light" ? "🌿" : "🧬";
 
   return (
-    <div className="app">
-      <header className="topbar">
-        <Link className="brand" href="/">
-          <span className="brand-icon" aria-hidden>
-            ⚕
-          </span>
-          Agents Assemble
-          <sup>MCP</sup>
-        </Link>
-        <div className="topbar-divider" />
-        <nav className="nav" aria-label="Primary">
-          {nav.map((item) => {
-            const active = item.match(pathname);
-            return (
-              <Link key={item.href} href={item.href} className={`nav-item${active ? " active" : ""}`}>
-                {topIcons[item.href]}
-                {item.label}
-              </Link>
-            );
-          })}
-        </nav>
-        <div className="topbar-actions">
-          <div className="badge-live">MCP Tester Active</div>
-        </div>
-      </header>
-
-      <div className="layout">
-        <aside className="sidebar" aria-label="Section navigation">
-          <div className="sidebar-section-title">Navigation</div>
-          <Link
-            href="/"
-            className={`sidebar-item${pathname === "/" ? " active" : ""}`}
-          >
-            <IconHome />
-            Disease Hub
-            <span className="count">{diseases.length || "—"}</span>
-          </Link>
-          <Link href="/chat" className={`sidebar-item${pathname.startsWith("/chat") ? " active" : ""}`}>
-            <IconChat />
-            Patient Chat
-          </Link>
-          <Link href="/report" className={`sidebar-item${pathname.startsWith("/report") ? " active" : ""}`}>
-            <IconReport />
-            Report Analyzer
-          </Link>
-          <Link href="/history" className={`sidebar-item${pathname.startsWith("/history") ? " active" : ""}`}>
-            <IconHistory />
-            History
-          </Link>
-
-          <div className="sidebar-section-title">Imaging</div>
-          {imaging.slice(0, 8).map((d) => (
-            <Link key={d.slug} href={`/diseases/${d.slug}`} className="sidebar-disease">
-              <span className="dot" style={{ background: categoryDot(d.category) }} />
-              {d.name}
+    <div className="stunning-app">
+      <div className="bg-mesh" aria-hidden />
+      <div className="stunning-shell">
+        <aside className="stunning-sb" aria-label="Section navigation">
+          <div className="sb-scan" aria-hidden />
+          <div className="sb-logo">
+            <Link className="brand" href="/">
+              <div className="brand-mark">{brandIcon}</div>
+              <div>
+                <div className="brand-name">
+                  Agents
+                  <br />
+                  Assemble
+                </div>
+                <div className="brand-tag">Medical Intelligence</div>
+              </div>
             </Link>
-          ))}
+          </div>
 
-          <div className="sidebar-section-title">Clinical</div>
-          {clinical.slice(0, 8).map((d) => (
-            <Link key={d.slug} href={`/diseases/${d.slug}`} className="sidebar-disease">
-              <span className="dot" style={{ background: categoryDot(d.category) }} />
-              {d.name}
-            </Link>
-          ))}
+          <nav className="sb-nav">
+            <div className="nav-sec">
+              <div className="nav-sec-lbl">Navigation</div>
+              {MAIN_NAV.map((item) => {
+                const on = item.match(pathname);
+                return (
+                  <Link key={item.href} href={item.href} className={`ni${on ? " on" : ""}`}>
+                    <span className="ni-dot" />
+                    {item.label}
+                    {item.href === "/" ? <span className="ni-badge">{diseases.length || "—"}</span> : null}
+                  </Link>
+                );
+              })}
+            </div>
 
-          <div className="sidebar-section-title">Signal</div>
-          {signal.map((d) => (
-            <Link key={d.slug} href={`/diseases/${d.slug}`} className="sidebar-disease">
-              <span className="dot" style={{ background: categoryDot(d.category) }} />
-              {d.name}
-            </Link>
-          ))}
+            <div className="nav-sec">
+              <div className="nav-sec-lbl">Imaging</div>
+              {imaging.slice(0, 6).map((d) => (
+                <Link key={d.slug} href={`/diseases/${d.slug}`} className="ni">
+                  <span className="ni-dot" />
+                  {d.name}
+                </Link>
+              ))}
+            </div>
+
+            <div className="nav-sec">
+              <div className="nav-sec-lbl">Clinical</div>
+              {clinical.slice(0, 6).map((d) => (
+                <Link key={d.slug} href={`/diseases/${d.slug}`} className="ni">
+                  <span className="ni-dot" />
+                  {d.name}
+                </Link>
+              ))}
+            </div>
+          </nav>
+
+          <div className="sb-foot">
+            <div className="status-row">
+              <span className="status-dot" />
+              <span className="status-txt">MCP Tester Active</span>
+            </div>
+          </div>
         </aside>
 
-        <main className="content">{children}</main>
+        <div className="stunning-mn">
+          <header className="stunning-tb">
+            <div>
+              <div className="tb-title">{meta.title}</div>
+              <div className="tb-sub">{meta.subtitle}</div>
+            </div>
+            <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+              <ThemeToggle />
+              <div className="tab-row" role="tablist" aria-label="Primary sections">
+                {TOP_TABS.map((tab) => {
+                  const on =
+                    tab.href === "/"
+                      ? pathname === "/"
+                      : pathname === tab.href || pathname.startsWith(`${tab.href}/`);
+                  return (
+                    <Link key={tab.href} href={tab.href} className={`tab${on ? " on" : ""}`} role="tab">
+                      {tab.label}
+                    </Link>
+                  );
+                })}
+              </div>
+            </div>
+          </header>
+
+          <main className="stunning-content">{children}</main>
+        </div>
       </div>
     </div>
   );

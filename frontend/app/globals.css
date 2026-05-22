@@ -42,12 +42,13 @@ html {
 }
 
 body {
-  background: var(--void);
-  color: var(--text);
-  font-family: var(--font-body), system-ui, sans-serif;
+  background: var(--c1, var(--void));
+  color: var(--txt, var(--text));
+  font-family: var(--font-body), "Outfit", system-ui, sans-serif;
   font-size: 15px;
   line-height: 1.6;
   min-height: 100vh;
+  overflow-x: hidden;
   overflow-x: hidden;
 }
 

@@ -1,0 +1,33 @@
+{
+  "diseaseSlug": "tuberculosis",
+  "trainedAt": "2026-05-22T23:26:34.066417+00:00",
+  "sourcePdfs": [
+    "TB2.pdf",
+    "TB.pdf"
+  ],
+  "sourceCitation": "Rawat A et al. Development of machine learning models to identify potentially active compounds against tuberculosis. Sci Rep / Springer Open Access 2024; plus Memon 2025 TB management review (TB.pdf).",
+  "methodology": {
+    "positiveClass": "TB-related text chunks from TB2.pdf + TB.pdf",
+    "negativeClass": "Non-TB clinical snippets + ml/README excerpts",
+    "features": "TF-IDF (1,2)-grams, max_features 6k\u20138k",
+    "classifiersEvaluated": [
+      "tfidf_logistic_regression",
+      "tfidf_random_forest"
+    ],
+    "selectedClassifier": "tfidf_random_forest",
+    "evaluationMetric": "Stratified k-fold ROC-AUC (TB2 paper uses 10-fold CV + AUC)"
+  },
+  "metrics": {
+    "cvFolds": 10,
+    "cvAuc": 0.9998506794086905,
+    "cvAucError": null,
+    "trainAccuracy": 1.0,
+    "trainF1": 1.0,
+    "nSamples": 218,
+    "nPositive": 181,
+    "nNegative": 37,
+    "formulaKey": "tfidf_random_forest"
+  },
+  "artifactPath": "ml/artifacts/tuberculosis/tb2_sklearn_pipeline.joblib",
+  "disclaimer": "Educational text classifier \u2014 not for clinical diagnosis."
+}

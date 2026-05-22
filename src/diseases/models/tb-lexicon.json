@@ -1,0 +1,321 @@
+{
+  "diseaseSlug": "tuberculosis",
+  "trainedAt": "2026-05-22T23:10:00.116Z",
+  "sourcePdf": "TB.pdf",
+  "sourceCitation": "Memon S, Bibi S, He G. Integration of AI and ML in Tuberculosis (TB) Management. Diseases. 2025;13(6):184.",
+  "logicSummary": [
+    "Layer 1 — Curated lexicon from PDF sections: pathogen, traditional diagnostics (smear, culture, CXR), latent/active TB, molecular tests (Xpert/AFB), MDR-TB, symptoms, BCG, and AI methods (CNN/SVM/RF) cited in the review.",
+    "Layer 2 — Frequency mining on full PDF text for recurring diagnostic phrases (tubercul*, sputum/smear, latent/active TB, MDR-TB).",
+    "Scoring (report analyzer): score = min(1, 0.2 + sum matched term weights); require ≥2 hits OR one term with weight ≥0.4; map score to low/medium/high risk.",
+    "Imaging MCP path unchanged: chest X-ray still uses imagingRiskPredict unless DISEASE_ML_URL provides a trained image model."
+  ],
+  "weightedTerms": [
+    {
+      "term": "mycobacterium tuberculosis",
+      "weight": 0.55,
+      "source": "pdf:pathogen"
+    },
+    {
+      "term": "m. tuberculosis",
+      "weight": 0.5,
+      "source": "pdf:pathogen"
+    },
+    {
+      "term": "tuberculosis",
+      "weight": 0.5,
+      "source": "pdf:core"
+    },
+    {
+      "term": "sputum smear microscopy",
+      "weight": 0.5,
+      "source": "pdf:traditional_dx"
+    },
+    {
+      "term": "acid-fast bacilli",
+      "weight": 0.5,
+      "source": "pdf:lab"
+    },
+    {
+      "term": "afb positive",
+      "weight": 0.5,
+      "source": "pdf:lab"
+    },
+    {
+      "term": "xpert mtb/rif",
+      "weight": 0.5,
+      "source": "pdf:molecular"
+    },
+    {
+      "term": "mtb/rif",
+      "weight": 0.5,
+      "source": "pdf:molecular"
+    },
+    {
+      "term": "multidrug-resistant tuberculosis",
+      "weight": 0.5,
+      "source": "pdf:mdr"
+    },
+    {
+      "term": "xpert mtb",
+      "weight": 0.48,
+      "source": "pdf:molecular"
+    },
+    {
+      "term": "mdr-tb",
+      "weight": 0.48,
+      "source": "pdf:mdr"
+    },
+    {
+      "term": "mtb bacteria",
+      "weight": 0.45,
+      "source": "pdf:pathogen"
+    },
+    {
+      "term": "active tb",
+      "weight": 0.45,
+      "source": "pdf:latent_vs_active"
+    },
+    {
+      "term": "latent tb",
+      "weight": 0.45,
+      "source": "pdf:freq:latent_active"
+    },
+    {
+      "term": "sputum smear",
+      "weight": 0.45,
+      "source": "pdf:traditional_dx"
+    },
+    {
+      "term": "chest x-ray",
+      "weight": 0.45,
+      "source": "pdf:traditional_dx"
+    },
+    {
+      "term": "chest x-rays",
+      "weight": 0.45,
+      "source": "pdf:traditional_dx"
+    },
+    {
+      "term": "tuberculin skin test",
+      "weight": 0.45,
+      "source": "pdf:latent_dx"
+    },
+    {
+      "term": "genexpert",
+      "weight": 0.45,
+      "source": "pdf:molecular"
+    },
+    {
+      "term": "culture test",
+      "weight": 0.4,
+      "source": "pdf:traditional_dx"
+    },
+    {
+      "term": "culture tests",
+      "weight": 0.4,
+      "source": "pdf:traditional_dx"
+    },
+    {
+      "term": "chest x ray",
+      "weight": 0.4,
+      "source": "pdf:traditional_dx"
+    },
+    {
+      "term": "night sweats",
+      "weight": 0.4,
+      "source": "pdf:symptoms"
+    },
+    {
+      "term": "chronic cough",
+      "weight": 0.4,
+      "source": "pdf:symptoms"
+    },
+    {
+      "term": "hemoptysis",
+      "weight": 0.4,
+      "source": "pdf:symptoms"
+    },
+    {
+      "term": "bloody mucus",
+      "weight": 0.38,
+      "source": "pdf:symptoms"
+    },
+    {
+      "term": "tubercular",
+      "weight": 0.38,
+      "source": "pdf:freq:tubercul*"
+    },
+    {
+      "term": "white death",
+      "weight": 0.35,
+      "source": "pdf:history"
+    },
+    {
+      "term": "cxr",
+      "weight": 0.35,
+      "source": "pdf:imaging"
+    },
+    {
+      "term": "microscopic analysis",
+      "weight": 0.35,
+      "source": "pdf:traditional_dx"
+    },
+    {
+      "term": "acid-fast",
+      "weight": 0.35,
+      "source": "pdf:lab"
+    },
+    {
+      "term": "cavitation",
+      "weight": 0.35,
+      "source": "pdf:imaging_findings"
+    },
+    {
+      "term": "drug-resistant",
+      "weight": 0.35,
+      "source": "pdf:mdr"
+    },
+    {
+      "term": "isoniazid",
+      "weight": 0.35,
+      "source": "pdf:treatment"
+    },
+    {
+      "term": "rifampicin",
+      "weight": 0.35,
+      "source": "pdf:treatment"
+    },
+    {
+      "term": "bcg vaccination",
+      "weight": 0.35,
+      "source": "pdf:prevention"
+    },
+    {
+      "term": "bacillus calmette",
+      "weight": 0.35,
+      "source": "pdf:prevention"
+    },
+    {
+      "term": "pulmonary infiltrate",
+      "weight": 0.3,
+      "source": "pdf:imaging_findings"
+    },
+    {
+      "term": "antibiotic resistance",
+      "weight": 0.3,
+      "source": "pdf:mdr"
+    },
+    {
+      "term": "consolidation",
+      "weight": 0.28,
+      "source": "pdf:imaging_findings"
+    },
+    {
+      "term": "blood tests",
+      "weight": 0.25,
+      "source": "pdf:latent_dx"
+    },
+    {
+      "term": "convolutional neural network",
+      "weight": 0.25,
+      "source": "pdf:ai_methods"
+    },
+    {
+      "term": "convolutional neural networks",
+      "weight": 0.25,
+      "source": "pdf:ai_methods"
+    },
+    {
+      "term": "weight loss",
+      "weight": 0.22,
+      "source": "pdf:symptoms"
+    },
+    {
+      "term": "tst",
+      "weight": 0.2,
+      "source": "pdf:latent_dx"
+    },
+    {
+      "term": "support vector machine",
+      "weight": 0.2,
+      "source": "pdf:ai_methods"
+    },
+    {
+      "term": "random forest",
+      "weight": 0.2,
+      "source": "pdf:ai_methods"
+    },
+    {
+      "term": "deep learning",
+      "weight": 0.18,
+      "source": "pdf:ai_methods"
+    },
+    {
+      "term": "cnn",
+      "weight": 0.15,
+      "source": "pdf:ai_methods"
+    },
+    {
+      "term": "artificial intelligence",
+      "weight": 0.12,
+      "source": "pdf:ai_methods"
+    },
+    {
+      "term": "machine learning",
+      "weight": 0.12,
+      "source": "pdf:ai_methods"
+    },
+    {
+      "term": "tb",
+      "weight": 0.1,
+      "source": "pdf:abbrev"
+    }
+  ],
+  "diagnosticPillars": [
+    {
+      "id": "traditional",
+      "label": "Traditional diagnostics (PDF §1.1)",
+      "terms": [
+        "sputum smear microscopy",
+        "culture tests",
+        "chest x-ray",
+        "microscopic analysis"
+      ]
+    },
+    {
+      "id": "molecular",
+      "label": "Molecular / lab",
+      "terms": [
+        "acid-fast bacilli",
+        "xpert mtb/rif",
+        "afb positive",
+        "genexpert"
+      ]
+    },
+    {
+      "id": "clinical",
+      "label": "Clinical presentation",
+      "terms": [
+        "latent tb",
+        "active tb",
+        "night sweats",
+        "chronic cough",
+        "mdr-tb"
+      ]
+    },
+    {
+      "id": "ai",
+      "label": "AI/ML in TB (review focus)",
+      "terms": [
+        "convolutional neural network",
+        "deep learning",
+        "support vector machine",
+        "random forest"
+      ]
+    }
+  ],
+  "metrics": {
+    "pdfCharCount": 60000,
+    "termCount": 52
+  }
+}

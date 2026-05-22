@@ -3,7 +3,8 @@
 import { useState } from "react";
 import { analyzeReportPdf } from "../../lib/api";
 import type { ReportAnalysisResult } from "../../lib/types";
-import { CarePlanPanel } from "../../components/CarePlanPanel";
+import { ReportFlashCards } from "../../components/ReportFlashCards";
+import { ReportDetectedList } from "../../components/ReportDetectedList";
 
 function toBase64(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -87,27 +88,10 @@ export function ReportUploader() {
           <>
             <div className="det-section-title">Detected diseases</div>
             <div className="result-card" style={{ marginBottom: 16 }}>
-              {result.primaryDisease ? (
-                <p className="subtle" style={{ margin: 0 }}>
-                  Primary: <strong>{result.primaryDisease.name}</strong> (
-                  <code>{result.primaryDisease.slug}</code>) score {(result.primaryDisease.score * 100).toFixed(0)}%
-                </p>
-              ) : (
-                <p className="subtle" style={{ margin: 0 }}>
-                  No disease keywords found.
-                </p>
-              )}
-
-              {result.detectedDiseases.length > 0 && (
-                <ul className="list" style={{ marginTop: 12 }}>
-                  {result.detectedDiseases.map((d) => (
-                    <li key={d.slug}>
-                      <strong>{d.name}</strong> <span className="subtle">({d.slug})</span> — {(d.score * 100).toFixed(0)}%
-                      — evidence: <span className="subtle">{d.evidence.join(", ")}</span>
-                    </li>
-                  ))}
-                </ul>
-              )}
+              <ReportDetectedList
+                detected={result.detectedDiseases}
+                primarySlug={result.primaryDisease?.slug}
+              />
             </div>
 
             <div className="det-section-title">Extracted text preview</div>
@@ -139,7 +123,7 @@ export function ReportUploader() {
 
             {result.carePlan ? (
               <div style={{ marginTop: 20 }}>
-                <CarePlanPanel plan={result.carePlan} />
+                <ReportFlashCards carePlan={result.carePlan} />
               </div>
             ) : (
               <div className="result-card" style={{ marginTop: 20 }}>

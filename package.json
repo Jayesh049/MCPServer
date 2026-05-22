@@ -22,6 +22,8 @@
     "demo": "tsx demo/run_demo.ts",
     "integration": "npm run build && tsx demo/mcp_integration.ts",
     "train:diabetes": "tsx src/training/trainDiabetes.ts",
+    "train:tb": "tsx src/training/trainTuberculosis.ts",
+    "train:tb2-ml": "python ml/scripts/train_tuberculosis_tb2_sklearn.py",
     "lint": "eslint .",
     "healer": "tsx src/healer/cli.ts",
     "dev:heal": "tsx src/healer/cli.ts -- npm run dev",

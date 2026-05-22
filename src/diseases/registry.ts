@@ -3,41 +3,28 @@ import {
   bandToRiskLevel,
   bool,
   buildGenericSolution,
-  deterministicScoreFromImage,
   getTreatmentSteps,
-  num,
-  str
+  num
 } from "./helpers.js";
 import { predictPneumonia } from "./predictors/pneumoniaHF.js";
 import { predictDiabetesLR } from "./predictors/diabetesLR.js";
+import { clinicalRiskPredict, imagingRiskPredict } from "./riskBridge.js";
+import { predictTuberculosis } from "./predictors/predictTuberculosis.js";
 
 const IMAGE_MIMES = ["image/jpeg", "image/png", "image/webp"];
 
 function imagingPredictor(opts: {
+  slug: string;
   positiveLabel: string;
   negativeLabel: string;
   rationaleBase: string;
 }) {
-  return (input: Parameters<DiseaseConfig["predict"]>[0]) => {
-    const score = deterministicScoreFromImage(input);
-    const riskLevel = bandToRiskLevel(score);
-    const positive = score >= 0.5;
-    return {
-      classification: positive ? opts.positiveLabel : opts.negativeLabel,
-      confidence: Math.abs(score - 0.5) * 2,
-      riskLevel,
-      signals: [
-        { label: "Imaging-derived risk score", value: Number(score.toFixed(3)) },
-        {
-          label: "Image bytes received",
-          value: input.imageByteLength ?? 0
-        }
-      ],
-      rationale:
-        `${opts.rationaleBase} Deterministic stub uses an image-hash-based risk score ` +
-        `for safe synthetic-data testing (no PHI).`
-    };
-  };
+  return imagingRiskPredict(
+    opts.slug,
+    opts.positiveLabel,
+    opts.negativeLabel,
+    opts.rationaleBase
+  );
 }
 
 const PATIENT_ED_GENERIC = [
@@ -60,6 +47,7 @@ export const diseases: DiseaseConfig[] = [
       "Will wrap a pretrained MRI tumor classifier (e.g., HuggingFace model) in production.",
     inputSpec: { kind: "image", acceptedMimeTypes: IMAGE_MIMES },
     predict: imagingPredictor({
+      slug: "brain-tumor",
       positiveLabel: "tumor_likely",
       negativeLabel: "no_tumor_detected",
       rationaleBase: "Brain tumor detection from MRI."
@@ -140,14 +128,11 @@ export const diseases: DiseaseConfig[] = [
     category: "imaging",
     modality: "imaging",
     description: "Screen chest X-ray for findings suggestive of tuberculosis.",
-    modelKind: "open-source-pretrained",
-    modelNotes: "Will wrap a TB screening classifier.",
+    modelKind: "self-trained",
+    modelNotes:
+      "TB2.pdf sklearn TF-IDF+LR/RF on report text (npm run train:tb2-ml). CXR: HF_TB_MODEL_ID if HF_API_TOKEN set; else imaging stub / DISEASE_ML_URL.",
     inputSpec: { kind: "image", acceptedMimeTypes: IMAGE_MIMES },
-    predict: imagingPredictor({
-      positiveLabel: "tb_findings_suspected",
-      negativeLabel: "no_tb_findings",
-      rationaleBase: "Tuberculosis screening from CXR."
-    }),
+    predict: predictTuberculosis,
     treatments: [
       { forRiskLevel: "low", steps: ["No findings suggesting TB. Routine follow-up."] },
       {
@@ -184,6 +169,7 @@ export const diseases: DiseaseConfig[] = [
     modelNotes: "Will wrap an open COVID-CXR classifier.",
     inputSpec: { kind: "image", acceptedMimeTypes: IMAGE_MIMES },
     predict: imagingPredictor({
+      slug: "covid-19",
       positiveLabel: "covid_findings",
       negativeLabel: "no_covid_findings",
       rationaleBase: "COVID-19 imaging finding detection."
@@ -224,6 +210,7 @@ export const diseases: DiseaseConfig[] = [
     modelNotes: "Will wrap an HAM10000-style classifier.",
     inputSpec: { kind: "image", acceptedMimeTypes: IMAGE_MIMES },
     predict: imagingPredictor({
+      slug: "skin-cancer",
       positiveLabel: "lesion_likely_malignant",
       negativeLabel: "lesion_likely_benign",
       rationaleBase: "Dermatology lesion classification."
@@ -257,28 +244,12 @@ export const diseases: DiseaseConfig[] = [
     modelKind: "open-source-pretrained",
     modelNotes: "Will wrap an APTOS-style DR classifier.",
     inputSpec: { kind: "image", acceptedMimeTypes: IMAGE_MIMES },
-    predict: (input) => {
-      const score = deterministicScoreFromImage(input);
-      const grade =
-        score < 0.2
-          ? "no_DR"
-          : score < 0.4
-            ? "mild_NPDR"
-            : score < 0.6
-              ? "moderate_NPDR"
-              : score < 0.8
-                ? "severe_NPDR"
-                : "proliferative_DR";
-      const risk = bandToRiskLevel(score);
-      return {
-        classification: grade,
-        confidence: Math.min(1, 0.5 + Math.abs(score - 0.5)),
-        riskLevel: risk,
-        signals: [{ label: "Severity score", value: Number(score.toFixed(3)) }],
-        rationale:
-          "Diabetic retinopathy graded into 5 levels (none/mild/moderate/severe/proliferative)."
-      };
-    },
+    predict: imagingPredictor({
+      slug: "diabetic-retinopathy",
+      positiveLabel: "retinopathy_findings",
+      negativeLabel: "no_retinopathy_findings",
+      rationaleBase: "Diabetic retinopathy screening from retinal image."
+    }),
     treatments: [
       {
         forRiskLevel: "low",
@@ -321,6 +292,7 @@ export const diseases: DiseaseConfig[] = [
     modelNotes: "Will wrap an open glaucoma classifier (REFUGE / ACRIMA).",
     inputSpec: { kind: "image", acceptedMimeTypes: IMAGE_MIMES },
     predict: imagingPredictor({
+      slug: "glaucoma",
       positiveLabel: "glaucoma_suspected",
       negativeLabel: "no_glaucoma_findings",
       rationaleBase: "Glaucoma classification from fundus image."
@@ -355,6 +327,7 @@ export const diseases: DiseaseConfig[] = [
     modelNotes: "Will wrap an open cataract classifier.",
     inputSpec: { kind: "image", acceptedMimeTypes: IMAGE_MIMES },
     predict: imagingPredictor({
+      slug: "cataract",
       positiveLabel: "cataract_likely",
       negativeLabel: "no_cataract_findings",
       rationaleBase: "Cataract detection from eye image."
@@ -389,6 +362,7 @@ export const diseases: DiseaseConfig[] = [
     modelNotes: "Will wrap an open mammography classifier.",
     inputSpec: { kind: "image", acceptedMimeTypes: IMAGE_MIMES },
     predict: imagingPredictor({
+      slug: "breast-cancer",
       positiveLabel: "mass_suspicious",
       negativeLabel: "benign_or_normal",
       rationaleBase: "Mammographic finding classification."
@@ -423,6 +397,7 @@ export const diseases: DiseaseConfig[] = [
     modelNotes: "Will wrap a Lung-Nodule classifier (LIDC-IDRI based).",
     inputSpec: { kind: "image", acceptedMimeTypes: IMAGE_MIMES },
     predict: imagingPredictor({
+      slug: "lung-cancer",
       positiveLabel: "nodule_suspicious",
       negativeLabel: "no_suspicious_nodule",
       rationaleBase: "Pulmonary nodule classification."
@@ -457,6 +432,7 @@ export const diseases: DiseaseConfig[] = [
     modelNotes: "Will wrap an open MURA-style fracture classifier.",
     inputSpec: { kind: "image", acceptedMimeTypes: IMAGE_MIMES },
     predict: imagingPredictor({
+      slug: "bone-fracture",
       positiveLabel: "fracture_detected",
       negativeLabel: "no_fracture",
       rationaleBase: "Fracture detection on plain radiograph."
@@ -492,6 +468,7 @@ export const diseases: DiseaseConfig[] = [
     modelNotes: "Self-trained CNN on synthetic atrophy patterns (placeholder).",
     inputSpec: { kind: "image", acceptedMimeTypes: IMAGE_MIMES },
     predict: imagingPredictor({
+      slug: "alzheimers",
       positiveLabel: "atrophy_pattern_suggestive",
       negativeLabel: "no_atrophy_pattern",
       rationaleBase: "Alzheimer's disease screening from brain MRI."
@@ -577,32 +554,7 @@ export const diseases: DiseaseConfig[] = [
         { name: "diabetic", label: "Diabetic", kind: "boolean" }
       ]
     },
-    predict: (input) => {
-      const f = input.form ?? {};
-      let score = 0;
-      score += Math.max(0, num(f, "age") - 40) / 80;
-      score += Math.max(0, num(f, "totalCholesterol") - 200) / 200;
-      score += Math.max(0, num(f, "systolicBp") - 120) / 80;
-      if (bool(f, "smoker")) score += 0.15;
-      if (bool(f, "diabetic")) score += 0.15;
-      score -= Math.max(0, num(f, "hdl") - 40) / 200;
-      score = Math.max(0, Math.min(1, score));
-
-      const risk = bandToRiskLevel(score);
-      return {
-        classification:
-          score >= 0.66 ? "high_ascvd_risk" : score >= 0.33 ? "moderate_risk" : "low_risk",
-        confidence: 0.65,
-        riskLevel: risk,
-        signals: [
-          { label: "Age", value: num(f, "age") },
-          { label: "SBP", value: num(f, "systolicBp") },
-          { label: "Total chol / HDL", value: `${num(f, "totalCholesterol")} / ${num(f, "hdl")}` }
-        ],
-        rationale:
-          "Synthetic ASCVD-style scoring on age, lipids, BP, smoking, and diabetes."
-      };
-    },
+    predict: clinicalRiskPredict("heart-disease"),
     treatments: [
       { forRiskLevel: "low", steps: ["Lifestyle reinforcement; reassess in 4-6 years."] },
       {
@@ -645,33 +597,7 @@ export const diseases: DiseaseConfig[] = [
         { name: "uacr", label: "Urine ACR", kind: "number", unit: "mg/g" }
       ]
     },
-    predict: (input) => {
-      const f = input.form ?? {};
-      const egfr = num(f, "egfr");
-      const uacr = num(f, "uacr");
-      let stage = "G1";
-      if (egfr >= 90) stage = "G1";
-      else if (egfr >= 60) stage = "G2";
-      else if (egfr >= 45) stage = "G3a";
-      else if (egfr >= 30) stage = "G3b";
-      else if (egfr >= 15) stage = "G4";
-      else stage = "G5";
-
-      const score =
-        egfr >= 90 ? 0.1 : egfr >= 60 ? 0.3 : egfr >= 30 ? 0.6 : 0.9;
-      const adj = score + (uacr >= 300 ? 0.1 : uacr >= 30 ? 0.05 : 0);
-      const finalScore = Math.min(1, adj);
-      return {
-        classification: `ckd_${stage.toLowerCase()}`,
-        confidence: 0.8,
-        riskLevel: bandToRiskLevel(finalScore),
-        signals: [
-          { label: "eGFR", value: egfr },
-          { label: "UACR", value: uacr }
-        ],
-        rationale: "Synthetic KDIGO-style staging."
-      };
-    },
+    predict: clinicalRiskPredict("kidney-disease"),
     treatments: [
       { forRiskLevel: "low", steps: ["Annual eGFR/UACR; manage BP and glucose."] },
       {
@@ -715,32 +641,7 @@ export const diseases: DiseaseConfig[] = [
         { name: "albumin", label: "Albumin", kind: "number", unit: "g/dL" }
       ]
     },
-    predict: (input) => {
-      const f = input.form ?? {};
-      const alt = num(f, "alt");
-      const ast = num(f, "ast");
-      const bili = num(f, "bilirubin");
-      const alb = num(f, "albumin");
-      let score = 0;
-      if (alt > 80 || ast > 80) score += 0.4;
-      else if (alt > 40 || ast > 40) score += 0.2;
-      if (bili > 1.2) score += 0.3;
-      if (alb && alb < 3.5) score += 0.3;
-      score = Math.min(1, score);
-      return {
-        classification:
-          score >= 0.6 ? "liver_dysfunction" : score >= 0.3 ? "borderline" : "normal_liver_panel",
-        confidence: 0.7,
-        riskLevel: bandToRiskLevel(score),
-        signals: [
-          { label: "ALT", value: alt },
-          { label: "AST", value: ast },
-          { label: "Bilirubin", value: bili },
-          { label: "Albumin", value: alb }
-        ],
-        rationale: "Rule-based scoring on liver enzymes, bilirubin, albumin."
-      };
-    },
+    predict: clinicalRiskPredict("liver-disease"),
     treatments: [
       { forRiskLevel: "low", steps: ["Routine monitoring; lifestyle reinforcement."] },
       {
@@ -786,32 +687,7 @@ export const diseases: DiseaseConfig[] = [
         { name: "smoker", label: "Current smoker", kind: "boolean" }
       ]
     },
-    predict: (input) => {
-      const f = input.form ?? {};
-      let score = 0;
-      const age = num(f, "age");
-      if (age >= 75) score += 0.3;
-      else if (age >= 65) score += 0.15;
-      if (bool(f, "afib")) score += 0.2;
-      if (bool(f, "hypertension")) score += 0.1;
-      if (bool(f, "diabetes")) score += 0.1;
-      if (bool(f, "priorStroke")) score += 0.3;
-      if (bool(f, "smoker")) score += 0.1;
-      score = Math.min(1, score);
-
-      return {
-        classification:
-          score >= 0.66 ? "high_stroke_risk" : score >= 0.33 ? "moderate_risk" : "low_risk",
-        confidence: 0.7,
-        riskLevel: bandToRiskLevel(score),
-        signals: [
-          { label: "Age", value: age },
-          { label: "AFib", value: bool(f, "afib") ? 1 : 0 },
-          { label: "Prior stroke", value: bool(f, "priorStroke") ? 1 : 0 }
-        ],
-        rationale: "CHA2DS2-VASc-style synthetic risk scoring."
-      };
-    },
+    predict: clinicalRiskPredict("stroke"),
     treatments: [
       { forRiskLevel: "low", steps: ["Lifestyle measures; BP and glucose control."] },
       {
@@ -854,36 +730,7 @@ export const diseases: DiseaseConfig[] = [
         { name: "ageOver60", label: "Age >60", kind: "boolean" }
       ]
     },
-    predict: (input) => {
-      const f = input.form ?? {};
-      const sbp = num(f, "systolic");
-      const dbp = num(f, "diastolic");
-      let cls = "normal";
-      if (sbp >= 180 || dbp >= 120) cls = "stage_3_crisis";
-      else if (sbp >= 140 || dbp >= 90) cls = "stage_2";
-      else if (sbp >= 130 || dbp >= 80) cls = "stage_1";
-      else if (sbp >= 120) cls = "elevated";
-      const score =
-        cls === "stage_3_crisis"
-          ? 1
-          : cls === "stage_2"
-            ? 0.8
-            : cls === "stage_1"
-              ? 0.5
-              : cls === "elevated"
-                ? 0.3
-                : 0.1;
-      return {
-        classification: cls,
-        confidence: 0.85,
-        riskLevel: bandToRiskLevel(score),
-        signals: [
-          { label: "SBP", value: sbp },
-          { label: "DBP", value: dbp }
-        ],
-        rationale: "Stage classification per common BP guidelines."
-      };
-    },
+    predict: clinicalRiskPredict("hypertension"),
     treatments: [
       { forRiskLevel: "low", steps: ["Lifestyle reinforcement; rescreen annually."] },
       {

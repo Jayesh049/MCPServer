@@ -22,6 +22,7 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
+import { apiUrl } from "@/lib/api-base";
 
 // ---------------------------------------------------------------------------
 // Types (mirrors src/care/types.ts — no direct import needed on frontend)
@@ -91,7 +92,7 @@ function setCache(slug: string, data: CarePlan) {
 
 async function fetchCarePlan(slug: string): Promise<CarePlan | null> {
   try {
-    const res = await fetch(`/api/diseases/${encodeURIComponent(slug)}/care-plan`);
+    const res = await fetch(apiUrl(`/api/diseases/${encodeURIComponent(slug)}/care-plan`));
     if (!res.ok) return null;
     const json = (await res.json()) as CarePlan;
     return json?.diseaseSlug ? json : null;

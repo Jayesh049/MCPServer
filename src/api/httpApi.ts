@@ -7,7 +7,12 @@ import { extractTextFromCsvText, extractTextFromXlsxBase64 } from "../report/tab
 import { prisma } from "../lib/prisma.js";
 import { answerQuestionByBankSlug, answerQuestionWithWebRag } from "../rag/dynamicWebRag.js";
 import { getFullRagCatalog } from "../rag/fullCatalog.js";
-import { AnswerSource, persistAnswerSafe } from "../answers/persist.js";
+import {
+  AnswerSource,
+  deleteAllAnswers,
+  deleteAnswerById,
+  persistAnswerSafe
+} from "../answers/persist.js";
 import { MANUAL_QUESTIONS } from "../questions/catalogManual.js";
 import {
   answerQ2HomeRemediesThenDoctors,
@@ -22,7 +27,7 @@ import { isTbSklearnModelAvailable, loadTbSklearnMeta } from "../diseases/predic
 
 function setCors(res: ServerResponse) {
   res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Access-Control-Allow-Methods", "GET,POST,OPTIONS");
+  res.setHeader("Access-Control-Allow-Methods", "GET,POST,DELETE,OPTIONS");
   res.setHeader(
     "Access-Control-Allow-Headers",
     "Content-Type,Authorization,X-FHIR-Server-URL,X-FHIR-Access-Token,X-Patient-ID"
@@ -122,6 +127,34 @@ export async function handleApiRequest(
 
   if (req.method === "GET" && url.pathname === "/api/rag/catalog") {
     sendJson(res, 200, getFullRagCatalog());
+    return true;
+  }
+
+  const answerIdMatch = url.pathname.match(/^\/api\/answers\/([^/]+)$/);
+  if (req.method === "DELETE" && answerIdMatch) {
+    const id = decodeURIComponent(answerIdMatch[1] ?? "");
+    try {
+      const removed = await deleteAnswerById(id);
+      if (!removed) {
+        sendJson(res, 404, { ok: false, error: "Answer not found." });
+        return true;
+      }
+      sendJson(res, 200, { ok: true, deletedId: id });
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "Delete failed.";
+      sendJson(res, 500, { ok: false, error: msg });
+    }
+    return true;
+  }
+
+  if (req.method === "DELETE" && url.pathname === "/api/answers") {
+    try {
+      const deletedCount = await deleteAllAnswers();
+      sendJson(res, 200, { ok: true, deletedCount });
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "Clear history failed.";
+      sendJson(res, 500, { ok: false, error: msg });
+    }
     return true;
   }
 

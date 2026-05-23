@@ -56,8 +56,10 @@ export function StunningCredentials() {
 
         <div className="tok-c free">
           <div style={{ fontSize: 20, marginBottom: 8 }}>⚡</div>
-          <div className="tok-name">GROQ_API_KEY — Patient Chat (recommended)</div>
-          <div className="tok-desc">Llama 3.1 70B — fast free LLM for chat + auto-healer.</div>
+          <div className="tok-name">GROQ_API_KEY — Patient Chat (pehle yeh)</div>
+          <div className="tok-desc">
+            Chat answers: Groq first, phir Gemini fallback. Har sawal pehle Wikipedia se context.
+          </div>
           <div className="tok-env" style={{ color: "var(--gold)" }}>
             GROQ_API_KEY=gsk_…
           </div>
@@ -75,7 +77,7 @@ export function StunningCredentials() {
         <div className="tok-c free">
           <div style={{ fontSize: 20, marginBottom: 8 }}>🌊</div>
           <div className="tok-name">GEMINI_API_KEY — Chat + embeddings</div>
-          <div className="tok-desc">Agar Groq nahi hai to Gemini Flash use hota hai. RAG embeddings bhi.</div>
+          <div className="tok-desc">Groq fail/off ho to Gemini use hota hai. Embeddings bhi ho sakti hain.</div>
           <div className="tok-env" style={{ color: "var(--acc)" }}>
             GEMINI_API_KEY=AIza…
           </div>
@@ -131,7 +133,7 @@ export function StunningCredentials() {
           </li>
           <li>
             <strong style={{ color: "var(--txt)" }}>Chat + history:</strong>{" "}
-            <code>DATABASE_URL</code> + <code>GROQ_API_KEY</code> ya <code>GEMINI_API_KEY</code>.
+            <code>DATABASE_URL</code> + <code>GROQ_API_KEY</code> (preferred), optional <code>GEMINI_API_KEY</code>.
           </li>
           <li>
             <strong style={{ color: "var(--txt)" }}>Real pneumonia X-ray:</strong> <code>HF_API_TOKEN</code>.

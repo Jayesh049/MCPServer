@@ -1,0 +1,9 @@
+# Paste in Vercel → Project → Settings → Environment Variables
+# Root Directory for project must be: frontend
+# After changing env vars: Deployments → Redeploy (required)
+
+# Server-side (SSR + Next rewrites at build time)
+MCP_API_BASE_URL=https://mcp-server-api-7go2.onrender.com
+
+# Browser calls Render directly (fixes chat/history timeout on Vercel Hobby)
+NEXT_PUBLIC_MCP_API_BASE_URL=https://mcp-server-api-7go2.onrender.com

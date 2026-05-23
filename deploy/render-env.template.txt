@@ -1,0 +1,16 @@
+# Paste these in Render → Web Service → Environment (Dashboard).
+# Replace placeholders — never commit real secrets to git.
+
+DATABASE_URL=postgresql://USER:PASSWORD@HOST/DB?sslmode=require
+MCP_TRANSPORT=http
+PORT=3333
+NODE_ENV=production
+
+# Patient chat (Groq first, then Gemini)
+GROQ_API_KEY=gsk_REPLACE_ME
+GEMINI_API_KEY=AIza_REPLACE_ME
+
+# Optional
+HF_API_TOKEN=hf_REPLACE_ME
+# DISEASE_ML_URL=https://your-disease-ml.onrender.com
+# DISEASE_ML_SECRET=long-random-string

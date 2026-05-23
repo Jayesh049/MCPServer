@@ -1103,11 +1103,44 @@ button.dc {
   border-color: var(--bdr2);
   transform: translateX(2px);
 }
+.hi-item-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+.hi-del-btn {
+  flex-shrink: 0;
+  padding: 5px 12px;
+  border-radius: var(--r2);
+  font-size: 11px;
+  font-weight: 500;
+  font-family: var(--font-sans), "Outfit", sans-serif;
+  cursor: pointer;
+  border: 1px solid rgba(246, 135, 179, 0.35);
+  background: rgba(246, 135, 179, 0.08);
+  color: var(--rose);
+  transition: all 0.15s;
+}
+.hi-del-btn:hover:not(:disabled) {
+  background: rgba(246, 135, 179, 0.18);
+  border-color: var(--rose);
+}
+.hi-del-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.hi-clear-btn {
+  font-size: 11.5px;
+  padding: 6px 14px;
+}
 .hi-q {
   font-size: 13px;
   font-weight: 600;
   color: var(--txt);
   line-height: 1.4;
+  flex: 1;
+  min-width: 0;
 }
 .hi-a {
   font-size: 11.5px;

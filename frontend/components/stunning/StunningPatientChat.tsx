@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { apiUrl } from "@/lib/api-base";
 
 type ChatTurn = { role: "user" | "assistant"; content: string };
 
@@ -43,13 +44,13 @@ export function StunningPatientChat() {
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    void fetch("/api/healer/status")
+    void fetch(apiUrl("/api/healer/status"))
       .then((r) => (r.ok ? r.json() : null))
       .then((d: { llmProvider?: string } | null) => {
         if (d?.llmProvider) setLlmBadge(`🤖 LLM: ${d.llmProvider}`);
-        else setLlmBadge("🤖 Set GROQ_API_KEY or GEMINI_API_KEY");
+        else setLlmBadge("🤖 Set GROQ_API_KEY (then GEMINI)");
       })
-      .catch(() => setLlmBadge("🤖 Set GROQ_API_KEY or GEMINI_API_KEY"));
+      .catch(() => setLlmBadge("🤖 Set GROQ_API_KEY (then GEMINI)"));
   }, []);
 
   useEffect(() => {
@@ -67,7 +68,7 @@ export function StunningPatientChat() {
     setLoading(true);
 
     try {
-      const res = await fetch("/api/chat/patient", {
+      const res = await fetch(apiUrl("/api/chat/patient"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ message: msg, history: nextHistory.slice(-6) })
@@ -88,7 +89,8 @@ export function StunningPatientChat() {
         ...m,
         {
           role: "ai",
-          text: "Backend is not running. Start with `npm run dev` (port 3333) and `npm run dev` in frontend.",
+          text:
+            "Could not reach the API. On Vercel set NEXT_PUBLIC_MCP_API_BASE_URL to your Render URL and redeploy. Locally run `npm run dev` (port 3333).",
           sources: []
         }
       ]);

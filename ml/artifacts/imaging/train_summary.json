@@ -1,0 +1,272 @@
+{
+  "covid-19": {
+    "diseaseSlug": "covid-19",
+    "displayName": "COVID-19 (chest X-ray)",
+    "trainedAt": "2026-05-23T03:52:49.103536+00:00",
+    "methodology": {
+      "features": "RGB histogram + gradient bins + 8x8 gray + stats (Pillow/numpy)",
+      "classifiers": [
+        "LogisticRegression",
+        "RandomForest"
+      ],
+      "selection": "best stratified CV ROC-AUC"
+    },
+    "metrics": {
+      "cvAuc": 0.9992,
+      "cvFolds": 10,
+      "formulaKey": "hog_lr",
+      "testAccuracy": 1.0,
+      "testF1": 1.0,
+      "nSamples": 100,
+      "nPositive": 50,
+      "nNegative": 50,
+      "featureDim": 246,
+      "imageSize": 128
+    },
+    "artifactPath": "ml/artifacts/imaging/covid-19/pipeline.joblib",
+    "dataDirs": {
+      "positive": "data/imaging/covid-19/positive",
+      "negative": "data/imaging/covid-19/negative"
+    }
+  },
+  "skin-cancer": {
+    "diseaseSlug": "skin-cancer",
+    "displayName": "Skin lesion",
+    "trainedAt": "2026-05-23T03:53:02.158867+00:00",
+    "methodology": {
+      "features": "RGB histogram + gradient bins + 8x8 gray + stats (Pillow/numpy)",
+      "classifiers": [
+        "LogisticRegression",
+        "RandomForest"
+      ],
+      "selection": "best stratified CV ROC-AUC"
+    },
+    "metrics": {
+      "cvAuc": 0.92,
+      "cvFolds": 10,
+      "formulaKey": "hog_rf",
+      "testAccuracy": 0.7941,
+      "testF1": 0.7879,
+      "nSamples": 170,
+      "nPositive": 85,
+      "nNegative": 85,
+      "featureDim": 246,
+      "imageSize": 128
+    },
+    "artifactPath": "ml/artifacts/imaging/skin-cancer/pipeline.joblib",
+    "dataDirs": {
+      "positive": "data/imaging/skin-cancer/positive",
+      "negative": "data/imaging/skin-cancer/negative"
+    }
+  },
+  "diabetic-retinopathy": {
+    "diseaseSlug": "diabetic-retinopathy",
+    "displayName": "Diabetic retinopathy",
+    "trainedAt": "2026-05-23T03:53:08.304807+00:00",
+    "methodology": {
+      "features": "RGB histogram + gradient bins + 8x8 gray + stats (Pillow/numpy)",
+      "classifiers": [
+        "LogisticRegression",
+        "RandomForest"
+      ],
+      "selection": "best stratified CV ROC-AUC"
+    },
+    "metrics": {
+      "cvAuc": 0.9732,
+      "cvFolds": 10,
+      "formulaKey": "hog_lr",
+      "testAccuracy": 0.95,
+      "testF1": 0.9474,
+      "nSamples": 100,
+      "nPositive": 50,
+      "nNegative": 50,
+      "featureDim": 246,
+      "imageSize": 128
+    },
+    "artifactPath": "ml/artifacts/imaging/diabetic-retinopathy/pipeline.joblib",
+    "dataDirs": {
+      "positive": "data/imaging/diabetic-retinopathy/positive",
+      "negative": "data/imaging/diabetic-retinopathy/negative"
+    }
+  },
+  "glaucoma": {
+    "diseaseSlug": "glaucoma",
+    "displayName": "Glaucoma",
+    "trainedAt": "2026-05-23T03:53:17.940202+00:00",
+    "methodology": {
+      "features": "RGB histogram + gradient bins + 8x8 gray + stats (Pillow/numpy)",
+      "classifiers": [
+        "LogisticRegression",
+        "RandomForest"
+      ],
+      "selection": "best stratified CV ROC-AUC"
+    },
+    "metrics": {
+      "cvAuc": 0.7931,
+      "cvFolds": 10,
+      "formulaKey": "hog_lr",
+      "testAccuracy": 0.5385,
+      "testF1": 0.625,
+      "nSamples": 62,
+      "nPositive": 33,
+      "nNegative": 29,
+      "featureDim": 246,
+      "imageSize": 128
+    },
+    "artifactPath": "ml/artifacts/imaging/glaucoma/pipeline.joblib",
+    "dataDirs": {
+      "positive": "data/imaging/glaucoma/positive",
+      "negative": "data/imaging/glaucoma/negative"
+    }
+  },
+  "cataract": {
+    "diseaseSlug": "cataract",
+    "displayName": "Cataract",
+    "trainedAt": "2026-05-23T03:53:23.487045+00:00",
+    "methodology": {
+      "features": "RGB histogram + gradient bins + 8x8 gray + stats (Pillow/numpy)",
+      "classifiers": [
+        "LogisticRegression",
+        "RandomForest"
+      ],
+      "selection": "best stratified CV ROC-AUC"
+    },
+    "metrics": {
+      "cvAuc": 0.9732,
+      "cvFolds": 10,
+      "formulaKey": "hog_lr",
+      "testAccuracy": 0.95,
+      "testF1": 0.9474,
+      "nSamples": 100,
+      "nPositive": 50,
+      "nNegative": 50,
+      "featureDim": 246,
+      "imageSize": 128
+    },
+    "artifactPath": "ml/artifacts/imaging/cataract/pipeline.joblib",
+    "dataDirs": {
+      "positive": "data/imaging/cataract/positive",
+      "negative": "data/imaging/cataract/negative"
+    }
+  },
+  "breast-cancer": {
+    "diseaseSlug": "breast-cancer",
+    "displayName": "Breast cancer (mammogram)",
+    "trainedAt": "2026-05-23T03:53:32.213031+00:00",
+    "methodology": {
+      "features": "RGB histogram + gradient bins + 8x8 gray + stats (Pillow/numpy)",
+      "classifiers": [
+        "LogisticRegression",
+        "RandomForest"
+      ],
+      "selection": "best stratified CV ROC-AUC"
+    },
+    "metrics": {
+      "cvAuc": 1.0,
+      "cvFolds": 10,
+      "formulaKey": "hog_lr",
+      "testAccuracy": 0.9,
+      "testF1": 0.8889,
+      "nSamples": 200,
+      "nPositive": 100,
+      "nNegative": 100,
+      "featureDim": 246,
+      "imageSize": 128
+    },
+    "artifactPath": "ml/artifacts/imaging/breast-cancer/pipeline.joblib",
+    "dataDirs": {
+      "positive": "data/imaging/breast-cancer/positive",
+      "negative": "data/imaging/breast-cancer/negative"
+    }
+  },
+  "lung-cancer": {
+    "diseaseSlug": "lung-cancer",
+    "displayName": "Lung cancer (chest X-ray)",
+    "trainedAt": "2026-05-23T03:53:38.895487+00:00",
+    "methodology": {
+      "features": "RGB histogram + gradient bins + 8x8 gray + stats (Pillow/numpy)",
+      "classifiers": [
+        "LogisticRegression",
+        "RandomForest"
+      ],
+      "selection": "best stratified CV ROC-AUC"
+    },
+    "metrics": {
+      "cvAuc": 0.9398,
+      "cvFolds": 10,
+      "formulaKey": "hog_rf",
+      "testAccuracy": 1.0,
+      "testF1": 1.0,
+      "nSamples": 100,
+      "nPositive": 50,
+      "nNegative": 50,
+      "featureDim": 246,
+      "imageSize": 128
+    },
+    "artifactPath": "ml/artifacts/imaging/lung-cancer/pipeline.joblib",
+    "dataDirs": {
+      "positive": "data/imaging/lung-cancer/positive",
+      "negative": "data/imaging/lung-cancer/negative"
+    }
+  },
+  "bone-fracture": {
+    "diseaseSlug": "bone-fracture",
+    "displayName": "Bone fracture (X-ray)",
+    "trainedAt": "2026-05-23T03:53:42.350424+00:00",
+    "methodology": {
+      "features": "RGB histogram + gradient bins + 8x8 gray + stats (Pillow/numpy)",
+      "classifiers": [
+        "LogisticRegression",
+        "RandomForest"
+      ],
+      "selection": "best stratified CV ROC-AUC"
+    },
+    "metrics": {
+      "cvAuc": 0.7114,
+      "cvFolds": 10,
+      "formulaKey": "hog_lr",
+      "testAccuracy": 0.7333,
+      "testF1": 0.8333,
+      "nSamples": 71,
+      "nPositive": 50,
+      "nNegative": 21,
+      "featureDim": 246,
+      "imageSize": 128
+    },
+    "artifactPath": "ml/artifacts/imaging/bone-fracture/pipeline.joblib",
+    "dataDirs": {
+      "positive": "data/imaging/bone-fracture/positive",
+      "negative": "data/imaging/bone-fracture/negative"
+    }
+  },
+  "alzheimers": {
+    "diseaseSlug": "alzheimers",
+    "displayName": "Alzheimer's (brain MRI)",
+    "trainedAt": "2026-05-23T03:53:47.993803+00:00",
+    "methodology": {
+      "features": "RGB histogram + gradient bins + 8x8 gray + stats (Pillow/numpy)",
+      "classifiers": [
+        "LogisticRegression",
+        "RandomForest"
+      ],
+      "selection": "best stratified CV ROC-AUC"
+    },
+    "metrics": {
+      "cvAuc": 0.8042,
+      "cvFolds": 10,
+      "formulaKey": "hog_lr",
+      "testAccuracy": 0.7941,
+      "testF1": 0.8,
+      "nSamples": 170,
+      "nPositive": 85,
+      "nNegative": 85,
+      "featureDim": 246,
+      "imageSize": 128
+    },
+    "artifactPath": "ml/artifacts/imaging/alzheimers/pipeline.joblib",
+    "dataDirs": {
+      "positive": "data/imaging/alzheimers/positive",
+      "negative": "data/imaging/alzheimers/negative"
+    }
+  }
+}

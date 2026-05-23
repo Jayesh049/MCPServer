@@ -1,0 +1,181 @@
+{
+  "dataRoot": "data/imaging",
+  "maxPerClass": 80,
+  "imageSize": 128,
+  "diseases": [
+    {
+      "slug": "brain-tumor",
+      "displayName": "Brain tumor (MRI)",
+      "positiveLabel": "tumor_likely",
+      "negativeLabel": "no_tumor_detected",
+      "sources": [
+        {
+          "type": "hf_zip",
+          "dataset": "sartajbhuvaji/Brain-Tumor-Classification",
+          "zipFiles": ["Training.zip"],
+          "positiveFolderNames": ["glioma_tumor", "meningioma_tumor", "pituitary_tumor"],
+          "negativeFolderNames": ["no_tumor", "notumor", "normal"]
+        }
+      ]
+    },
+    {
+      "slug": "covid-19",
+      "displayName": "COVID-19 (chest X-ray)",
+      "positiveLabel": "covid_findings",
+      "negativeLabel": "no_covid_findings",
+      "sources": [
+        {
+          "type": "hf_snapshot",
+          "dataset": "hawking32/covid_chestXray",
+          "pathPrefix": "train/",
+          "positiveFolderNames": ["COVID19", "covid"],
+          "negativeFolderNames": ["NORMAL", "normal"]
+        }
+      ]
+    },
+    {
+      "slug": "skin-cancer",
+      "displayName": "Skin lesion",
+      "positiveLabel": "lesion_likely_malignant",
+      "negativeLabel": "lesion_likely_benign",
+      "sources": [
+        {
+          "type": "hf_parquet",
+          "dataset": "marmal88/skin_cancer",
+          "parquetGlob": "data/train",
+          "maxParquetFiles": 2,
+          "imageColumn": "image",
+          "labelColumn": "dx",
+          "positiveValues": ["mel", "melanoma", "bcc", "akiec"],
+          "negativeValues": ["nv", "bkl", "df", "vasc"]
+        }
+      ]
+    },
+    {
+      "slug": "diabetic-retinopathy",
+      "displayName": "Diabetic retinopathy",
+      "positiveLabel": "retinopathy_findings",
+      "negativeLabel": "no_retinopathy_findings",
+      "sources": [
+        {
+          "type": "hf_parquet",
+          "dataset": "Rami/Diabetic_Retinopathy_Preprocessed_Dataset_256x256",
+          "parquetGlob": "data/train",
+          "maxParquetFiles": 1,
+          "imageColumn": "image",
+          "labelColumn": "label",
+          "positiveValues": ["Mild DR", "Moderate DR", "Severe DR", "Proliferate DR", "moderate", "severe"],
+          "negativeValues": ["Healthy", "healthy", "0"]
+        }
+      ]
+    },
+    {
+      "slug": "glaucoma",
+      "displayName": "Glaucoma",
+      "positiveLabel": "glaucoma_suspected",
+      "negativeLabel": "no_glaucoma_findings",
+      "sources": [
+        {
+          "type": "hf_labeled_csv",
+          "dataset": "rafiaa/glaucoma_fundus_demo",
+          "csvFile": "Labels.csv",
+          "imageFolder": "Images",
+          "imageFileColumn": "Image Name",
+          "labelColumn": "Label",
+          "positiveValues": ["GON+"],
+          "negativeValues": ["GON-"]
+        },
+        {
+          "type": "hf_parquet",
+          "dataset": "ekacare/OCT_And_Fundus_Glaucoma_Dataset",
+          "parquetGlob": "data/train",
+          "maxParquetFiles": 1,
+          "imageColumn": "Colour_Image",
+          "labelColumn": "ekacare_opt"
+        }
+      ]
+    },
+    {
+      "slug": "cataract",
+      "displayName": "Cataract",
+      "positiveLabel": "cataract_likely",
+      "negativeLabel": "no_cataract_findings",
+      "sources": [
+        {
+          "type": "hf_parquet",
+          "dataset": "Rami/Diabetic_Retinopathy_Preprocessed_Dataset_256x256",
+          "parquetGlob": "data/train",
+          "maxParquetFiles": 1,
+          "imageColumn": "image",
+          "labelColumn": "label",
+          "positiveValues": ["Moderate DR", "Severe DR", "Proliferate DR", "Mild DR"],
+          "negativeValues": ["Healthy"]
+        }
+      ]
+    },
+    {
+      "slug": "breast-cancer",
+      "displayName": "Breast cancer (mammogram)",
+      "positiveLabel": "mass_suspicious",
+      "negativeLabel": "benign_or_normal",
+      "sources": [
+        {
+          "type": "hf_snapshot",
+          "dataset": "buybluepants/BreastCancerMammogram",
+          "pathPrefix": "",
+          "positiveFolderNames": ["1", "malignant", "cancer"],
+          "negativeFolderNames": ["0", "benign", "normal"]
+        }
+      ]
+    },
+    {
+      "slug": "lung-cancer",
+      "displayName": "Lung cancer (chest X-ray)",
+      "positiveLabel": "nodule_suspicious",
+      "negativeLabel": "no_suspicious_nodule",
+      "sources": [
+        {
+          "type": "hf_parquet",
+          "dataset": "mthandazo/chest-xray-pneumonia-images",
+          "parquetGlob": "data/train",
+          "maxParquetFiles": 2,
+          "imageColumn": "image",
+          "labelColumn": "label",
+          "positiveValues": ["PNEUMONIA", "pneumonia", "1", "positive"],
+          "negativeValues": ["NORMAL", "normal", "0", "negative"]
+        }
+      ]
+    },
+    {
+      "slug": "bone-fracture",
+      "displayName": "Bone fracture (X-ray)",
+      "positiveLabel": "fracture_detected",
+      "negativeLabel": "no_fracture",
+      "sources": [
+        {
+          "type": "hf_yolo",
+          "dataset": "Mahadih534/x-ray_bone-fracture-Dataset",
+          "splits": ["train", "valid", "test"]
+        }
+      ]
+    },
+    {
+      "slug": "alzheimers",
+      "displayName": "Alzheimer's (brain MRI)",
+      "positiveLabel": "atrophy_pattern_suggestive",
+      "negativeLabel": "no_atrophy_pattern",
+      "sources": [
+        {
+          "type": "hf_parquet",
+          "dataset": "Falah/Alzheimer_MRI",
+          "parquetGlob": "data/train",
+          "maxParquetFiles": 1,
+          "imageColumn": "image",
+          "labelColumn": "label",
+          "positiveValues": ["1", "2", "3"],
+          "negativeValues": ["0"]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,838 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Agents Assemble — Medical Intelligence Platform</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --c1:#08111f;--c2:#0d1829;
+  --acc:#4fd1c7;--acc2:#38b2ac;--acc3:#81e6d9;
+  --gold:#f6c90e;--rose:#f687b3;--violet:#b794f4;
+  --green:#68d391;--orange:#f6ad55;
+  --txt:#e2eef7;--txt2:#94b8cc;--txt3:#4a7080;
+  --bdr:rgba(79,209,199,.1);--bdr2:rgba(79,209,199,.22);
+  --gls:rgba(13,26,46,.8);
+  --r:14px;--r2:8px;--r3:22px;
+}
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+@keyframes scan{0%{transform:translateX(-100%)}100%{transform:translateX(300%)}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes glow{0%,100%{box-shadow:0 0 10px rgba(79,209,199,.2)}50%{box-shadow:0 0 24px rgba(79,209,199,.5)}}
+
+html,body{height:100%}
+body{font-family:'Outfit',sans-serif;background:var(--c1);color:var(--txt);min-height:100vh;overflow-x:hidden}
+
+.bg{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden}
+.bg::before{content:'';position:absolute;width:700px;height:700px;border-radius:50%;background:radial-gradient(circle,rgba(79,209,199,.055),transparent 70%);top:-200px;right:-200px}
+.bg::after{content:'';position:absolute;width:500px;height:500px;border-radius:50%;background:radial-gradient(circle,rgba(246,201,14,.04),transparent 70%);bottom:-100px;left:0}
+
+.shell{position:relative;z-index:1;display:flex;min-height:100vh}
+
+/* SIDEBAR */
+.sb{width:240px;flex-shrink:0;background:var(--c2);border-right:1px solid var(--bdr);display:flex;flex-direction:column;position:sticky;top:0;height:100vh;overflow-y:auto;scrollbar-width:none}
+.sb::-webkit-scrollbar{display:none}
+.sb::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--acc),transparent)}
+
+.sb-logo{padding:20px 16px 16px;border-bottom:1px solid var(--bdr)}
+.brand{display:flex;align-items:center;gap:10px}
+.bmark{width:40px;height:40px;border-radius:11px;flex-shrink:0;background:linear-gradient(135deg,var(--acc),#2b6cb0);display:flex;align-items:center;justify-content:center;font-size:20px;animation:glow 3s ease-in-out infinite;position:relative;overflow:hidden}
+.bmark::after{content:'';position:absolute;top:0;left:-100%;width:50%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.18),transparent);animation:scan 4s linear infinite}
+.bname{font-family:'Playfair Display',serif;font-size:14px;font-weight:700;color:var(--txt);line-height:1.25}
+.btag{font-size:9px;color:var(--acc);letter-spacing:.1em;text-transform:uppercase;margin-top:2px}
+
+.sb-nav{padding:8px 8px;flex:1}
+.ng-lbl{font-size:9px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--txt3);padding:8px 8px 4px}
+
+.ni{display:flex;align-items:center;gap:7px;padding:7px 10px;border-radius:var(--r2);font-size:12.5px;color:var(--txt2);cursor:pointer;border:none;background:none;width:100%;text-align:left;font-family:'Outfit',sans-serif;transition:all .18s;position:relative}
+.ni:hover{background:rgba(79,209,199,.08);color:var(--txt)}
+.ni.on{background:rgba(79,209,199,.12);color:var(--acc);font-weight:500}
+.ni.on::before{content:'';position:absolute;left:0;top:22%;bottom:22%;width:2px;background:var(--acc);border-radius:2px}
+.nd{width:5px;height:5px;border-radius:50%;background:var(--txt3);flex-shrink:0;transition:all .2s}
+.ni.on .nd{background:var(--acc);box-shadow:0 0 6px var(--acc)}
+.nbadge{margin-left:auto;background:rgba(79,209,199,.14);color:var(--acc);border-radius:20px;padding:1px 7px;font-size:10px;font-weight:600}
+
+/* DROPDOWN in sidebar */
+.ddt{display:flex;align-items:center;gap:7px;padding:7px 10px;border-radius:var(--r2);font-size:12.5px;color:var(--txt2);font-weight:500;cursor:pointer;border:none;background:none;width:100%;text-align:left;font-family:'Outfit',sans-serif;transition:all .18s}
+.ddt:hover{background:rgba(79,209,199,.08);color:var(--txt)}
+.ddt.op{color:var(--acc);background:rgba(79,209,199,.06)}
+.dda{margin-left:auto;font-size:10px;color:var(--txt3);transition:transform .25s}
+.ddt.op .dda{transform:rotate(90deg);color:var(--acc)}
+.ddb{overflow:hidden;max-height:0;transition:max-height .3s cubic-bezier(.4,0,.2,1);padding-left:12px}
+.ddb.op{max-height:500px}
+
+/* training pills */
+.tp{display:inline-flex;align-items:center;gap:3px;font-size:9px;padding:1px 6px;border-radius:20px;margin-left:auto;font-weight:600;flex-shrink:0;white-space:nowrap}
+.tp-hf{background:rgba(104,211,145,.12);color:var(--green);border:1px solid rgba(104,211,145,.25)}
+.tp-rule{background:rgba(79,209,199,.1);color:var(--acc);border:1px solid var(--bdr2)}
+.tp-stub{background:rgba(246,173,85,.1);color:var(--orange);border:1px solid rgba(246,173,85,.2)}
+.tp-none{background:rgba(255,255,255,.05);color:var(--txt3);border:1px solid rgba(255,255,255,.08)}
+
+.sb-foot{padding:10px 8px;border-top:1px solid var(--bdr)}
+.sp{display:flex;align-items:center;gap:7px;background:rgba(79,209,199,.07);border:1px solid var(--bdr);border-radius:30px;padding:6px 12px}
+.sd{width:6px;height:6px;border-radius:50%;background:var(--green);animation:pulse 2s infinite;flex-shrink:0}
+
+/* MAIN */
+.mn{flex:1;display:flex;flex-direction:column;min-width:0}
+
+.topbar{padding:13px 28px;background:var(--c2);border-bottom:1px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:20;flex-shrink:0}
+.topbar::after{content:'';position:absolute;bottom:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--bdr2),transparent)}
+.tb-t{font-family:'Playfair Display',serif;font-size:17px;font-weight:700;color:var(--txt)}
+.tb-s{font-size:11px;color:var(--txt3);margin-top:2px}
+.tabrow{display:flex;gap:2px;background:rgba(255,255,255,.04);border-radius:var(--r2);padding:3px;border:1px solid var(--bdr)}
+.tab{padding:5px 13px;border-radius:6px;font-size:12px;color:var(--txt3);border:none;background:none;cursor:pointer;font-family:'Outfit',sans-serif;transition:all .15s}
+.tab:hover:not(.on){color:var(--txt2)}
+.tab.on{background:rgba(79,209,199,.14);color:var(--acc);font-weight:500;border:1px solid var(--bdr2)}
+
+.content{flex:1;overflow-y:auto;padding:28px 32px;scrollbar-width:thin;scrollbar-color:var(--bdr) transparent}
+.page{display:none}.page.on{display:block;animation:fadeUp .28s ease}
+
+/* PILLS */
+.pill{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:20px;font-size:10.5px;font-weight:500;border:1px solid var(--bdr);background:rgba(79,209,199,.06);color:var(--acc2)}
+.pill.g{background:rgba(104,211,145,.07);border-color:rgba(104,211,145,.25);color:var(--green)}
+.pill.y{background:rgba(246,201,14,.07);border-color:rgba(246,201,14,.2);color:var(--gold)}
+.pill.r{background:rgba(246,135,179,.07);border-color:rgba(246,135,179,.2);color:var(--rose)}
+.pill.d{background:rgba(255,255,255,.04);border-color:rgba(255,255,255,.08);color:var(--txt3)}
+.pill.v{background:rgba(183,148,244,.07);border-color:rgba(183,148,244,.2);color:var(--violet)}
+
+/* SECTION HEAD */
+.sh{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:20px;gap:12px}
+.sh-t{font-family:'Playfair Display',serif;font-size:21px;font-weight:700;color:var(--txt)}
+.sh-s{font-size:12px;color:var(--txt3);margin-top:4px;line-height:1.55;max-width:560px}
+
+/* STATS */
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px}
+.stat{background:var(--gls);border:1px solid var(--bdr);border-radius:var(--r);padding:16px 18px;position:relative;overflow:hidden;transition:all .2s}
+.stat::after{content:'';position:absolute;bottom:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--acc),transparent);opacity:.35}
+.stat:hover{border-color:var(--bdr2);transform:translateY(-2px)}
+.stat-v{font-family:'Playfair Display',serif;font-size:26px;font-weight:700;color:var(--acc);line-height:1}
+.stat-l{font-size:11px;color:var(--txt3);margin-top:4px}
+.stat-c{font-size:10px;color:var(--txt3);margin-top:2px;opacity:.7}
+
+/* DISEASE HUB ACCORDION */
+.hub-sec{margin-bottom:14px}
+.hub-head{display:flex;align-items:center;gap:10px;background:var(--gls);border:1px solid var(--bdr);border-radius:var(--r);padding:14px 18px;cursor:pointer;transition:all .2s;user-select:none}
+.hub-head:hover{border-color:var(--bdr2);background:rgba(79,209,199,.05)}
+.hub-head.op{border-radius:var(--r) var(--r) 0 0;border-bottom-color:transparent}
+.hub-arrow{margin-left:auto;font-size:11px;color:var(--txt3);transition:transform .25s}
+.hub-head.op .hub-arrow{transform:rotate(90deg);color:var(--acc)}
+.hub-title{font-size:14px;font-weight:600;color:var(--txt)}
+.hub-sub{font-size:11px;color:var(--txt3);margin-left:2px}
+.hub-body{background:var(--gls);border:1px solid var(--bdr);border-top:none;border-radius:0 0 var(--r) var(--r);overflow:hidden;max-height:0;transition:max-height .35s cubic-bezier(.4,0,.2,1)}
+.hub-body.op{max-height:900px}
+.hub-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;padding:16px}
+.dc{background:rgba(255,255,255,.03);border:1px solid var(--bdr);border-radius:var(--r2);padding:13px;cursor:pointer;transition:all .2s;position:relative;overflow:hidden}
+.dc::before{content:'';position:absolute;top:0;left:0;right:0;height:1.5px;background:linear-gradient(90deg,transparent,var(--acc),transparent);opacity:0;transition:opacity .2s}
+.dc:hover{border-color:var(--acc2);transform:translateY(-1px);box-shadow:0 6px 20px rgba(79,209,199,.1)}
+.dc:hover::before{opacity:1}
+.dc-icon{font-size:19px;margin-bottom:7px}
+.dc-name{font-size:12px;font-weight:500;color:var(--txt);line-height:1.3}
+.dc-meta{display:flex;align-items:center;gap:5px;margin-top:6px}
+.dc-cat{font-size:9px;text-transform:uppercase;letter-spacing:.05em;color:var(--txt3)}
+
+/* CARD */
+.card{background:var(--gls);border:1px solid var(--bdr);border-radius:var(--r);padding:20px 22px}
+
+/* REPORT */
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px}
+.upz{border:1.5px dashed rgba(79,209,199,.2);border-radius:var(--r);padding:28px 20px;text-align:center;background:rgba(79,209,199,.02);cursor:pointer;transition:all .2s}
+.upz:hover,.upz.has{border-color:var(--acc);background:rgba(79,209,199,.06);border-style:solid}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 17px;border-radius:var(--r2);font-size:12.5px;font-weight:500;cursor:pointer;font-family:'Outfit',sans-serif;transition:all .18s;border:1px solid transparent}
+.btn-p{background:linear-gradient(135deg,var(--acc),var(--acc2));color:#08111f;border:none;font-weight:600}
+.btn-p:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(79,209,199,.3)}
+.btn-p:disabled{opacity:.4;cursor:not-allowed;transform:none;box-shadow:none}
+.btn-g{background:rgba(79,209,199,.08);color:var(--acc);border-color:var(--bdr2)}
+.btn-g:hover{background:rgba(79,209,199,.14);transform:translateY(-1px)}
+
+.hl{display:flex;flex-direction:column;gap:8px}
+.hi{display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.03);border:1px solid var(--bdr);border-radius:var(--r2);padding:10px 13px}
+.hi.pri{background:rgba(79,209,199,.07);border-color:var(--bdr2)}
+.hi-score{font-family:'Playfair Display',serif;font-size:15px;font-weight:700;color:var(--acc);min-width:38px;text-align:right}
+.hi-bar{flex:1;height:3px;background:rgba(255,255,255,.06);border-radius:2px;overflow:hidden}
+.hi-fill{height:100%;background:linear-gradient(90deg,var(--acc),var(--acc3));border-radius:2px;transition:width .7s ease}
+.hi-n{font-size:12.5px;font-weight:500;color:var(--txt)}
+.hi-e{font-size:10.5px;color:var(--txt3);margin-top:1px}
+
+/* CARE PLAN */
+.cp-sec{margin-bottom:22px}
+.cp-lbl{font-size:9.5px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--txt3);margin-bottom:11px;display:flex;align-items:center;gap:8px}
+.cp-lbl::before{content:'';width:14px;height:1px;background:var(--acc);opacity:.5}
+
+.hs{background:linear-gradient(135deg,rgba(79,209,199,.1),rgba(43,108,176,.07));border:1px solid var(--bdr2);border-radius:var(--r);padding:18px 22px;position:relative;overflow:hidden}
+.hs::before{content:'';position:absolute;top:-40px;right:-40px;width:140px;height:140px;border-radius:50%;background:radial-gradient(circle,rgba(79,209,199,.1),transparent 70%)}
+.hs-d{font-family:'Playfair Display',serif;font-size:18px;font-weight:700;color:var(--txt);margin-bottom:13px}
+.hs-g{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.hs-c{background:rgba(0,0,0,.25);border-radius:var(--r2);padding:10px 12px;border:1px solid var(--bdr)}
+.hs-v{font-family:'Playfair Display',serif;font-size:19px;font-weight:700;color:var(--acc)}
+.hs-l{font-size:10px;color:var(--txt3);margin-top:2px}
+
+.car{display:flex;gap:12px;overflow-x:auto;padding-bottom:8px;scrollbar-width:none}
+.car::-webkit-scrollbar{display:none}
+
+.fc{flex-shrink:0;width:195px;background:var(--gls);border:1px solid var(--bdr);border-radius:var(--r);padding:15px;transition:all .2s}
+.fc:hover{border-color:var(--bdr2);transform:translateY(-2px)}
+.fc-icon{font-size:19px;margin-bottom:7px}
+.fc-t{font-size:13px;font-weight:600;color:var(--txt);line-height:1.3}
+.fc-b{font-size:11.5px;color:var(--txt2);margin-top:5px;line-height:1.5}
+.fc-f{font-size:11px;color:var(--acc2);margin-top:9px;padding-top:8px;border-top:1px solid var(--bdr)}
+.itag{display:inline-block;padding:2px 8px;border-radius:20px;font-size:9.5px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;margin-top:6px;border:1px solid transparent}
+.it-l{background:rgba(104,211,145,.12);color:#9ae6b4;border-color:rgba(104,211,145,.25)}
+.it-m{background:rgba(246,201,14,.1);color:#faf089;border-color:rgba(246,201,14,.2)}
+.it-h{background:rgba(252,129,74,.1);color:#fbd38d;border-color:rgba(252,129,74,.2)}
+
+.doc-c{flex-shrink:0;width:195px;background:var(--gls);border:1px solid var(--bdr);border-radius:var(--r);padding:15px;cursor:pointer;transition:all .2s}
+.doc-c:hover{border-color:rgba(246,135,179,.4);transform:translateY(-2px);box-shadow:0 8px 24px rgba(246,135,179,.07)}
+.doc-av{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#553c9a,var(--violet));display:flex;align-items:center;justify-content:center;font-size:16px;margin-bottom:9px;border:1px solid rgba(183,148,244,.25)}
+.doc-n{font-size:13px;font-weight:600;color:var(--txt)}
+.doc-sp{font-size:11px;color:var(--rose);margin-top:2px}
+.doc-h{font-size:10.5px;color:var(--txt3);margin-top:5px;line-height:1.4}
+.doc-xp{display:inline-block;background:rgba(183,148,244,.1);color:#e9d8fd;border-radius:20px;padding:2px 8px;font-size:10px;font-weight:500;margin-top:5px;border:1px solid rgba(183,148,244,.2)}
+.doc-btn{width:100%;margin-top:8px;padding:6px;background:rgba(246,135,179,.07);border:1px solid rgba(246,135,179,.18);border-radius:var(--r2);font-size:11.5px;color:var(--rose);cursor:pointer;font-family:'Outfit',sans-serif;font-weight:500;transition:all .15s}
+.doc-btn:hover{background:rgba(246,135,179,.14)}
+
+.aff-c{flex-shrink:0;width:195px;background:var(--gls);border:1px solid var(--bdr);border-radius:var(--r);padding:15px;transition:all .2s}
+.aff-c:hover{border-color:rgba(246,201,14,.22);transform:translateY(-2px)}
+.aff-th{font-size:9.5px;font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:var(--gold);margin-bottom:8px;opacity:.8}
+.aff-q{font-family:'Playfair Display',serif;font-size:12.5px;font-style:italic;color:var(--txt);line-height:1.6;border-left:2px solid rgba(246,201,14,.35);padding-left:9px}
+
+/* MODAL */
+.mo-bg{position:fixed;inset:0;background:rgba(0,0,0,.68);backdrop-filter:blur(8px);z-index:100;display:flex;align-items:center;justify-content:center;padding:24px;opacity:0;pointer-events:none;transition:opacity .2s}
+.mo-bg.op{opacity:1;pointer-events:auto}
+.mo{background:var(--c2);border-radius:var(--r3);max-width:640px;width:100%;max-height:86vh;overflow-y:auto;border:1px solid var(--bdr2);box-shadow:0 30px 80px rgba(0,0,0,.65);transform:translateY(12px);transition:transform .25s;scrollbar-width:thin;scrollbar-color:var(--bdr) transparent}
+.mo-bg.op .mo{transform:translateY(0)}
+.mo::before{content:'';display:block;height:2px;background:linear-gradient(90deg,var(--acc),var(--rose),var(--gold))}
+.mo-h{padding:16px 20px 12px;border-bottom:1px solid var(--bdr);display:flex;align-items:flex-start;justify-content:space-between;position:sticky;top:0;background:var(--c2);z-index:1}
+.mo-b{padding:16px 20px}
+.mo-x{background:rgba(255,255,255,.06);border:1px solid var(--bdr);border-radius:50%;width:27px;height:27px;display:flex;align-items:center;justify-content:center;font-size:17px;cursor:pointer;color:var(--txt3);flex-shrink:0;transition:all .15s}
+.mo-x:hover{background:rgba(246,135,179,.15);color:var(--rose)}
+.med-t{width:100%;border-collapse:collapse}
+.med-t th{font-size:9.5px;text-transform:uppercase;letter-spacing:.07em;color:var(--txt3);font-weight:600;padding:5px 8px;border-bottom:1px solid var(--bdr);text-align:left}
+.med-t td{font-size:11.5px;color:var(--txt2);padding:8px 8px;border-bottom:1px solid rgba(255,255,255,.04);vertical-align:top}
+.med-t tr:last-child td{border-bottom:none}
+.med-t tr:hover td{background:rgba(79,209,199,.03)}
+.med-nm{font-weight:600;color:var(--txt)}
+.med-cau{color:#fc8181;font-size:10px;margin-top:1px}
+
+/* CHAT */
+.chat-wrap{height:calc(100vh - 200px);min-height:400px;display:flex;flex-direction:column}
+.chat-msgs{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:13px;padding:2px 0;scrollbar-width:thin;scrollbar-color:var(--bdr) transparent}
+.cmsg{display:flex;gap:9px;animation:fadeUp .2s ease}
+.cmsg.u{flex-direction:row-reverse;align-self:flex-end}
+.cav{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;border:1px solid var(--bdr)}
+.cav.ai{background:rgba(79,209,199,.1)}
+.cav.u{background:rgba(246,135,179,.08)}
+.cbub{background:rgba(255,255,255,.04);border:1px solid var(--bdr);border-radius:var(--r);padding:10px 13px;font-size:12.5px;color:var(--txt2);line-height:1.6;max-width:580px}
+.cbub.u{background:rgba(79,209,199,.07);border-color:var(--bdr2);color:var(--txt)}
+.csrc{margin-top:6px;display:flex;flex-wrap:wrap;gap:4px}
+.ci-row{padding-top:12px;border-top:1px solid var(--bdr);display:flex;gap:9px}
+.cin{flex:1;background:rgba(255,255,255,.04);border:1px solid var(--bdr);border-radius:var(--r2);padding:9px 13px;font-size:12.5px;font-family:'Outfit',sans-serif;color:var(--txt);resize:none;outline:none;transition:border-color .15s;min-height:40px}
+.cin:focus{border-color:var(--acc2)}
+.cin::placeholder{color:var(--txt3)}
+
+/* HISTORY */
+.hist-item{background:var(--gls);border:1px solid var(--bdr);border-radius:var(--r);padding:13px 16px;margin-bottom:9px;transition:all .2s}
+.hist-item:hover{border-color:var(--bdr2);transform:translateX(2px)}
+
+/* ABOUT */
+.ab-hero{background:linear-gradient(135deg,rgba(79,209,199,.09),rgba(246,201,14,.05),rgba(246,135,179,.05));border:1px solid var(--bdr2);border-radius:var(--r3);padding:30px 34px;margin-bottom:24px;position:relative;overflow:hidden}
+.ab-hero::before{content:'';position:absolute;top:-50px;right:-50px;width:200px;height:200px;border-radius:50%;background:radial-gradient(circle,rgba(79,209,199,.1),transparent 70%)}
+.src-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:11px}
+.src-c{background:var(--gls);border:1px solid var(--bdr);border-radius:var(--r);padding:15px 16px;transition:all .2s}
+.src-c:hover{border-color:var(--bdr2);transform:translateY(-1px)}
+.src-tag{font-size:9.5px;background:rgba(79,209,199,.08);color:var(--acc);border-radius:20px;padding:2px 8px;display:inline-block;margin-top:7px;border:1px solid var(--bdr2)}
+
+/* TRAIN TABLE */
+.ttbl{width:100%;border-collapse:collapse}
+.ttbl th{font-size:9.5px;text-transform:uppercase;letter-spacing:.07em;color:var(--txt3);font-weight:600;padding:6px 10px;border-bottom:1px solid var(--bdr);text-align:left}
+.ttbl td{font-size:11.5px;color:var(--txt2);padding:8px 10px;border-bottom:1px solid rgba(255,255,255,.04);vertical-align:middle}
+.ttbl tr:last-child td{border-bottom:none}
+.ttbl tr:hover td{background:rgba(79,209,199,.03)}
+
+/* API TOKEN CARDS */
+.tok-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px;margin-bottom:28px}
+.tok-c{background:var(--gls);border:1px solid var(--bdr);border-radius:var(--r);padding:16px 18px;transition:all .2s}
+.tok-c:hover{transform:translateY(-1px)}
+.tok-c.free{border-color:rgba(104,211,145,.25)}
+.tok-c.paid{border-color:rgba(246,135,179,.2)}
+.tok-c.local{border-color:rgba(183,148,244,.2)}
+.tok-name{font-size:13.5px;font-weight:600;color:var(--txt);margin-bottom:5px}
+.tok-desc{font-size:11.5px;color:var(--txt3);line-height:1.5;margin-bottom:8px}
+.tok-env{font-size:10.5px;font-family:monospace;background:rgba(0,0,0,.35);padding:6px 9px;border-radius:var(--r2);margin-bottom:7px;line-height:1.6}
+.tok-link{font-size:11px;text-decoration:none;transition:color .15s}
+.tok-link:hover{color:var(--acc3)}
+
+/* DISC */
+.disc{background:rgba(246,201,14,.05);border:1px solid rgba(246,201,14,.15);border-radius:var(--r2);padding:10px 14px;font-size:11px;color:rgba(246,201,14,.7);line-height:1.55;margin-top:14px}
+
+/* TEXT PREVIEW */
+.tp-box{background:rgba(0,0,0,.4);border:1px solid var(--bdr);border-radius:var(--r2);padding:11px 13px;font-size:11px;font-family:monospace;color:var(--txt3);max-height:115px;overflow-y:auto;line-height:1.6}
+
+.spinner{width:13px;height:13px;border:2px solid var(--bdr2);border-top-color:var(--acc);border-radius:50%;animation:spin .55s linear infinite;display:inline-block}
+.sec-lbl{font-size:9.5px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--txt3);margin-bottom:9px;display:flex;align-items:center;gap:7px}
+.sec-lbl::before{content:'';width:13px;height:1px;background:var(--acc);opacity:.5}
+
+code{font-size:10px;color:var(--acc);background:rgba(79,209,199,.06);padding:1px 5px;border-radius:4px}
+
+@media(max-width:960px){.stats{grid-template-columns:1fr 1fr}.two-col{grid-template-columns:1fr}.hs-g{grid-template-columns:1fr 1fr}}
+@media(max-width:680px){.sb{display:none}.content{padding:18px}}
+</style>
+</head>
+<body>
+<div class="bg"></div>
+<div class="shell">
+
+<!-- SIDEBAR -->
+<aside class="sb">
+  <div class="sb-logo">
+    <div class="brand">
+      <div class="bmark">🧬</div>
+      <div><div class="bname">Agents<br>Assemble</div><div class="btag">Medical Intelligence</div></div>
+    </div>
+  </div>
+  <nav class="sb-nav">
+    <div class="ng-lbl">Navigation</div>
+    <button class="ni on" onclick="go('diseases')"><span class="nd"></span>Disease Hub<span class="nbadge">20</span></button>
+    <button class="ni" onclick="go('chat')"><span class="nd"></span>Patient Chat</button>
+    <button class="ni" onclick="go('report')"><span class="nd"></span>Report Analyzer</button>
+    <button class="ni" onclick="go('history')"><span class="nd"></span>History</button>
+    <button class="ni" onclick="go('about')"><span class="nd"></span>About & Sources</button>
+
+    <div class="ng-lbl" style="margin-top:6px">Disease Categories</div>
+
+    <!-- Imaging dropdown -->
+    <button class="ddt" onclick="toggleDD(this,'dd-img')">
+      <span class="nd"></span>🔬 Imaging (11)<span class="dda">▶</span>
+    </button>
+    <div class="ddb" id="dd-img">
+      <button class="ni" onclick="pickD('brain-tumor','Brain tumor (MRI)')"><span class="nd"></span>Brain tumor<span class="tp tp-stub">stub</span></button>
+      <button class="ni" onclick="pickD('pneumonia','Pneumonia (X-ray)')"><span class="nd"></span>Pneumonia<span class="tp tp-hf">HF API</span></button>
+      <button class="ni" onclick="pickD('tuberculosis','Tuberculosis')"><span class="nd"></span>Tuberculosis<span class="tp tp-stub">stub</span></button>
+      <button class="ni" onclick="pickD('covid-19','COVID-19 (X-ray)')"><span class="nd"></span>COVID-19<span class="tp tp-stub">stub</span></button>
+      <button class="ni" onclick="pickD('skin-cancer','Skin lesion')"><span class="nd"></span>Skin lesion<span class="tp tp-stub">stub</span></button>
+      <button class="ni" onclick="pickD('diabetic-retinopathy','Diabetic retinopathy')"><span class="nd"></span>Retinopathy<span class="tp tp-stub">stub</span></button>
+      <button class="ni" onclick="pickD('glaucoma','Glaucoma')"><span class="nd"></span>Glaucoma<span class="tp tp-stub">stub</span></button>
+      <button class="ni" onclick="pickD('cataract','Cataract')"><span class="nd"></span>Cataract<span class="tp tp-stub">stub</span></button>
+      <button class="ni" onclick="pickD('breast-cancer','Breast cancer')"><span class="nd"></span>Breast cancer<span class="tp tp-stub">stub</span></button>
+      <button class="ni" onclick="pickD('lung-cancer','Lung cancer (CT)')"><span class="nd"></span>Lung cancer<span class="tp tp-stub">stub</span></button>
+      <button class="ni" onclick="pickD('bone-fracture','Bone fracture')"><span class="nd"></span>Bone fracture<span class="tp tp-stub">stub</span></button>
+    </div>
+
+    <!-- Clinical dropdown -->
+    <button class="ddt" onclick="toggleDD(this,'dd-clin')">
+      <span class="nd"></span>🩺 Clinical (6)<span class="dda">▶</span>
+    </button>
+    <div class="ddb" id="dd-clin">
+      <button class="ni" onclick="pickD('diabetes','Diabetes risk')"><span class="nd"></span>Diabetes<span class="tp tp-rule">formula</span></button>
+      <button class="ni" onclick="pickD('heart-disease','Heart disease')"><span class="nd"></span>Heart disease<span class="tp tp-rule">Framingham</span></button>
+      <button class="ni" onclick="pickD('kidney-disease','Kidney disease')"><span class="nd"></span>Kidney disease<span class="tp tp-rule">CKD-EPI</span></button>
+      <button class="ni" onclick="pickD('liver-disease','Liver disease')"><span class="nd"></span>Liver disease<span class="tp tp-rule">NAFLD</span></button>
+      <button class="ni" onclick="pickD('hypertension','Hypertension')"><span class="nd"></span>Hypertension<span class="tp tp-rule">ACC/AHA</span></button>
+      <button class="ni" onclick="pickD('stroke','Stroke risk')"><span class="nd"></span>Stroke<span class="tp tp-rule">CHA₂DS₂</span></button>
+    </div>
+
+    <!-- Signal dropdown -->
+    <button class="ddt" onclick="toggleDD(this,'dd-sig')">
+      <span class="nd"></span>📡 Signal (2)<span class="dda">▶</span>
+    </button>
+    <div class="ddb" id="dd-sig">
+      <button class="ni" onclick="pickD('parkinsons','Parkinson\'s')"><span class="nd"></span>Parkinson's<span class="tp tp-none">heuristic</span></button>
+      <button class="ni" onclick="pickD('sleep-apnea','Sleep apnea')"><span class="nd"></span>Sleep apnea<span class="tp tp-none">STOP-BANG</span></button>
+    </div>
+
+    <!-- ML Sidecar dropdown -->
+    <button class="ddt" onclick="toggleDD(this,'dd-ml')">
+      <span class="nd"></span>🤖 ML Sidecar<span class="dda">▶</span>
+    </button>
+    <div class="ddb" id="dd-ml">
+      <button class="ni" onclick="go('about')"><span class="nd"></span>Training status</button>
+      <button class="ni" onclick="go('about')"><span class="nd"></span>Free API tokens</button>
+      <button class="ni" onclick="go('about')"><span class="nd"></span>Setup guide</button>
+    </div>
+  </nav>
+  <div class="sb-foot">
+    <div class="sp"><span class="sd"></span><span style="font-size:11px;color:var(--txt2)">MCP Tester Active</span></div>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<main class="mn">
+  <header class="topbar">
+    <div><div class="tb-t" id="pt">Disease Hub</div><div class="tb-s" id="ps">All 20 supported detection models</div></div>
+    <div class="tabrow">
+      <button class="tab on" onclick="go('diseases')">Diseases</button>
+      <button class="tab" onclick="go('chat')">Chat</button>
+      <button class="tab" onclick="go('report')">Report</button>
+      <button class="tab" onclick="go('history')">History</button>
+      <button class="tab" onclick="go('about')">About</button>
+    </div>
+  </header>
+
+  <div class="content">
+
+  <!-- DISEASE HUB -->
+  <div class="page on" id="page-diseases">
+    <div class="sh">
+      <div><div class="sh-t">Disease Hub</div><div class="sh-s">Click a section to expand. Every disease shows its training status and data source.</div></div>
+      <span class="pill">⚡ /api/diseases</span>
+    </div>
+    <div class="stats">
+      <div class="stat"><div class="stat-v">20</div><div class="stat-l">Total diseases</div><div class="stat-c">11 imaging · 6 clinical · 2 signal · 1 lab</div></div>
+      <div class="stat"><div class="stat-v">6</div><div class="stat-l">Real formula models</div><div class="stat-c">Framingham · CKD-EPI · NAFLD</div></div>
+      <div class="stat"><div class="stat-v">10+</div><div class="stat-l">Sklearn imaging</div><div class="stat-c">npm run train:imaging</div></div>
+      <div class="stat"><div class="stat-v">Daily</div><div class="stat-l">Care plan refresh</div><div class="stat-c">Date-seeded RNG</div></div>
+    </div>
+
+    <!-- Imaging -->
+    <div class="hub-sec">
+      <div class="hub-head" onclick="toggleHub(this,'hb-img')">
+        <span style="font-size:18px">🔬</span>
+        <div><div class="hub-title">Imaging Diseases (11)</div><div class="hub-sub">Brain MRI · Chest X-ray · Retinal · Skin · CT</div></div>
+        <div style="margin-left:auto;display:flex;align-items:center;gap:8px"><span class="pill g">✓ Sklearn after train:imaging</span><span class="hub-arrow">▶</span></div>
+      </div>
+      <div class="hub-body" id="hb-img">
+        <div class="hub-grid">
+          <div class="dc" onclick="pickD('brain-tumor','Brain tumor (MRI)')"><div class="dc-icon">🧠</div><div class="dc-name">Brain tumor (MRI)</div><div class="dc-meta"><span class="dc-cat">imaging</span><span class="tp tp-stub">stub</span></div></div>
+          <div class="dc" onclick="pickD('pneumonia','Pneumonia (X-ray)')"><div class="dc-icon">🫁</div><div class="dc-name">Pneumonia (X-ray)</div><div class="dc-meta"><span class="dc-cat">imaging</span><span class="tp tp-hf">HF API</span></div></div>
+          <div class="dc" onclick="pickD('tuberculosis','Tuberculosis')"><div class="dc-icon">🦠</div><div class="dc-name">Tuberculosis</div><div class="dc-meta"><span class="dc-cat">imaging</span><span class="tp tp-stub">stub</span></div></div>
+          <div class="dc" onclick="pickD('covid-19','COVID-19 (X-ray)')"><div class="dc-icon">🦠</div><div class="dc-name">COVID-19</div><div class="dc-meta"><span class="dc-cat">imaging</span><span class="tp tp-stub">stub</span></div></div>
+          <div class="dc" onclick="pickD('skin-cancer','Skin lesion')"><div class="dc-icon">🔬</div><div class="dc-name">Skin lesion</div><div class="dc-meta"><span class="dc-cat">imaging</span><span class="tp tp-stub">stub</span></div></div>
+          <div class="dc" onclick="pickD('diabetic-retinopathy','Diabetic retinopathy')"><div class="dc-icon">👁</div><div class="dc-name">Diabetic retinopathy</div><div class="dc-meta"><span class="dc-cat">imaging</span><span class="tp tp-stub">stub</span></div></div>
+          <div class="dc" onclick="pickD('glaucoma','Glaucoma')"><div class="dc-icon">👁</div><div class="dc-name">Glaucoma</div><div class="dc-meta"><span class="dc-cat">imaging</span><span class="tp tp-stub">stub</span></div></div>
+          <div class="dc" onclick="pickD('cataract','Cataract')"><div class="dc-icon">👁</div><div class="dc-name">Cataract</div><div class="dc-meta"><span class="dc-cat">imaging</span><span class="tp tp-stub">stub</span></div></div>
+          <div class="dc" onclick="pickD('breast-cancer','Breast cancer')"><div class="dc-icon">🎗</div><div class="dc-name">Breast cancer</div><div class="dc-meta"><span class="dc-cat">imaging</span><span class="tp tp-stub">stub</span></div></div>
+          <div class="dc" onclick="pickD('lung-cancer','Lung cancer (CT)')"><div class="dc-icon">🫁</div><div class="dc-name">Lung cancer (CT)</div><div class="dc-meta"><span class="dc-cat">imaging</span><span class="tp tp-stub">stub</span></div></div>
+          <div class="dc" onclick="pickD('bone-fracture','Bone fracture')"><div class="dc-icon">🦴</div><div class="dc-name">Bone fracture</div><div class="dc-meta"><span class="dc-cat">imaging</span><span class="tp tp-stub">stub</span></div></div>
+        </div>
+        <div class="disc" style="margin:0 16px 16px">
+          <strong style="color:var(--gold)">Imaging note:</strong> Run <code>npm run train:imaging:all</code> for sklearn models on 10 diseases. Pneumonia uses <code>HF_API_TOKEN</code> (ViT) or a labeled content stub. Brain tumor keeps its own HF-trained set.
+        </div>
+      </div>
+    </div>
+
+    <!-- Clinical -->
+    <div class="hub-sec">
+      <div class="hub-head" onclick="toggleHub(this,'hb-clin')">
+        <span style="font-size:18px">🩺</span>
+        <div><div class="hub-title">Clinical Diseases (6)</div><div class="hub-sub">Validated formula-based risk scoring on form fields</div></div>
+        <div style="margin-left:auto;display:flex;align-items:center;gap:8px"><span class="pill g">✓ Real formulas · isStub: false</span><span class="hub-arrow">▶</span></div>
+      </div>
+      <div class="hub-body" id="hb-clin">
+        <div class="hub-grid">
+          <div class="dc" onclick="pickD('diabetes','Diabetes risk')"><div class="dc-icon">🩸</div><div class="dc-name">Diabetes risk</div><div class="dc-meta"><span class="dc-cat">clinical</span><span class="tp tp-rule">LR + formula</span></div></div>
+          <div class="dc" onclick="pickD('heart-disease','Heart disease')"><div class="dc-icon">❤️</div><div class="dc-name">Heart disease</div><div class="dc-meta"><span class="dc-cat">clinical</span><span class="tp tp-rule">Framingham</span></div></div>
+          <div class="dc" onclick="pickD('kidney-disease','Kidney disease')"><div class="dc-icon">🫘</div><div class="dc-name">Kidney disease</div><div class="dc-meta"><span class="dc-cat">clinical</span><span class="tp tp-rule">CKD-EPI</span></div></div>
+          <div class="dc" onclick="pickD('liver-disease','Liver disease')"><div class="dc-icon">🍃</div><div class="dc-name">Liver disease</div><div class="dc-meta"><span class="dc-cat">clinical</span><span class="tp tp-rule">NAFLD score</span></div></div>
+          <div class="dc" onclick="pickD('hypertension','Hypertension')"><div class="dc-icon">💊</div><div class="dc-name">Hypertension</div><div class="dc-meta"><span class="dc-cat">clinical</span><span class="tp tp-rule">ACC/AHA 2017</span></div></div>
+          <div class="dc" onclick="pickD('stroke','Stroke risk')"><div class="dc-icon">⚡</div><div class="dc-name">Stroke risk</div><div class="dc-meta"><span class="dc-cat">clinical</span><span class="tp tp-rule">CHA₂DS₂-VASc</span></div></div>
+        </div>
+        <div style="padding:0 16px 14px;font-size:11.5px;color:var(--txt3);line-height:1.55">
+          <span style="color:var(--acc)">isStub: false</span> — These use validated scoring formulas (not trained on PHI). Diabetes additionally supports a self-trained LR model: run <code>npm run train:diabetes</code> to generate <code>src/diseases/models/diabetes-lr.json</code>.
+        </div>
+      </div>
+    </div>
+
+    <!-- Signal -->
+    <div class="hub-sec">
+      <div class="hub-head" onclick="toggleHub(this,'hb-sig')">
+        <span style="font-size:18px">📡</span>
+        <div><div class="hub-title">Signal / Heuristic (2)</div><div class="hub-sub">Rule-based scoring, no trained model</div></div>
+        <div style="margin-left:auto;display:flex;align-items:center;gap:8px"><span class="pill d">Hand-tuned rules</span><span class="hub-arrow">▶</span></div>
+      </div>
+      <div class="hub-body" id="hb-sig">
+        <div class="hub-grid">
+          <div class="dc" onclick="pickD('parkinsons','Parkinson\'s')"><div class="dc-icon">🧠</div><div class="dc-name">Parkinson's</div><div class="dc-meta"><span class="dc-cat">signal</span><span class="tp tp-none">jitter/shimmer</span></div></div>
+          <div class="dc" onclick="pickD('sleep-apnea','Sleep apnea')"><div class="dc-icon">😴</div><div class="dc-name">Sleep apnea</div><div class="dc-meta"><span class="dc-cat">signal</span><span class="tp tp-none">STOP-BANG</span></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CHAT -->
+  <div class="page" id="page-chat">
+    <div class="sh">
+      <div><div class="sh-t">Patient Chat</div><div class="sh-s">Wikipedia RAG + LLM synthesis · multi-turn · source-labeled answers</div></div>
+      <div style="display:flex;flex-direction:column;gap:5px;align-items:flex-end">
+        <span class="pill">📖 Wikipedia RAG</span>
+        <span class="pill g" id="llm-badge">🤖 detecting LLM…</span>
+      </div>
+    </div>
+    <div class="card chat-wrap">
+      <div class="chat-msgs" id="chat-msgs">
+        <div class="cmsg">
+          <div class="cav ai">🧬</div>
+          <div>
+            <div class="cbub">Hello! Ask me anything about a health condition, medication, or symptom. I search Wikipedia medical articles and answer in plain language.</div>
+            <div class="csrc"><span class="pill">Wikipedia RAG</span><span class="pill y">Education only · not clinical advice</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="ci-row">
+        <textarea class="cin" id="cin" rows="1" placeholder="Ask a health question… e.g. What is HbA1c?" onkeydown="ck(event)"></textarea>
+        <button class="btn btn-p" onclick="sc()">Send ↗</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- REPORT -->
+  <div class="page" id="page-report">
+    <div class="sh">
+      <div><div class="sh-t">Report Analyzer</div><div class="sh-s">Upload a PDF health report · keyword detection · synthetic care plan</div></div>
+      <div style="display:flex;flex-direction:column;gap:5px;align-items:flex-end">
+        <span class="pill">📄 pdf-parse · local</span>
+        <span class="pill r">Synthetic · no PHI</span>
+      </div>
+    </div>
+    <div class="two-col">
+      <div>
+        <div class="sec-lbl" style="margin-bottom:8px">PDF Input</div>
+        <div class="upz" id="upz" onclick="document.getElementById('fi').click()">
+          <input type="file" id="fi" accept=".pdf" style="display:none" onchange="fc(this)">
+          <div style="font-size:26px;margin-bottom:8px">📋</div>
+          <div style="font-size:13px;color:var(--txt2)" id="uz-t">Select report PDF</div>
+          <div style="font-size:11px;color:var(--txt3);margin-top:3px" id="uz-h">De-identified reports only · No PHI</div>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:10px">
+          <button class="btn btn-p" id="abtn" onclick="ar()" disabled style="flex:1"><span class="spinner" id="aspin" style="display:none"></span>Analyze</button>
+          <button class="btn btn-g" onclick="demo()" style="flex:1">▶ Demo data</button>
+        </div>
+      </div>
+      <div>
+        <div class="sec-lbl" style="margin-bottom:8px">Detected Diseases <span class="pill d" style="margin-left:5px;vertical-align:middle">keyword · weighted</span></div>
+        <div class="hl" id="hl"><div style="color:var(--txt3);font-size:12px;padding:10px 0">Upload a report or click Demo data.</div></div>
+      </div>
+    </div>
+    <div id="tpw" style="display:none;margin-bottom:16px">
+      <div class="sec-lbl" style="margin-bottom:6px">Extracted Text</div>
+      <div class="tp-box" id="tpb"></div>
+      <div style="font-size:10px;color:var(--txt3);margin-top:4px" id="tps"></div>
+    </div>
+    <div id="cpw" style="display:none">
+      <div class="cp-sec">
+        <div class="cp-lbl">01 · Personal Health Overview <span class="pill" style="margin-left:4px">/api/diseases/:slug/care-plan</span></div>
+        <div class="hs" id="hs"></div>
+      </div>
+      <div class="cp-sec">
+        <div class="cp-lbl">02 · Exercises <span class="pill d">synthetic · daily refresh</span></div>
+        <div class="car" id="excar"></div>
+      </div>
+      <div class="cp-sec">
+        <div class="cp-lbl">03 · Top 3 Specialists <span class="pill d">fictional doctors</span></div>
+        <div class="car" id="doccar"></div>
+      </div>
+      <div class="cp-sec">
+        <div class="cp-lbl">04 · Positive Manifestations <span class="pill y">mindfulness</span></div>
+        <div class="car" id="affcar"></div>
+      </div>
+      <div class="disc" id="cpdisc"></div>
+    </div>
+  </div>
+
+  <!-- HISTORY -->
+  <div class="page" id="page-history">
+    <div class="sh">
+      <div><div class="sh-t">Answer History</div><div class="sh-s">Past Q&amp;A sessions stored in Postgres · persisted across sessions</div></div>
+      <span class="pill g">🗄 Postgres · /api/answers</span>
+    </div>
+    <div id="hist-list"><div style="color:var(--txt3);font-size:12px"><span class="spinner"></span> Loading…</div></div>
+  </div>
+
+  <!-- ABOUT -->
+  <div class="page" id="page-about">
+    <div class="ab-hero">
+      <div style="font-family:'Playfair Display',serif;font-size:24px;font-weight:700;color:var(--txt);margin-bottom:8px;position:relative">What's trained, what's a stub, and where does every piece of data come from?</div>
+      <div style="font-size:13px;color:var(--txt2);line-height:1.65;max-width:540px;position:relative">Every component is labeled with its source and training status. This is a medical education demo — always consult a clinician for real decisions.</div>
+    </div>
+
+    <!-- Training status -->
+    <div style="font-family:'Playfair Display',serif;font-size:18px;font-weight:700;color:var(--txt);margin-bottom:14px">Model Training Status — All 20 Diseases</div>
+    <div class="card" style="padding:0;margin-bottom:26px">
+      <table class="ttbl">
+        <thead><tr><th>Disease</th><th>Category</th><th>Status</th><th>Method</th><th>How to enable</th></tr></thead>
+        <tbody>
+          <tr><td>Pneumonia</td><td>imaging</td><td><span class="tp tp-hf">HF API</span></td><td><code>lxyuan/vit-xray-pneumonia-classification</code></td><td><code>HF_API_TOKEN=hf_…</code></td></tr>
+          <tr><td>Diabetes</td><td>clinical</td><td><span class="tp tp-rule">formula+LR</span></td><td>Rule fallback · optional LR via <code>npm run train:diabetes</code></td><td>Trains on synthetic data — no token needed</td></tr>
+          <tr><td>Heart disease</td><td>clinical</td><td><span class="tp tp-rule">Framingham</span></td><td>Simplified Framingham Heart Study 10-year risk formula</td><td>No token — formula only</td></tr>
+          <tr><td>Kidney disease</td><td>clinical</td><td><span class="tp tp-rule">CKD-EPI</span></td><td>CKD-EPI 2021 eGFR + KDIGO staging</td><td>No token — formula only</td></tr>
+          <tr><td>Liver disease</td><td>clinical</td><td><span class="tp tp-rule">NAFLD</span></td><td>NAFLD Fibrosis Score (AST/ALT ratio + albumin + platelets)</td><td>No token — formula only</td></tr>
+          <tr><td>Hypertension</td><td>clinical</td><td><span class="tp tp-rule">ACC/AHA</span></td><td>ACC/AHA 2017 blood pressure staging</td><td>No token — formula only</td></tr>
+          <tr><td>Stroke</td><td>clinical</td><td><span class="tp tp-rule">CHA₂DS₂-VASc</span></td><td>CHA₂DS₂-VASc score</td><td>No token — formula only</td></tr>
+          <tr><td>Parkinson's</td><td>signal</td><td><span class="tp tp-none">heuristic</span></td><td>Hand-tuned jitter/shimmer/HNR scoring rules</td><td>No token — rule-based</td></tr>
+          <tr><td>Sleep apnea</td><td>signal</td><td><span class="tp tp-none">STOP-BANG</span></td><td>STOP-BANG yes-count questionnaire rules</td><td>No token — rule-based</td></tr>
+          <tr><td colspan="5" style="color:var(--txt3);font-size:11px;padding:10px;border-top:1px solid var(--bdr)">Remaining 11 imaging diseases → <span class="tp tp-stub" style="vertical-align:middle">content-aware stub</span> (brightness/contrast heuristic, <code>isStub: true</code>). Set <code>DISEASE_ML_URL</code> to point at <code>ml/flask_disease/</code> and call <code>POST /v1/diseases/&lt;slug&gt;/train</code> with PDFs to enable real sklearn TF-IDF+LR predictions.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Free API tokens -->
+    <div style="font-family:'Playfair Display',serif;font-size:18px;font-weight:700;color:var(--txt);margin-bottom:14px">Free API Tokens You Need</div>
+    <div class="tok-grid">
+      <div class="tok-c free">
+        <div style="font-size:20px;margin-bottom:8px">🤗</div>
+        <div class="tok-name">Hugging Face — Pneumonia imaging</div>
+        <div class="tok-desc">Enables <code>lxyuan/vit-xray-pneumonia-classification</code> — a real ViT image classifier. Free tier: 30,000 requests/month.</div>
+        <div class="tok-env" style="color:var(--green)">HF_API_TOKEN=hf_xxxxxxxxxxxxxxxx</div>
+        <a class="tok-link" style="color:var(--green)" href="https://huggingface.co/settings/tokens" target="_blank">→ huggingface.co/settings/tokens (free)</a>
+      </div>
+      <div class="tok-c free">
+        <div style="font-size:20px;margin-bottom:8px">⚡</div>
+        <div class="tok-name">Groq — Patient Chat + Healer (Free)</div>
+        <div class="tok-desc">Llama 3.1 70B via Groq. Fastest free LLM — ~6,000 tokens/min. Used by patient chat and auto-healer. Recommended first choice.</div>
+        <div class="tok-env" style="color:var(--gold)">GROQ_API_KEY=gsk_xxxxxxxxxxxx</div>
+        <a class="tok-link" style="color:var(--gold)" href="https://console.groq.com/keys" target="_blank">→ console.groq.com/keys (free)</a>
+      </div>
+      <div class="tok-c free">
+        <div style="font-size:20px;margin-bottom:8px">🌊</div>
+        <div class="tok-name">Google Gemini — Chat + Healer (Free)</div>
+        <div class="tok-desc">Gemini 1.5 Flash. 1 million tokens/day free. Used if GROQ key is not set. Reliable fallback for patient chat.</div>
+        <div class="tok-env" style="color:var(--acc)">GEMINI_API_KEY=AIzaxxxxxxxx</div>
+        <a class="tok-link" style="color:var(--acc)" href="https://aistudio.google.com/apikey" target="_blank">→ aistudio.google.com/apikey (free)</a>
+      </div>
+      <div class="tok-c free">
+        <div style="font-size:20px;margin-bottom:8px">🗄</div>
+        <div class="tok-name">Neon — PostgreSQL (Free)</div>
+        <div class="tok-desc">Free Postgres for Q&amp;A history, RAG embeddings, healer fix-pattern cache, and ML model artifacts. 0.5 GB free tier.</div>
+        <div class="tok-env" style="color:var(--txt3)">DATABASE_URL=postgresql://neon…</div>
+        <a class="tok-link" style="color:var(--acc2)" href="https://neon.tech" target="_blank">→ neon.tech (free)</a>
+      </div>
+      <div class="tok-c local">
+        <div style="font-size:20px;margin-bottom:8px">🔧</div>
+        <div class="tok-name">Flask ML Sidecar — Imaging (Local)</div>
+        <div class="tok-desc">Run the Flask sidecar locally to enable real sklearn predictions for all 11 imaging diseases. Ingest PDFs, then train per slug.</div>
+        <div class="tok-env" style="color:var(--violet)">DISEASE_ML_URL=http://localhost:5001<br>DISEASE_ML_SECRET=your-secret-key</div>
+        <span style="font-size:10.5px;color:var(--violet)">cd ml &amp;&amp; pip install -r requirements.txt &amp;&amp; python wsgi.py</span>
+      </div>
+      <div class="tok-c paid">
+        <div style="font-size:20px;margin-bottom:8px">🤖</div>
+        <div class="tok-name">Anthropic Claude — Optional (Paid)</div>
+        <div class="tok-desc">Only used if GROQ and GEMINI keys are not set. Claude Haiku is cheapest at ~$0.80/M tokens. Best code-fix quality for healer.</div>
+        <div class="tok-env" style="color:var(--rose)">ANTHROPIC_API_KEY=sk-ant-…</div>
+        <a class="tok-link" style="color:var(--rose)" href="https://console.anthropic.com" target="_blank">→ console.anthropic.com (paid)</a>
+      </div>
+    </div>
+
+    <!-- Data sources -->
+    <div style="font-family:'Playfair Display',serif;font-size:18px;font-weight:700;color:var(--txt);margin-bottom:14px">All Data Sources</div>
+    <div class="src-grid">
+      <div class="src-c"><div style="font-size:18px;margin-bottom:7px">📖</div><div style="font-size:13px;font-weight:600;color:var(--txt)">Wikipedia RAG</div><div style="font-size:11.5px;color:var(--txt3);margin-top:4px;line-height:1.5">Patient chat fetches Wikipedia medical articles, chunks + embeds via Transformers.js (free), stores in Postgres, retrieves by cosine similarity per question.</div><span class="src-tag">Refreshed per question</span></div>
+      <div class="src-c"><div style="font-size:18px;margin-bottom:7px">🧬</div><div style="font-size:13px;font-weight:600;color:var(--txt)">Disease Registry</div><div style="font-size:11.5px;color:var(--txt3);margin-top:4px;line-height:1.5">20 diseases in <code>src/diseases/registry.ts</code>. Clinical diseases use validated scoring formulas. Imaging uses Flask sidecar or brightness/contrast stub.</div><span class="src-tag">Local · src/diseases/</span></div>
+      <div class="src-c"><div style="font-size:18px;margin-bottom:7px">📄</div><div style="font-size:13px;font-weight:600;color:var(--txt)">PDF Extraction</div><div style="font-size:11.5px;color:var(--txt3);margin-top:4px;line-height:1.5">PDFs parsed locally via <code>pdf-parse</code>. Text matched to weighted keyword dictionaries (<code>detectDiseasesFromText.ts</code>). No PHI leaves the server.</div><span class="src-tag">Local · keyword weighted</span></div>
+      <div class="src-c"><div style="font-size:18px;margin-bottom:7px">👨‍⚕️</div><div style="font-size:13px;font-weight:600;color:var(--txt)">Synthetic Care Plans</div><div style="font-size:11.5px;color:var(--txt3);margin-top:4px;line-height:1.5">All doctors, hospitals, and medications are fictional. Generated with a date-seeded RNG — rotates daily from <code>src/care/dataPools.ts</code>.</div><span class="src-tag">Synthetic · daily refresh</span></div>
+      <div class="src-c"><div style="font-size:18px;margin-bottom:7px">🔧</div><div style="font-size:13px;font-weight:600;color:var(--txt)">Auto-Healer (3 processes)</div><div style="font-size:11.5px;color:var(--txt3);margin-top:4px;line-height:1.5">Watches Prisma, backend, and frontend simultaneously. Runtime errors → LLM generates patch → applies to source file → cached in Postgres.</div><span class="src-tag">LLM-powered · all processes</span></div>
+      <div class="src-c"><div style="font-size:18px;margin-bottom:7px">🌐</div><div style="font-size:13px;font-weight:600;color:var(--txt)">MCP / FHIR Tools</div><div style="font-size:11.5px;color:var(--txt3);margin-top:4px;line-height:1.5">When MCP transport is active the app exposes FHIR care-gap analysis tools via a synthetic adapter. No real EHR data.</div><span class="src-tag">MCP · Synthetic FHIR</span></div>
+    </div>
+    <div class="disc" style="margin-top:22px"><strong style="color:var(--gold)">Education only.</strong> All doctors, hospitals, medications, and risk scores are SYNTHETIC. Not medical advice. Always consult a qualified clinician.</div>
+  </div>
+
+  </div><!-- /content -->
+</main>
+</div><!-- /shell -->
+
+<!-- Doctor Modal -->
+<div class="mo-bg" id="doc-modal">
+  <div class="mo">
+    <div class="mo-h">
+      <div style="display:flex;align-items:center;gap:13px">
+        <div class="doc-av" style="width:44px;height:44px;font-size:20px">👨‍⚕️</div>
+        <div>
+          <div style="font-family:'Playfair Display',serif;font-size:17px;font-weight:700;color:var(--txt)" id="md-n">—</div>
+          <div style="font-size:12px;color:var(--rose);margin-top:2px" id="md-sp">—</div>
+          <div style="font-size:11px;color:var(--txt3);margin-top:2px" id="md-h">—</div>
+        </div>
+      </div>
+      <button class="mo-x" onclick="closeMo()">×</button>
+    </div>
+    <div class="mo-b">
+      <div style="font-size:12.5px;color:var(--txt2);line-height:1.55;background:rgba(79,209,199,.06);border:1px solid var(--bdr);border-radius:var(--r2);padding:11px 13px;margin-bottom:15px" id="md-bio">—</div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-bottom:16px">
+        <div class="hs-c"><div class="hs-v" id="md-exp">—</div><div class="hs-l">Yrs exp.</div></div>
+        <div class="hs-c"><div class="hs-v">10</div><div class="hs-l">Medications</div></div>
+        <div class="hs-c"><div class="hs-v" id="md-city">—</div><div class="hs-l">Location</div></div>
+      </div>
+      <div class="sec-lbl" style="margin-bottom:8px">Suggested Medications <span class="pill r" style="margin-left:4px;vertical-align:middle">illustrative only</span></div>
+      <table class="med-t"><thead><tr><th>#</th><th>Medication</th><th>Dose · Schedule</th><th>Rationale</th></tr></thead><tbody id="md-meds"></tbody></table>
+      <div class="disc" style="margin-top:12px">All details SYNTHETIC. Medication doses are illustrative only — NOT clinical recommendations.</div>
+    </div>
+  </div>
+</div>
+
+<script>
+const API=window.location.origin;
+let plan=null,chatH=[],histLoaded=false;
+const CACHE_TTL=3*24*60*60*1000;
+const META={
+  diseases:{t:'Disease Hub',s:'All 20 supported detection models — imaging · clinical · signal'},
+  chat:{t:'Patient Chat',s:'Wikipedia RAG + LLM synthesis · multi-turn · source-labeled'},
+  report:{t:'Report Analyzer',s:'PDF disease detection · keyword matching · synthetic care plan'},
+  history:{t:'Answer History',s:'Past Q&A sessions stored in Postgres database'},
+  about:{t:'About & Sources',s:'Training status, free API tokens, and all data sources'},
+};
+
+function go(n){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('on'));
+  document.getElementById('page-'+n)?.classList.add('on');
+  document.querySelectorAll('.ni,.tab').forEach(b=>b.classList.remove('on'));
+  document.querySelectorAll('.ni,.tab').forEach(b=>{if(b.textContent.trim().toLowerCase().startsWith(n.slice(0,5)))b.classList.add('on')});
+  const m=META[n]||{};
+  document.getElementById('pt').textContent=m.t||n;
+  document.getElementById('ps').textContent=m.s||'';
+  if(n==='history'&&!histLoaded)loadHist();
+}
+
+function toggleDD(btn,id){
+  btn.classList.toggle('op');
+  document.getElementById(id)?.classList.toggle('op');
+}
+function toggleHub(h,id){
+  h.classList.toggle('op');
+  document.getElementById(id)?.classList.toggle('op');
+}
+
+function pickD(slug,name){
+  go('report');
+  const p=mkPlan(slug,name);
+  plan=p;renderPlan(p);
+  document.getElementById('hl').innerHTML=`<div class="hi pri"><div class="hi-bar"><div class="hi-fill" style="width:100%"></div></div><div class="hi-score">100%</div><div><div class="hi-n">${name} ★</div><div class="hi-e">Loaded from Disease Hub</div></div></div>`;
+}
+
+function getCached(s){try{const r=localStorage.getItem('cp_'+s);if(!r)return null;const{data,at}=JSON.parse(r);if(Date.now()-at>CACHE_TTL)return null;return data}catch{return null}}
+function setCache(s,d){try{localStorage.setItem('cp_'+s,JSON.stringify({data:d,at:Date.now()}))}catch{}}
+
+async function fetchPlan(slug){
+  const c=getCached(slug);if(c)return c;
+  try{const r=await fetch(`${API}/api/diseases/${slug}/care-plan`);if(!r.ok)throw 0;const j=await r.json();const p=j.carePlan||j;setCache(slug,p);return p}
+  catch{return mkPlan(slug)}
+}
+
+function mkPlan(slug,name){
+  name=name||slug.replace(/-/g,' ').replace(/\b\w/g,c=>c.toUpperCase());
+  return{diseaseSlug:slug,diseaseName:name,synthetic:true,generatedAt:new Date().toISOString(),
+    exercises:[
+      {name:'Walking program',description:'Low-impact aerobic walks at conversational pace.',frequency:'20–30 min · 5×/week',intensity:'moderate',cautions:[]},
+      {name:'Strength basics',description:'Sit-to-stands, wall push-ups, banded rows.',frequency:'2–3 sets × 10 · 3×/week',intensity:'low',cautions:[]},
+      {name:'Mobility & stretching',description:'Full-body stretches — hips, shoulders, neck.',frequency:'10 min daily',intensity:'low',cautions:[]},
+      {name:'Mindful breathing',description:'Box breathing 4-4-4-4 for stress regulation.',frequency:'10 min · 2×/day',intensity:'low',cautions:[]},
+    ],
+    topDoctors:[
+      {name:'Dr. Theo Larsen',specialty:'Hepatology',yearsOfExperience:16,hospital:{name:'Mountain View Memorial',city:'Denver',country:'USA'},bio:'Fatty liver disease and hepatitis follow-up clinics. 16 years specialising in advanced liver conditions.',medications:mkMeds()},
+      {name:'Dr. Daniel Okafor',specialty:'Internal Medicine',yearsOfExperience:12,hospital:{name:'Lotus Bay Multispecialty',city:'Singapore',country:'Singapore'},bio:'Chronic disease management, HbA1c clinics, and motivational interviewing for lifestyle change.',medications:mkMeds()},
+      {name:'Dr. Olivia Park',specialty:'Infectious Disease',yearsOfExperience:15,hospital:{name:'Cedarbrook Institute',city:'Seattle',country:'USA'},bio:'Respiratory infections and antimicrobial stewardship. Published researcher in evidence-based protocols.',medications:mkMeds()},
+    ],
+    affirmations:[
+      {theme:'Presence',statement:'I take this one breath, one moment at a time.'},
+      {theme:'Agency',statement:'I am an active participant in my own care, not a passive observer.'},
+      {theme:'Support',statement:'I let trusted people walk beside me on this path.'},
+      {theme:'Compassion',statement:'I extend the same kindness to myself I would to a dear friend.'},
+      {theme:'Hope',statement:'Healing is not linear; small steps still count.'},
+      {theme:'Rest',statement:'Resting is part of getting better, not the opposite of it.'},
+      {theme:'Trust',statement:'I trust the team and the process even when it is hard.'},
+      {theme:'Celebration',statement:'I notice and celebrate every small improvement.'},
+    ],
+    disclaimers:[
+      'All doctors, hospitals, and patient details are SYNTHETIC and fictional.',
+      'Medication doses are illustrative only — NOT clinical recommendations.',
+      'Always consult a qualified clinician before changing any treatment.',
+    ]};
+}
+
+function mkMeds(){return[
+  {name:'Acetaminophen',dose:'500 mg PO',schedule:'every 6 hrs PRN',rationale:'Pain & fever.',cautions:[]},
+  {name:'Ibuprofen',dose:'400 mg PO',schedule:'every 6–8 hrs PRN',rationale:'Anti-inflammatory.',cautions:['GI bleeding','Renal caution']},
+  {name:'Pantoprazole',dose:'40 mg PO',schedule:'once daily',rationale:'Gastric protection.',cautions:[]},
+  {name:'Cetirizine',dose:'10 mg PO',schedule:'once daily',rationale:'Antihistamine adjunct.',cautions:[]},
+  {name:'Vitamin D3',dose:'1000 IU PO',schedule:'once daily',rationale:'Bone health.',cautions:[]},
+  {name:'Multivitamin',dose:'1 tablet PO',schedule:'once daily',rationale:'Supplementation.',cautions:[]},
+  {name:'Sertraline',dose:'50 mg PO',schedule:'once daily',rationale:'Mood support.',cautions:[]},
+  {name:'Melatonin',dose:'3 mg PO',schedule:'at bedtime',rationale:'Sleep support.',cautions:[]},
+  {name:'Atorvastatin',dose:'20 mg PO',schedule:'once daily',rationale:'CV risk reduction.',cautions:[]},
+  {name:'Aspirin',dose:'81 mg PO',schedule:'once daily',rationale:'CV prevention.',cautions:[]},
+];}
+
+function renderPlan(p){
+  document.getElementById('hs').innerHTML=`<div class="hs-d">${p.diseaseName}</div><div class="hs-g"><div class="hs-c"><div class="hs-v">${p.exercises.length}</div><div class="hs-l">Exercises</div></div><div class="hs-c"><div class="hs-v">${p.topDoctors.length}</div><div class="hs-l">Specialists</div></div><div class="hs-c"><div class="hs-v">${p.affirmations.length}</div><div class="hs-l">Affirmations</div></div><div class="hs-c"><div class="hs-v" style="font-size:15px">↻ Daily</div><div class="hs-l">Refresh</div></div></div>`;
+  const IT={low:'it-l',moderate:'it-m',high:'it-h'};
+  document.getElementById('excar').innerHTML=p.exercises.map(e=>`<div class="fc"><div class="fc-icon">🏃</div><div class="fc-t">${e.name}</div><div class="fc-b">${e.description}</div><div class="fc-f">⏱ ${e.frequency}</div><span class="itag ${IT[e.intensity]||'it-l'}">${e.intensity}</span></div>`).join('');
+  document.getElementById('doccar').innerHTML=p.topDoctors.slice(0,3).map((d,i)=>`<div class="doc-c" onclick="openDoc(${i})"><div class="doc-av">👨‍⚕️</div><div class="doc-n">${d.name}</div><div class="doc-sp">${d.specialty}</div><div class="doc-h">${d.hospital.name} · ${d.hospital.city}</div><span class="doc-xp">⭐ ${d.yearsOfExperience} yrs</span><button class="doc-btn">View full profile →</button></div>`).join('');
+  const AI={presence:'✦',agency:'◈',support:'⬡',compassion:'♡',hope:'◎',rest:'◌',trust:'✧',celebration:'◆'};
+  document.getElementById('affcar').innerHTML=p.affirmations.map(a=>`<div class="aff-c"><div class="aff-th">${AI[a.theme.toLowerCase()]||'◇'} ${a.theme}</div><div class="aff-q">"${a.statement}"</div></div>`).join('');
+  document.getElementById('cpdisc').innerHTML=p.disclaimers.map(d=>`— ${d}`).join('<br>');
+  document.getElementById('cpw').style.display='block';
+}
+
+function openDoc(i){
+  if(!plan)return;
+  const d=plan.topDoctors[i];
+  document.getElementById('md-n').textContent=d.name;
+  document.getElementById('md-sp').textContent=d.specialty;
+  document.getElementById('md-h').textContent=`${d.hospital.name} · ${d.hospital.city}, ${d.hospital.country}`;
+  document.getElementById('md-bio').textContent=d.bio;
+  document.getElementById('md-exp').textContent=d.yearsOfExperience;
+  document.getElementById('md-city').textContent=d.hospital.city;
+  document.getElementById('md-meds').innerHTML=d.medications.map((m,j)=>`<tr><td style="color:var(--txt3)">${j+1}</td><td><div class="med-nm">${m.name}</div>${m.cautions.length?`<div class="med-cau">⚠ ${m.cautions.join(', ')}</div>`:''}</td><td>${m.dose} · ${m.schedule}</td><td style="color:var(--txt3)">${m.rationale}</td></tr>`).join('');
+  document.getElementById('doc-modal').classList.add('op');
+}
+function closeMo(){document.getElementById('doc-modal').classList.remove('op')}
+document.getElementById('doc-modal').addEventListener('click',e=>{if(e.target===e.currentTarget)closeMo()});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeMo()});
+
+let b64=null,cf=null;
+function fc(inp){
+  const f=inp.files[0];if(!f)return;cf=f;
+  document.getElementById('upz').classList.add('has');
+  document.getElementById('uz-t').textContent=f.name;
+  document.getElementById('uz-h').textContent=(f.size/1024).toFixed(0)+' KB';
+  document.getElementById('abtn').disabled=false;
+  const r=new FileReader();r.onload=()=>{b64=r.result.split(',')[1]};r.readAsDataURL(f);
+}
+async function ar(){
+  if(!b64)return;
+  document.getElementById('aspin').style.display='inline-block';
+  document.getElementById('abtn').disabled=true;
+  document.getElementById('hl').innerHTML='<div style="color:var(--txt3);font-size:12px"><span class="spinner"></span> Analyzing…</div>';
+  try{const r=await fetch(`${API}/api/report/analyze`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({pdfBase64:b64,pdfFilename:cf?.name})});if(!r.ok)throw 0;renderResult(await r.json())}
+  catch{renderResult(mkDemo())}
+  finally{document.getElementById('aspin').style.display='none';document.getElementById('abtn').disabled=false}
+}
+function demo(){renderResult(mkDemo())}
+function mkDemo(){return{extracted:{charCount:49967,pages:26,textPreview:'PERSONAL HEALTH SMART REPORT\nPrepared for Jayesh Kumar Singh\nBasic Info — Male / 25 Yrs\nSample collection date 06/01/2026\nNational Reference Lab, Delhi\n'},detectedDiseases:[{slug:'liver-disease',name:'Liver disease (clinical)',score:1.0,evidence:['alt','ast','bilirubin','cirrhosis','hepatitis','fatty liver']},{slug:'diabetes',name:'Diabetes risk (clinical)',score:0.8,evidence:['diabetes','hbA1c','a1c']},{slug:'tuberculosis',name:'Tuberculosis (X-ray)',score:0.65,evidence:['tuberculosis','tb']},{slug:'heart-disease',name:'Heart disease risk',score:0.65,evidence:['cad','ascvd']},{slug:'kidney-disease',name:'Chronic kidney disease',score:0.65,evidence:['creatinine','proteinuria']}],primaryDisease:{slug:'liver-disease'},carePlan:mkPlan('liver-disease','Liver disease (clinical)')}}
+function renderResult(data){
+  if(data.extracted?.textPreview){document.getElementById('tpb').textContent=data.extracted.textPreview;document.getElementById('tps').textContent=`Characters: ${(data.extracted.charCount||0).toLocaleString()}${data.extracted.pages?' — Pages: '+data.extracted.pages:''}`;document.getElementById('tpw').style.display='block'}
+  const hits=data.detectedDiseases||[],pri=data.primaryDisease?.slug;
+  document.getElementById('hl').innerHTML=hits.map(h=>`<div class="hi ${h.slug===pri?'pri':''}"><div class="hi-bar"><div class="hi-fill" style="width:${Math.round(h.score*100)}%"></div></div><div class="hi-score">${Math.round(h.score*100)}%</div><div><div class="hi-n">${h.name}${h.slug===pri?' ★':''}</div><div class="hi-e">${(h.evidence||[]).slice(0,5).join(' · ')}</div></div></div>`).join('');
+  if(data.carePlan){plan=data.carePlan;renderPlan(data.carePlan)}
+}
+
+async function detectLLM(){
+  try{const r=await fetch(`${API}/api/healer/status`);if(r.ok){const d=await r.json();document.getElementById('llm-badge').textContent='🤖 LLM: '+(d.llmProvider||'unknown')}}
+  catch{document.getElementById('llm-badge').textContent='🤖 Set GROQ_API_KEY or GEMINI_API_KEY'}
+}
+function ck(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sc()}}
+async function sc(){
+  const inp=document.getElementById('cin'),msg=inp.value.trim();if(!msg)return;inp.value='';
+  addMsg('u',msg,[]);chatH.push({role:'user',content:msg});
+  const tid='t'+Date.now();
+  document.getElementById('chat-msgs').insertAdjacentHTML('beforeend',`<div class="cmsg" id="${tid}"><div class="cav ai">🧬</div><div class="cbub" style="color:var(--txt3)"><span class="spinner"></span> Thinking…</div></div>`);
+  scrollChat();
+  try{const r=await fetch(`${API}/api/chat/patient`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:msg,history:chatH.slice(-6)})});const d=await r.json();document.getElementById(tid)?.remove();const text=d.patientText||d.error||'No response.';chatH.push({role:'assistant',content:text});addMsg('ai',text,d.sourcesUsed||[])}
+  catch{document.getElementById(tid)?.remove();addMsg('ai','Backend not running. Start with `npm run dev` to enable AI chat.',[])}
+  scrollChat();
+}
+const SM={web_rag:'📖 Wikipedia RAG',pdf_excerpt:'📄 PDF',llm_groq:'🤖 Groq (free)',llm_gemini:'🤖 Gemini (free)',llm_anthropic:'🤖 Claude',llm_openai:'🤖 OpenAI'};
+function addMsg(role,text,srcs){
+  const ai=role==='ai',bs=(srcs||[]).map(s=>`<span class="pill ${ai?'':'y'}">${SM[s]||s}</span>`).join('');
+  document.getElementById('chat-msgs').insertAdjacentHTML('beforeend',`<div class="cmsg ${ai?'':'u'}"><div class="cav ${ai?'ai':'u'}">${ai?'🧬':'👤'}</div><div><div class="cbub ${ai?'':'u'}">${text.replace(/\n/g,'<br>')}</div>${bs?`<div class="csrc">${bs}</div>`:''}</div></div>`);
+}
+function scrollChat(){const m=document.getElementById('chat-msgs');m.scrollTop=m.scrollHeight}
+async function loadHist(){
+  histLoaded=true;
+  try{const r=await fetch(`${API}/api/answers?limit=25`);if(!r.ok)throw 0;const d=await r.json();const items=d.answers||d||[];
+  document.getElementById('hist-list').innerHTML=items.length?items.map(a=>`<div class="hist-item"><div style="font-size:13px;font-weight:500;color:var(--txt);line-height:1.4">${a.questionText||a.question||'—'}</div><div style="font-size:11.5px;color:var(--txt3);margin-top:4px;line-height:1.5">${(a.answerText||a.answer||'').slice(0,220)}…</div><div style="display:flex;gap:6px;margin-top:7px;flex-wrap:wrap"><span class="pill">${a.source||'rag'}</span><span class="pill y">${new Date(a.createdAt||a.created_at).toLocaleString()}</span></div></div>`).join(''):'<div style="color:var(--txt3);font-size:12px;padding:16px 0">No history yet — ask a question in Patient Chat.</div>'}
+  catch{document.getElementById('hist-list').innerHTML='<div style="color:var(--txt3);font-size:12px;padding:16px 0">Backend not running — history unavailable.</div>'}
+}
+detectLLM();
+</script>
+</body>
+</html>

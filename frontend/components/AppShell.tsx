@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { metaForPath } from "../lib/page-meta";
 import { ThemeToggle, useTheme } from "../lib/theme";
 import type { DiseaseSummary } from "../lib/types";
+import { SidebarDiseaseDropdowns } from "./SidebarDiseaseDropdowns";
 
 const MAIN_NAV = [
   { href: "/", label: "Disease Hub", match: (p: string) => p === "/" },
@@ -33,8 +34,6 @@ export function AppShell({
   const pathname = usePathname() ?? "/";
   const meta = metaForPath(pathname);
   const { theme } = useTheme();
-  const imaging = diseases.filter((d) => d.category === "imaging");
-  const clinical = diseases.filter((d) => d.category === "clinical");
   const brandIcon = theme === "light" ? "🌿" : "🧬";
 
   return (
@@ -72,25 +71,7 @@ export function AppShell({
               })}
             </div>
 
-            <div className="nav-sec">
-              <div className="nav-sec-lbl">Imaging</div>
-              {imaging.slice(0, 6).map((d) => (
-                <Link key={d.slug} href={`/diseases/${d.slug}`} className="ni">
-                  <span className="ni-dot" />
-                  {d.name}
-                </Link>
-              ))}
-            </div>
-
-            <div className="nav-sec">
-              <div className="nav-sec-lbl">Clinical</div>
-              {clinical.slice(0, 6).map((d) => (
-                <Link key={d.slug} href={`/diseases/${d.slug}`} className="ni">
-                  <span className="ni-dot" />
-                  {d.name}
-                </Link>
-              ))}
-            </div>
+            <SidebarDiseaseDropdowns diseases={diseases} />
           </nav>
 
           <div className="sb-foot">
@@ -113,7 +94,7 @@ export function AppShell({
                 {TOP_TABS.map((tab) => {
                   const on =
                     tab.href === "/"
-                      ? pathname === "/"
+                      ? pathname === "/" || pathname.startsWith("/diseases/")
                       : pathname === tab.href || pathname.startsWith(`${tab.href}/`);
                   return (
                     <Link key={tab.href} href={tab.href} className={`tab${on ? " on" : ""}`} role="tab">

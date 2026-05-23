@@ -1,0 +1,30 @@
+{
+  "diseaseSlug": "skin-cancer",
+  "displayName": "Skin lesion",
+  "trainedAt": "2026-05-23T03:53:02.158867+00:00",
+  "methodology": {
+    "features": "RGB histogram + gradient bins + 8x8 gray + stats (Pillow/numpy)",
+    "classifiers": [
+      "LogisticRegression",
+      "RandomForest"
+    ],
+    "selection": "best stratified CV ROC-AUC"
+  },
+  "metrics": {
+    "cvAuc": 0.92,
+    "cvFolds": 10,
+    "formulaKey": "hog_rf",
+    "testAccuracy": 0.7941,
+    "testF1": 0.7879,
+    "nSamples": 170,
+    "nPositive": 85,
+    "nNegative": 85,
+    "featureDim": 246,
+    "imageSize": 128
+  },
+  "artifactPath": "ml/artifacts/imaging/skin-cancer/pipeline.joblib",
+  "dataDirs": {
+    "positive": "data/imaging/skin-cancer/positive",
+    "negative": "data/imaging/skin-cancer/negative"
+  }
+}

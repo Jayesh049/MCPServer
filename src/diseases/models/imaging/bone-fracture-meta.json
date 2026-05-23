@@ -1,0 +1,30 @@
+{
+  "diseaseSlug": "bone-fracture",
+  "displayName": "Bone fracture (X-ray)",
+  "trainedAt": "2026-05-23T03:53:42.350424+00:00",
+  "methodology": {
+    "features": "RGB histogram + gradient bins + 8x8 gray + stats (Pillow/numpy)",
+    "classifiers": [
+      "LogisticRegression",
+      "RandomForest"
+    ],
+    "selection": "best stratified CV ROC-AUC"
+  },
+  "metrics": {
+    "cvAuc": 0.7114,
+    "cvFolds": 10,
+    "formulaKey": "hog_lr",
+    "testAccuracy": 0.7333,
+    "testF1": 0.8333,
+    "nSamples": 71,
+    "nPositive": 50,
+    "nNegative": 21,
+    "featureDim": 246,
+    "imageSize": 128
+  },
+  "artifactPath": "ml/artifacts/imaging/bone-fracture/pipeline.joblib",
+  "dataDirs": {
+    "positive": "data/imaging/bone-fracture/positive",
+    "negative": "data/imaging/bone-fracture/negative"
+  }
+}

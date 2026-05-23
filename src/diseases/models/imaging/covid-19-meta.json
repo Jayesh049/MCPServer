@@ -1,0 +1,30 @@
+{
+  "diseaseSlug": "covid-19",
+  "displayName": "COVID-19 (chest X-ray)",
+  "trainedAt": "2026-05-23T03:52:49.103536+00:00",
+  "methodology": {
+    "features": "RGB histogram + gradient bins + 8x8 gray + stats (Pillow/numpy)",
+    "classifiers": [
+      "LogisticRegression",
+      "RandomForest"
+    ],
+    "selection": "best stratified CV ROC-AUC"
+  },
+  "metrics": {
+    "cvAuc": 0.9992,
+    "cvFolds": 10,
+    "formulaKey": "hog_lr",
+    "testAccuracy": 1.0,
+    "testF1": 1.0,
+    "nSamples": 100,
+    "nPositive": 50,
+    "nNegative": 50,
+    "featureDim": 246,
+    "imageSize": 128
+  },
+  "artifactPath": "ml/artifacts/imaging/covid-19/pipeline.joblib",
+  "dataDirs": {
+    "positive": "data/imaging/covid-19/positive",
+    "negative": "data/imaging/covid-19/negative"
+  }
+}

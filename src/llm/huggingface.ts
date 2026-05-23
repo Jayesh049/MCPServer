@@ -49,7 +49,8 @@ export async function classifyImageWithHF(
   }
 
   const url = `${cfg.baseUrl ?? DEFAULT_BASE_URL}/${modelId}`;
-  const buf = Buffer.from(imageBase64, "base64");
+  const raw = imageBase64.replace(/^data:[^;]+;base64,/, "");
+  const buf = Buffer.from(raw, "base64");
 
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), cfg.timeoutMs ?? 25000);
@@ -65,6 +66,27 @@ export async function classifyImageWithHF(
       signal: controller.signal
     });
 
+    if (res.status === 503) {
+      await new Promise((r) => setTimeout(r, 8000));
+      const retry = await fetch(url, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${cfg.apiToken}`,
+          "Content-Type": imageMimeType || "application/octet-stream"
+        },
+        body: buf,
+        signal: controller.signal
+      });
+      if (!retry.ok) {
+        throw new HuggingFaceUnavailableError(
+          `HuggingFace request failed after retry: ${retry.status} ${retry.statusText}`,
+          retry.status
+        );
+      }
+      const retryData = (await retry.json()) as unknown;
+      return parseHFClassificationArray(modelId, retryData);
+    }
+
     if (!res.ok) {
       throw new HuggingFaceUnavailableError(
         `HuggingFace request failed: ${res.status} ${res.statusText}`,
@@ -73,25 +95,32 @@ export async function classifyImageWithHF(
     }
 
     const data = (await res.json()) as unknown;
-    if (!Array.isArray(data)) {
-      throw new HuggingFaceUnavailableError(
-        "Unexpected HuggingFace response (expected an array of {label,score})."
-      );
-    }
-
-    const predictions: HFClassificationItem[] = (data as any[])
-      .filter((d) => d && typeof d.label === "string" && typeof d.score === "number")
-      .map((d) => ({ label: String(d.label), score: Number(d.score) }))
-      .sort((a, b) => b.score - a.score);
-
-    if (predictions.length === 0) {
-      throw new HuggingFaceUnavailableError(
-        "HuggingFace returned no usable predictions."
-      );
-    }
-
-    return { modelId, predictions };
+    return parseHFClassificationArray(modelId, data);
   } finally {
     clearTimeout(timer);
   }
+}
+
+function parseHFClassificationArray(
+  modelId: string,
+  data: unknown
+): HFClassifyResult {
+  if (!Array.isArray(data)) {
+    throw new HuggingFaceUnavailableError(
+      "Unexpected HuggingFace response (expected an array of {label,score})."
+    );
+  }
+
+  const predictions: HFClassificationItem[] = (data as { label?: unknown; score?: unknown }[])
+    .filter((d) => d && typeof d.label === "string" && typeof d.score === "number")
+    .map((d) => ({ label: String(d.label), score: Number(d.score) }))
+    .sort((a, b) => b.score - a.score);
+
+  if (predictions.length === 0) {
+    throw new HuggingFaceUnavailableError(
+      "HuggingFace returned no usable predictions."
+    );
+  }
+
+  return { modelId, predictions };
 }

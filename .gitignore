@@ -37,11 +37,20 @@ Thumbs.db
 files (1)/
 files (2)/
 files (5)/
+files (6)/
+
+# Downloaded training images (large)
+data/imaging/**
+!data/imaging/README.md
+data/imaging/.hf_cache/
+data/imaging/_zip_cache/
 
 # Python ML generated artifacts (see ml/README.md); keep trained TB sklearn pipeline in git
 ml/artifacts/*
 !ml/artifacts/tuberculosis/
 !ml/artifacts/tuberculosis/**
+!ml/artifacts/imaging/
+!ml/artifacts/imaging/**
 **/__pycache__/
 *.py[cod]
 ml/scripts/__pycache__/

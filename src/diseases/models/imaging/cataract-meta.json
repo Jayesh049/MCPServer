@@ -1,0 +1,30 @@
+{
+  "diseaseSlug": "cataract",
+  "displayName": "Cataract",
+  "trainedAt": "2026-05-23T03:53:23.487045+00:00",
+  "methodology": {
+    "features": "RGB histogram + gradient bins + 8x8 gray + stats (Pillow/numpy)",
+    "classifiers": [
+      "LogisticRegression",
+      "RandomForest"
+    ],
+    "selection": "best stratified CV ROC-AUC"
+  },
+  "metrics": {
+    "cvAuc": 0.9732,
+    "cvFolds": 10,
+    "formulaKey": "hog_lr",
+    "testAccuracy": 0.95,
+    "testF1": 0.9474,
+    "nSamples": 100,
+    "nPositive": 50,
+    "nNegative": 50,
+    "featureDim": 246,
+    "imageSize": 128
+  },
+  "artifactPath": "ml/artifacts/imaging/cataract/pipeline.joblib",
+  "dataDirs": {
+    "positive": "data/imaging/cataract/positive",
+    "negative": "data/imaging/cataract/negative"
+  }
+}

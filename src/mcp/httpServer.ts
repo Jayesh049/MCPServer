@@ -1,5 +1,7 @@
 import http from "node:http";
 import type { ServerResponse } from "node:http";
+import { readFile } from "node:fs/promises";
+import path from "node:path";
 import { randomUUID } from "node:crypto";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import type { Server } from "@modelcontextprotocol/sdk/server/index.js";
@@ -57,6 +59,26 @@ export async function startHttpTransport(
         res.setHeader("Content-Type", "application/json; charset=utf-8");
         res.statusCode = 200;
         res.end(JSON.stringify({ ok: true, role: "mcp-only", time: new Date().toISOString() }));
+        return;
+      }
+
+      if (
+        includeRestApi &&
+        req.method === "GET" &&
+        (url.pathname === "/tester" || url.pathname === "/tester/")
+      ) {
+        try {
+          const html = await readFile(
+            path.join(process.cwd(), "public", "mcp-tester.html"),
+            "utf8"
+          );
+          res.statusCode = 200;
+          res.setHeader("Content-Type", "text/html; charset=utf-8");
+          res.end(html);
+        } catch {
+          res.statusCode = 404;
+          res.end("mcp-tester.html not found");
+        }
         return;
       }
 
@@ -141,7 +163,7 @@ export async function startHttpTransport(
   await new Promise<void>((resolve) => httpServer.listen(port, host, resolve));
   const mode = includeRestApi ? "MCP Streamable HTTP + REST API" : "MCP Streamable HTTP only";
   const paths = includeRestApi
-    ? `(mcp at ${mcpPath}, api at /api/*)`
+    ? `(mcp at ${mcpPath}, api at /api/*, tester at /tester)`
     : `(mcp at ${mcpPath}, GET /health for probes)`;
   process.stderr.write(`${mode} listening on http://${host}:${port} ${paths}\n`);
 }

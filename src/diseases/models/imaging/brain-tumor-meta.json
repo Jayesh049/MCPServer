@@ -1,0 +1,30 @@
+{
+  "diseaseSlug": "brain-tumor",
+  "displayName": "Brain tumor (MRI)",
+  "trainedAt": "2026-05-23T00:25:00.577858+00:00",
+  "methodology": {
+    "features": "RGB histogram + gradient bins + 8x8 gray + stats (Pillow/numpy)",
+    "classifiers": [
+      "LogisticRegression",
+      "RandomForest"
+    ],
+    "selection": "best stratified CV ROC-AUC"
+  },
+  "metrics": {
+    "cvAuc": 0.9938,
+    "cvFolds": 10,
+    "formulaKey": "hog_rf",
+    "testAccuracy": 0.95,
+    "testF1": 0.9524,
+    "nSamples": 100,
+    "nPositive": 50,
+    "nNegative": 50,
+    "featureDim": 246,
+    "imageSize": 128
+  },
+  "artifactPath": "ml/artifacts/imaging/brain-tumor/pipeline.joblib",
+  "dataDirs": {
+    "positive": "data/imaging/brain-tumor/positive",
+    "negative": "data/imaging/brain-tumor/negative"
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "diseaseSlug": "diabetic-retinopathy",
+  "displayName": "Diabetic retinopathy",
+  "trainedAt": "2026-05-23T03:53:08.304807+00:00",
+  "methodology": {
+    "features": "RGB histogram + gradient bins + 8x8 gray + stats (Pillow/numpy)",
+    "classifiers": [
+      "LogisticRegression",
+      "RandomForest"
+    ],
+    "selection": "best stratified CV ROC-AUC"
+  },
+  "metrics": {
+    "cvAuc": 0.9732,
+    "cvFolds": 10,
+    "formulaKey": "hog_lr",
+    "testAccuracy": 0.95,
+    "testF1": 0.9474,
+    "nSamples": 100,
+    "nPositive": 50,
+    "nNegative": 50,
+    "featureDim": 246,
+    "imageSize": 128
+  },
+  "artifactPath": "ml/artifacts/imaging/diabetic-retinopathy/pipeline.joblib",
+  "dataDirs": {
+    "positive": "data/imaging/diabetic-retinopathy/positive",
+    "negative": "data/imaging/diabetic-retinopathy/negative"
+  }
+}

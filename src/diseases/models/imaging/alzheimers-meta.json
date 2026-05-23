@@ -1,0 +1,30 @@
+{
+  "diseaseSlug": "alzheimers",
+  "displayName": "Alzheimer's (brain MRI)",
+  "trainedAt": "2026-05-23T03:53:47.993803+00:00",
+  "methodology": {
+    "features": "RGB histogram + gradient bins + 8x8 gray + stats (Pillow/numpy)",
+    "classifiers": [
+      "LogisticRegression",
+      "RandomForest"
+    ],
+    "selection": "best stratified CV ROC-AUC"
+  },
+  "metrics": {
+    "cvAuc": 0.8042,
+    "cvFolds": 10,
+    "formulaKey": "hog_lr",
+    "testAccuracy": 0.7941,
+    "testF1": 0.8,
+    "nSamples": 170,
+    "nPositive": 85,
+    "nNegative": 85,
+    "featureDim": 246,
+    "imageSize": 128
+  },
+  "artifactPath": "ml/artifacts/imaging/alzheimers/pipeline.joblib",
+  "dataDirs": {
+    "positive": "data/imaging/alzheimers/positive",
+    "negative": "data/imaging/alzheimers/negative"
+  }
+}

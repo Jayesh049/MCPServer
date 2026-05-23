@@ -1,0 +1,30 @@
+{
+  "diseaseSlug": "lung-cancer",
+  "displayName": "Lung cancer (chest X-ray)",
+  "trainedAt": "2026-05-23T03:53:38.895487+00:00",
+  "methodology": {
+    "features": "RGB histogram + gradient bins + 8x8 gray + stats (Pillow/numpy)",
+    "classifiers": [
+      "LogisticRegression",
+      "RandomForest"
+    ],
+    "selection": "best stratified CV ROC-AUC"
+  },
+  "metrics": {
+    "cvAuc": 0.9398,
+    "cvFolds": 10,
+    "formulaKey": "hog_rf",
+    "testAccuracy": 1.0,
+    "testF1": 1.0,
+    "nSamples": 100,
+    "nPositive": 50,
+    "nNegative": 50,
+    "featureDim": 246,
+    "imageSize": 128
+  },
+  "artifactPath": "ml/artifacts/imaging/lung-cancer/pipeline.joblib",
+  "dataDirs": {
+    "positive": "data/imaging/lung-cancer/positive",
+    "negative": "data/imaging/lung-cancer/negative"
+  }
+}

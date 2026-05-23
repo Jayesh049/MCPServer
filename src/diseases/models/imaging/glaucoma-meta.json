@@ -1,0 +1,30 @@
+{
+  "diseaseSlug": "glaucoma",
+  "displayName": "Glaucoma",
+  "trainedAt": "2026-05-23T03:53:17.940202+00:00",
+  "methodology": {
+    "features": "RGB histogram + gradient bins + 8x8 gray + stats (Pillow/numpy)",
+    "classifiers": [
+      "LogisticRegression",
+      "RandomForest"
+    ],
+    "selection": "best stratified CV ROC-AUC"
+  },
+  "metrics": {
+    "cvAuc": 0.7931,
+    "cvFolds": 10,
+    "formulaKey": "hog_lr",
+    "testAccuracy": 0.5385,
+    "testF1": 0.625,
+    "nSamples": 62,
+    "nPositive": 33,
+    "nNegative": 29,
+    "featureDim": 246,
+    "imageSize": 128
+  },
+  "artifactPath": "ml/artifacts/imaging/glaucoma/pipeline.joblib",
+  "dataDirs": {
+    "positive": "data/imaging/glaucoma/positive",
+    "negative": "data/imaging/glaucoma/negative"
+  }
+}

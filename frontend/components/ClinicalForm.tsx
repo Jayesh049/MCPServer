@@ -5,11 +5,20 @@ import type { DiseaseInputField } from "../lib/types";
 
 export function ClinicalForm({
   fields,
-  onChange
+  onChange,
+  variant = "legacy"
 }: {
   fields: DiseaseInputField[];
   onChange: (values: Record<string, string | number | boolean>) => void;
+  variant?: "legacy" | "stunning";
 }) {
+  const stunning = variant === "stunning";
+  const gridClass = stunning ? "stf-grid" : "row";
+  const fullClass = stunning ? "stf-full" : "row full";
+  const labelClass = stunning ? "stf-label" : "label";
+  const inputClass = stunning ? "stf-input" : "input";
+  const selectClass = stunning ? "stf-input" : "select";
+  const helpClass = stunning ? "stf-help" : "subtle";
   const [values, setValues] = useState<Record<string, string | number | boolean>>({});
 
   function update(name: string, value: string | number | boolean) {
@@ -19,10 +28,10 @@ export function ClinicalForm({
   }
 
   return (
-    <div className="row">
+    <div className={gridClass}>
       {fields.map((field) => (
-        <div key={field.name} className={field.helpText ? "row full" : undefined}>
-          <label className="label">
+        <div key={field.name} className={field.helpText ? fullClass : undefined}>
+          <label className={labelClass}>
             {field.label}
             {field.unit ? ` (${field.unit})` : ""}
             {field.required ? " *" : ""}
@@ -30,7 +39,7 @@ export function ClinicalForm({
 
           {field.kind === "boolean" ? (
             <select
-              className="select"
+              className={selectClass}
               value={String(values[field.name] ?? "false")}
               onChange={(e) => update(field.name, e.target.value === "true")}
             >
@@ -39,7 +48,7 @@ export function ClinicalForm({
             </select>
           ) : field.kind === "select" ? (
             <select
-              className="select"
+              className={selectClass}
               value={String(values[field.name] ?? "")}
               onChange={(e) => update(field.name, e.target.value)}
             >
@@ -52,7 +61,7 @@ export function ClinicalForm({
             </select>
           ) : field.kind === "number" ? (
             <input
-              className="input"
+              className={inputClass}
               type="number"
               min={field.min}
               max={field.max}
@@ -63,7 +72,7 @@ export function ClinicalForm({
             />
           ) : (
             <input
-              className="input"
+              className={inputClass}
               type="text"
               value={String(values[field.name] ?? "")}
               onChange={(e) => update(field.name, e.target.value)}
@@ -71,7 +80,7 @@ export function ClinicalForm({
           )}
 
           {field.helpText && (
-            <div className="subtle" style={{ marginTop: 4 }}>
+            <div className={helpClass} style={{ marginTop: 4 }}>
               {field.helpText}
             </div>
           )}

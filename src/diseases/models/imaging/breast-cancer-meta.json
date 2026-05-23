@@ -1,0 +1,30 @@
+{
+  "diseaseSlug": "breast-cancer",
+  "displayName": "Breast cancer (mammogram)",
+  "trainedAt": "2026-05-23T03:53:32.213031+00:00",
+  "methodology": {
+    "features": "RGB histogram + gradient bins + 8x8 gray + stats (Pillow/numpy)",
+    "classifiers": [
+      "LogisticRegression",
+      "RandomForest"
+    ],
+    "selection": "best stratified CV ROC-AUC"
+  },
+  "metrics": {
+    "cvAuc": 1.0,
+    "cvFolds": 10,
+    "formulaKey": "hog_lr",
+    "testAccuracy": 0.9,
+    "testF1": 0.8889,
+    "nSamples": 200,
+    "nPositive": 100,
+    "nNegative": 100,
+    "featureDim": 246,
+    "imageSize": 128
+  },
+  "artifactPath": "ml/artifacts/imaging/breast-cancer/pipeline.joblib",
+  "dataDirs": {
+    "positive": "data/imaging/breast-cancer/positive",
+    "negative": "data/imaging/breast-cancer/negative"
+  }
+}

@@ -1,3 +1,5 @@
+import { StunningCredentials } from "./StunningCredentials";
+
 export function StunningAbout() {
   return (
     <>
@@ -8,6 +10,8 @@ export function StunningAbout() {
           why. This platform is for medical education only.
         </div>
       </div>
+
+      <StunningCredentials />
 
       <div
         style={{

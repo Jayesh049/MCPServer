@@ -8,24 +8,11 @@ import {
 } from "./helpers.js";
 import { predictPneumonia } from "./predictors/pneumoniaHF.js";
 import { predictDiabetesLR } from "./predictors/diabetesLR.js";
-import { clinicalRiskPredict, imagingRiskPredict } from "./riskBridge.js";
+import { clinicalRiskPredict } from "./riskBridge.js";
+import { imagingMlPredict } from "./predictors/predictImaging.js";
 import { predictTuberculosis } from "./predictors/predictTuberculosis.js";
 
 const IMAGE_MIMES = ["image/jpeg", "image/png", "image/webp"];
-
-function imagingPredictor(opts: {
-  slug: string;
-  positiveLabel: string;
-  negativeLabel: string;
-  rationaleBase: string;
-}) {
-  return imagingRiskPredict(
-    opts.slug,
-    opts.positiveLabel,
-    opts.negativeLabel,
-    opts.rationaleBase
-  );
-}
 
 const PATIENT_ED_GENERIC = [
   "Discuss findings with your clinician before changing any treatment.",
@@ -42,11 +29,11 @@ export const diseases: DiseaseConfig[] = [
     modality: "imaging",
     description:
       "Detect likely tumor-vs-no-tumor patterns from a brain MRI image (synthetic test only).",
-    modelKind: "open-source-pretrained",
+    modelKind: "self-trained",
     modelNotes:
-      "Will wrap a pretrained MRI tumor classifier (e.g., HuggingFace model) in production.",
+      "Sklearn HOG+histogram classifier on downloaded MRI images (npm run train:imaging:download && train:imaging).",
     inputSpec: { kind: "image", acceptedMimeTypes: IMAGE_MIMES },
-    predict: imagingPredictor({
+    predict: imagingMlPredict({
       slug: "brain-tumor",
       positiveLabel: "tumor_likely",
       negativeLabel: "no_tumor_detected",
@@ -92,8 +79,8 @@ export const diseases: DiseaseConfig[] = [
     description: "Identify likely pneumonia patterns from a chest X-ray image.",
     modelKind: "open-source-pretrained",
     modelNotes:
-      "Calls a HuggingFace Inference API model (default: lxyuan/vit-xray-pneumonia-classification). " +
-      "Falls back to a deterministic image-hash score when HF_API_TOKEN is not set.",
+      "Hugging Face ViT (default: lxyuan/vit-xray-pneumonia-classification) when HF_API_TOKEN is set; " +
+      "optional DISEASE_ML_URL Flask sidecar; otherwise content-aware brightness/contrast stub (isStub: true).",
     inputSpec: { kind: "image", acceptedMimeTypes: IMAGE_MIMES },
     predict: predictPneumonia,
     treatments: [
@@ -165,10 +152,11 @@ export const diseases: DiseaseConfig[] = [
     category: "imaging",
     modality: "imaging",
     description: "Identify radiographic findings suggestive of COVID-19 pneumonia.",
-    modelKind: "open-source-pretrained",
-    modelNotes: "Will wrap an open COVID-CXR classifier.",
+    modelKind: "self-trained",
+    modelNotes:
+      "Sklearn CXR classifier (npm run train:imaging:download && train:imaging). Falls back to stub if not trained.",
     inputSpec: { kind: "image", acceptedMimeTypes: IMAGE_MIMES },
-    predict: imagingPredictor({
+    predict: imagingMlPredict({
       slug: "covid-19",
       positiveLabel: "covid_findings",
       negativeLabel: "no_covid_findings",
@@ -206,10 +194,10 @@ export const diseases: DiseaseConfig[] = [
     category: "imaging",
     modality: "imaging",
     description: "Classify a dermatology image as benign vs likely malignant.",
-    modelKind: "open-source-pretrained",
-    modelNotes: "Will wrap an HAM10000-style classifier.",
+    modelKind: "self-trained",
+    modelNotes: "Sklearn skin lesion classifier (train:imaging pipeline).",
     inputSpec: { kind: "image", acceptedMimeTypes: IMAGE_MIMES },
-    predict: imagingPredictor({
+    predict: imagingMlPredict({
       slug: "skin-cancer",
       positiveLabel: "lesion_likely_malignant",
       negativeLabel: "lesion_likely_benign",
@@ -241,10 +229,10 @@ export const diseases: DiseaseConfig[] = [
     category: "imaging",
     modality: "imaging",
     description: "Grade diabetic retinopathy severity from a retinal image.",
-    modelKind: "open-source-pretrained",
-    modelNotes: "Will wrap an APTOS-style DR classifier.",
+    modelKind: "self-trained",
+    modelNotes: "Sklearn fundus classifier (train:imaging pipeline).",
     inputSpec: { kind: "image", acceptedMimeTypes: IMAGE_MIMES },
-    predict: imagingPredictor({
+    predict: imagingMlPredict({
       slug: "diabetic-retinopathy",
       positiveLabel: "retinopathy_findings",
       negativeLabel: "no_retinopathy_findings",
@@ -288,10 +276,10 @@ export const diseases: DiseaseConfig[] = [
     category: "imaging",
     modality: "imaging",
     description: "Identify optic-disc patterns suggestive of glaucoma.",
-    modelKind: "open-source-pretrained",
-    modelNotes: "Will wrap an open glaucoma classifier (REFUGE / ACRIMA).",
+    modelKind: "self-trained",
+    modelNotes: "Sklearn glaucoma fundus classifier (train:imaging pipeline).",
     inputSpec: { kind: "image", acceptedMimeTypes: IMAGE_MIMES },
-    predict: imagingPredictor({
+    predict: imagingMlPredict({
       slug: "glaucoma",
       positiveLabel: "glaucoma_suspected",
       negativeLabel: "no_glaucoma_findings",
@@ -323,10 +311,10 @@ export const diseases: DiseaseConfig[] = [
     category: "imaging",
     modality: "imaging",
     description: "Detect cataract findings from an external eye / fundus image.",
-    modelKind: "open-source-pretrained",
-    modelNotes: "Will wrap an open cataract classifier.",
+    modelKind: "self-trained",
+    modelNotes: "Sklearn cataract eye-image classifier (train:imaging pipeline).",
     inputSpec: { kind: "image", acceptedMimeTypes: IMAGE_MIMES },
-    predict: imagingPredictor({
+    predict: imagingMlPredict({
       slug: "cataract",
       positiveLabel: "cataract_likely",
       negativeLabel: "no_cataract_findings",
@@ -358,10 +346,10 @@ export const diseases: DiseaseConfig[] = [
     category: "imaging",
     modality: "imaging",
     description: "Classify mammogram regions as benign vs likely malignant.",
-    modelKind: "open-source-pretrained",
-    modelNotes: "Will wrap an open mammography classifier.",
+    modelKind: "self-trained",
+    modelNotes: "Sklearn mammography classifier (train:imaging pipeline).",
     inputSpec: { kind: "image", acceptedMimeTypes: IMAGE_MIMES },
-    predict: imagingPredictor({
+    predict: imagingMlPredict({
       slug: "breast-cancer",
       positiveLabel: "mass_suspicious",
       negativeLabel: "benign_or_normal",
@@ -393,10 +381,10 @@ export const diseases: DiseaseConfig[] = [
     category: "imaging",
     modality: "imaging",
     description: "Detect suspicious lung nodules on chest CT.",
-    modelKind: "open-source-pretrained",
-    modelNotes: "Will wrap a Lung-Nodule classifier (LIDC-IDRI based).",
+    modelKind: "self-trained",
+    modelNotes: "Sklearn lung imaging classifier (train:imaging pipeline).",
     inputSpec: { kind: "image", acceptedMimeTypes: IMAGE_MIMES },
-    predict: imagingPredictor({
+    predict: imagingMlPredict({
       slug: "lung-cancer",
       positiveLabel: "nodule_suspicious",
       negativeLabel: "no_suspicious_nodule",
@@ -428,10 +416,10 @@ export const diseases: DiseaseConfig[] = [
     category: "imaging",
     modality: "imaging",
     description: "Detect fractures on extremity X-rays.",
-    modelKind: "open-source-pretrained",
-    modelNotes: "Will wrap an open MURA-style fracture classifier.",
+    modelKind: "self-trained",
+    modelNotes: "Sklearn fracture X-ray classifier (train:imaging pipeline).",
     inputSpec: { kind: "image", acceptedMimeTypes: IMAGE_MIMES },
-    predict: imagingPredictor({
+    predict: imagingMlPredict({
       slug: "bone-fracture",
       positiveLabel: "fracture_detected",
       negativeLabel: "no_fracture",
@@ -465,9 +453,10 @@ export const diseases: DiseaseConfig[] = [
     description:
       "Identify atrophy patterns suggestive of Alzheimer's disease from brain MRI.",
     modelKind: "self-trained",
-    modelNotes: "Self-trained CNN on synthetic atrophy patterns (placeholder).",
+    modelNotes:
+      "Sklearn Alzheimer's MRI classifier (Falah/Alzheimer_MRI via train:imaging:download).",
     inputSpec: { kind: "image", acceptedMimeTypes: IMAGE_MIMES },
-    predict: imagingPredictor({
+    predict: imagingMlPredict({
       slug: "alzheimers",
       positiveLabel: "atrophy_pattern_suggestive",
       negativeLabel: "no_atrophy_pattern",

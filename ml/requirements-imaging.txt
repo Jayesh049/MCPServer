@@ -1,0 +1,10 @@
+# Imaging download + train (Python 3.11–3.13; Windows-friendly — no C compiler needed)
+numpy>=2.0,<3
+pandas>=2.2,<3
+pyarrow>=18,<22
+joblib>=1.4,<2
+scikit-learn>=1.6.1,<2
+Pillow>=10.4,<12
+tqdm>=4.66,<5
+requests>=2.32,<3
+huggingface_hub>=0.26,<1

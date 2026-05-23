@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { getDiseaseSummaries } from "../../../lib/fetch-diseases";
-import { DetectorTester } from "./DetectorTester";
+import { StunningDiseaseDetector } from "../../../components/stunning/StunningDiseaseDetector";
 
 export default async function DiseasePage({
   params
@@ -13,36 +13,17 @@ export default async function DiseasePage({
 
   if (!disease) {
     return (
-      <div className="page-hero-compact">
-        <p>Unknown disease: {slug}</p>
-        <Link href="/" className="btn secondary" style={{ marginTop: 12, display: "inline-flex" }}>
-          ← Back to all diseases
+      <>
+        <div className="sec-h">
+          <div className="sec-title">Unknown disease</div>
+          <div className="sec-sub">{slug}</div>
+        </div>
+        <Link href="/" className="btn btn-g" style={{ display: "inline-flex", marginTop: 8 }}>
+          ← Disease hub
         </Link>
-      </div>
+      </>
     );
   }
 
-  return (
-    <div>
-      <div className="back-row">
-        <Link href="/" className="subtle">
-          ← All diseases
-        </Link>
-      </div>
-      <section className="hero">
-        <div className="hero-eyebrow">Disease pipeline</div>
-        <h1>{disease.name}</h1>
-        <p className="hero-sub">{disease.description}</p>
-        <div className="hero-meta" style={{ marginTop: 8 }}>
-          <span className="card-tag">{disease.modality}</span>
-          <span className="card-tag">{disease.modelKind}</span>
-        </div>
-        <p className="subtle" style={{ marginTop: 14, maxWidth: 640 }}>
-          {disease.modelNotes}
-        </p>
-      </section>
-
-      <DetectorTester disease={disease} />
-    </div>
-  );
+  return <StunningDiseaseDetector disease={disease} />;
 }

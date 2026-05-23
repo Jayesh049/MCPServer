@@ -26,7 +26,7 @@ export type DynamicWebRagResult = {
   slug: string;
   question: string;
   embeddingProvider: EmbedProvider;
-  webSource: "wikipedia";
+  webSource: "wikipedia" | "trained_corpus";
   indexedChunks: number;
   refreshed: boolean;
   topMatches: WebRagMatch[];

@@ -25,3 +25,17 @@ export function persistAnswerSafe(args: Parameters<typeof persistAnswer>[0]) {
     console.warn("[persistAnswer]", e);
   });
 }
+
+/** Remove one stored answer row (patient history). */
+export async function deleteAnswerById(id: string): Promise<boolean> {
+  const trimmed = id.trim();
+  if (!trimmed) return false;
+  const result = await prisma.answer.deleteMany({ where: { id: trimmed } });
+  return result.count > 0;
+}
+
+/** Remove all answer rows (clear patient Q&A history). */
+export async function deleteAllAnswers(): Promise<number> {
+  const result = await prisma.answer.deleteMany({});
+  return result.count;
+}

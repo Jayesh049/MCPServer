@@ -24,6 +24,8 @@ export function getApiDiscovery() {
       { method: "GET", path: "/api/rag/catalog", description: "Manual q2–q4 + bank qb_*." },
       { method: "GET", path: "/api/questions", description: "DB Question rows." },
       { method: "GET", path: "/api/answers", description: "?limit= Recent Answer rows." },
+      { method: "DELETE", path: "/api/answers/:id", description: "Delete one history row by id." },
+      { method: "DELETE", path: "/api/answers", description: "Clear all answer history." },
       { method: "POST", path: "/api/rag/ask", description: "Free-form Wikipedia RAG." },
       { method: "POST", path: "/api/rag/ask-bank", description: "{ slug: qb_XXX }." },
       { method: "POST", path: "/api/rag/train-bank", description: "Start training bank (async). Returns { started, runId? }." },

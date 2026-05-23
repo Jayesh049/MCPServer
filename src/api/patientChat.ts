@@ -1,16 +1,18 @@
 /**
- * Patient chat: Wikipedia RAG (grounding) + optional LLM to write simple, multilingual answers.
+ * Patient chat: **trained corpus RAG** (default) or live Wikipedia RAG + LLM synthesis.
  *
- * - RAG always runs first (`answerQuestionWithWebRag`, `skipGeminiSynthesis: true`).
- * - LLM provider (first available key): **Gemini → Groq → OpenAI → Anthropic → OpenRouter** → template fallback.
- * - Recommended for dev: **GEMINI_API_KEY** (same as embeddings; AI Studio free tier).
- * - Set **PATIENT_CHAT_DISABLE_LLM=1** to force template-only (no external LLM).
- * - Optional **history**: `{ role, content }[]` for multi-turn (passed to the LLM only).
+ * - Default (`PATIENT_CHAT_RAG_SOURCE=trained`): retrieve pre-indexed chunks from Postgres
+ *   (`npm run db:train-bank`) — **no Wikipedia at query time**. Groq/Gemini write the answer.
+ * - Legacy (`PATIENT_CHAT_RAG_SOURCE=wikipedia`): live Wikipedia fetch per question.
+ * - LLM order: **Groq → Gemini** → OpenAI → Anthropic → OpenRouter.
+ * - Set **PATIENT_CHAT_DISABLE_LLM=1** for template-only replies.
  */
 
 import { extractTextFromPdfBase64 } from "../report/pdfText.js";
 import { answerQuestionWithWebRag } from "../rag/dynamicWebRag.js";
 import type { DynamicWebRagResult } from "../rag/dynamicWebRag.js";
+import { answerQuestionWithTrainedCorpus } from "../rag/trainedCorpusRag.js";
+import type { TrainedCorpusRagResult } from "../rag/trainedCorpusRag.js";
 
 const MAX_DOC_CHARS = 10_000;
 const MAX_RAG_CONTEXT_CHARS = 3_000;
@@ -49,42 +51,78 @@ export type PatientChatResponse = {
   /** When LLM is off, explains template-only mode. */
   languageNote?: string;
   disclaimer?: string;
-  rawRag?: DynamicWebRagResult;
+  rawRag?: DynamicWebRagResult | TrainedCorpusRagResult;
+  ragSource?: "trained_corpus" | "wikipedia";
   error?: string;
 };
+
+function patientChatRagSource(): "trained" | "wikipedia" {
+  const v = (process.env.PATIENT_CHAT_RAG_SOURCE ?? "trained").toLowerCase();
+  return v === "wikipedia" || v === "web" ? "wikipedia" : "trained";
+}
 
 // ---------------------------------------------------------------------------
 // LLM provider implementations
 // ---------------------------------------------------------------------------
 
-/**
- * Detect which LLM to use for patient chat (first match wins).
- * Order: Gemini → Groq → OpenAI → Anthropic → OpenRouter → none.
- * Rationale: Gemini matches existing GOOGLE_API_KEY / AI Studio setup, strong multilingual, free tier;
- * Groq is very fast/cheap; OpenAI widely known; Anthropic/OpenRouter optional.
- */
-function detectProvider():
+export type PatientChatLlmProvider =
   | "anthropic"
   | "gemini"
   | "groq"
   | "openai"
-  | "openrouter"
-  | "none" {
-  if (
-    (process.env.PATIENT_CHAT_DISABLE_LLM ?? "").toLowerCase() === "1" ||
-    (process.env.PATIENT_CHAT_DISABLE_LLM ?? "").toLowerCase() === "true"
-  ) {
-    return "none";
-  }
-  if (process.env.GEMINI_API_KEY?.trim() || process.env.GOOGLE_API_KEY?.trim()) return "gemini";
-  if (process.env.GROQ_API_KEY?.trim()) return "groq";
-  if (process.env.OPENAI_API_KEY?.trim()) return "openai";
-  if (process.env.ANTHROPIC_API_KEY?.trim()) return "anthropic";
-  if (process.env.OPENROUTER_API_KEY?.trim()) return "openrouter";
-  return "none";
+  | "openrouter";
+
+function isLlmDisabled(): boolean {
+  const v = (process.env.PATIENT_CHAT_DISABLE_LLM ?? "").toLowerCase();
+  return v === "1" || v === "true";
 }
 
-function buildSystemPrompt(ragContext: string, language: string, hasPdf: boolean): string {
+/**
+ * Patient chat LLM priority: Groq first, then Gemini, then other keys.
+ */
+function patientChatProviderChain(): PatientChatLlmProvider[] {
+  if (isLlmDisabled()) return [];
+  const chain: PatientChatLlmProvider[] = [];
+  if (process.env.GROQ_API_KEY?.trim()) chain.push("groq");
+  if (process.env.GEMINI_API_KEY?.trim() || process.env.GOOGLE_API_KEY?.trim()) {
+    chain.push("gemini");
+  }
+  if (process.env.OPENAI_API_KEY?.trim()) chain.push("openai");
+  if (process.env.ANTHROPIC_API_KEY?.trim()) chain.push("anthropic");
+  if (process.env.OPENROUTER_API_KEY?.trim()) chain.push("openrouter");
+  return chain;
+}
+
+/** First provider in chain (for badges / metadata). */
+function detectProvider(): PatientChatLlmProvider | "none" {
+  const chain = patientChatProviderChain();
+  return chain[0] ?? "none";
+}
+
+/** Strip chat filler so Wikipedia search matches the topic (e.g. drinking water). */
+function wikipediaSearchQueryFromMessage(message: string): string {
+  let q = message.trim();
+  const stripOnce = (re: RegExp) => {
+    q = q.replace(re, "").trim();
+  };
+  stripOnce(/^(hey|hi|hello|please|thanks)[,!.\s]+/i);
+  for (let i = 0; i < 6; i++) {
+    const before = q;
+    stripOnce(
+      /^(can you|could you|would you|tell me|explain|describe|what is|what are|what's|whats|significance of|meaning of|importance of|about|regarding)\s+/i
+    );
+    if (q === before) break;
+  }
+  q = q.replace(/[?.!]+$/g, "").trim();
+  return q.length >= 3 ? q : message.trim();
+}
+
+function buildSystemPrompt(
+  ragContext: string,
+  language: string,
+  hasPdf: boolean,
+  ragSource: "trained" | "wikipedia"
+): string {
   const langNote = language.toLowerCase() === "english"
     ? "Reply in clear, simple English."
     : `Reply in ${language}. If you are not confident in that language, reply in English and add a note.`;
@@ -96,13 +134,17 @@ function buildSystemPrompt(ragContext: string, language: string, hasPdf: boolean
   return [
     "You are a patient-education assistant helping everyday people understand health topics.",
     langNote,
-    "Use the medical context provided below to ground your answer.",
+    ragSource === "trained"
+      ? "The context below was retrieved from our pre-trained medical education corpus (indexed Q&A bank in the database — not live web search)."
+      : "The context below was retrieved from Wikipedia (and any uploaded document).",
+    "Answer ONLY about the user's topic using that context. Do not introduce unrelated articles or topics.",
+    "If the context does not clearly cover the question, say so briefly and suggest a clearer health-related question.",
     "Write in short, simple sentences. Avoid jargon. If you must use a medical term, explain it immediately.",
     "Never give a personal diagnosis or prescribe treatment.",
     "Always end your response with exactly one sentence starting with: 'Please speak with a doctor or healthcare professional'.",
     docNote,
     "",
-    "--- Medical context (from Wikipedia / uploaded document) ---",
+    "--- Retrieved context (ground truth for this answer) ---",
     ragContext.slice(0, MAX_RAG_CONTEXT_CHARS),
     "--- End of context ---",
   ]
@@ -315,27 +357,48 @@ function fallbackResponse(
   if (!options?.llmConfigured) {
     lines.push(
       ``,
-      `(To enable AI-powered responses, add GEMINI_API_KEY or GROQ_API_KEY to your .env file — both have a free tier.)`
+      `(To enable AI-powered responses, add GROQ_API_KEY first, or GEMINI_API_KEY as fallback — both have a free tier.)`
     );
   }
   return lines.join("\n");
 }
 
-/** Route to the right provider and call it */
 async function synthesizeAnswer(
   system: string,
   history: ChatTurn[],
   message: string,
-  provider: ReturnType<typeof detectProvider>
+  provider: PatientChatLlmProvider
 ): Promise<string> {
   switch (provider) {
-    case "anthropic":  return callAnthropic(system, history, message);
-    case "gemini":     return callGemini(system, history, message);
-    case "groq":       return callGroq(system, history, message);
-    case "openai":     return callOpenAI(system, history, message);
-    case "openrouter": return callOpenRouter(system, history, message);
-    default:           return "";
+    case "anthropic":
+      return callAnthropic(system, history, message);
+    case "gemini":
+      return callGemini(system, history, message);
+    case "groq":
+      return callGroq(system, history, message);
+    case "openai":
+      return callOpenAI(system, history, message);
+    case "openrouter":
+      return callOpenRouter(system, history, message);
   }
+}
+
+/** Groq first, then Gemini, then other configured providers. */
+async function synthesizeWithFallback(
+  system: string,
+  history: ChatTurn[],
+  message: string
+): Promise<{ text: string; provider: PatientChatLlmProvider | "none" }> {
+  const chain = patientChatProviderChain();
+  for (const provider of chain) {
+    try {
+      const text = await synthesizeAnswer(system, history, message, provider);
+      if (text.trim()) return { text: text.trim(), provider };
+    } catch (e) {
+      console.warn(`[patientChat] ${provider} failed, trying next provider:`, e);
+    }
+  }
+  return { text: "", provider: "none" };
 }
 
 // ---------------------------------------------------------------------------
@@ -380,20 +443,26 @@ export async function executePatientChat(
     typeof body.imageBase64 === "string" && body.imageBase64.trim().length > 8;
   if (hasImage) sourcesUsed.push("image_attachment_meta");
 
-  // Compose the RAG query (message + doc context if present)
+  const searchQuery = wikipediaSearchQueryFromMessage(message);
+  const ragMode = patientChatRagSource();
+
   const ragQuery =
     docExcerpt.length > 0
-      ? `${message}\n\n---\nContext from uploaded document:\n${docExcerpt.slice(0, MAX_DOC_CHARS)}`
-      : message;
+      ? `${searchQuery}\n\n---\nContext from uploaded document:\n${docExcerpt.slice(0, MAX_DOC_CHARS)}`
+      : searchQuery;
 
-  // --- RAG retrieval ---
-  let rag: DynamicWebRagResult;
+  let rag: DynamicWebRagResult | TrainedCorpusRagResult;
   try {
-    rag = await answerQuestionWithWebRag(ragQuery, {
-      refresh: false,
-      skipGeminiSynthesis: true, // We do our own synthesis below
-    });
-    sourcesUsed.push("web_rag");
+    if (ragMode === "wikipedia") {
+      rag = await answerQuestionWithWebRag(ragQuery, {
+        refresh: true,
+        skipGeminiSynthesis: true,
+      });
+      sourcesUsed.push("web_rag");
+    } else {
+      rag = await answerQuestionWithTrainedCorpus(ragQuery);
+      sourcesUsed.push("trained_rag");
+    }
   } catch (e) {
     const msg = e instanceof Error ? e.message : "RAG failed.";
     return { ok: false, error: msg };
@@ -405,26 +474,31 @@ export async function executePatientChat(
     ...(docExcerpt ? [`--- From your uploaded document ---\n${docExcerpt.slice(0, 2000)}`] : []),
   ].join("\n\n");
 
-  // --- LLM synthesis ---
-  const provider = detectProvider();
-  const system = buildSystemPrompt(ragContext, language, docExcerpt.length > 0);
+  // --- LLM synthesis (Groq → Gemini → …) ---
+  const system = buildSystemPrompt(
+    ragContext,
+    language,
+    docExcerpt.length > 0,
+    ragMode
+  );
+  const chain = patientChatProviderChain();
+  const llmConfigured = chain.length > 0;
 
-  const llmConfigured = provider !== "none";
-  let patientText: string;
-  try {
-    if (provider === "none") {
-      patientText = fallbackResponse(message, ragContext, { llmConfigured: false });
-    } else {
-      patientText = await synthesizeAnswer(system, history, message, provider);
-      sourcesUsed.push(`llm_${provider}`);
+  let patientText = "";
+  let usedProvider: PatientChatLlmProvider | "none" = "none";
+
+  if (!llmConfigured) {
+    patientText = fallbackResponse(message, ragContext, { llmConfigured: false });
+  } else {
+    const synth = await synthesizeWithFallback(system, history, message);
+    usedProvider = synth.provider;
+    patientText = synth.text;
+    if (usedProvider !== "none") {
+      sourcesUsed.push(`llm_${usedProvider}`);
     }
-  } catch (e) {
-    // LLM call failed — fall back gracefully rather than returning an error
-    console.error("[patientChat] LLM synthesis failed, using fallback:", e);
-    patientText = fallbackResponse(message, ragContext, { llmConfigured });
   }
 
-  if (!patientText) {
+  if (!patientText.trim()) {
     patientText = fallbackResponse(message, ragContext, { llmConfigured });
   }
 
@@ -433,12 +507,17 @@ export async function executePatientChat(
     patientText,
     requestedLanguage: language,
     sourcesUsed,
-    llmProvider: provider,
+    llmProvider: usedProvider === "none" ? detectProvider() : usedProvider,
     disclaimer: DISCLAIMER,
+    ragSource: rag.webSource === "trained_corpus" ? "trained_corpus" : "wikipedia",
     languageNote:
-      provider === "none"
-        ? "No LLM API key set (or PATIENT_CHAT_DISABLE_LLM=1). Reply is a short template from retrieved text. Add GEMINI_API_KEY in .env for simple, multilingual answers."
-        : `Answer drafted by ${provider} using only the retrieved context above.`
+      usedProvider === "none"
+        ? ragMode === "trained"
+          ? "No LLM API key set. Reply uses trained corpus excerpts only. Add GROQ_API_KEY or GEMINI_API_KEY."
+          : "No LLM API key set. Reply is from Wikipedia excerpts only. Add GROQ_API_KEY or GEMINI_API_KEY."
+        : ragMode === "trained"
+          ? `Answer drafted by ${usedProvider} using trained RAG (Groq/Gemini + indexed corpus). Topic: "${searchQuery.slice(0, 80)}".`
+          : `Answer drafted by ${usedProvider} using Wikipedia context for: "${searchQuery.slice(0, 80)}".`
   };
 
   if (body.includeRawRag === true) {

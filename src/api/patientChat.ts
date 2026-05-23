@@ -1,18 +1,20 @@
 /**
- * Patient chat: **trained corpus RAG** (default) or live Wikipedia RAG + LLM synthesis.
+ * Patient chat flow (default):
  *
- * - Default (`PATIENT_CHAT_RAG_SOURCE=trained`): retrieve pre-indexed chunks from Postgres
- *   (`npm run db:train-bank`) — **no Wikipedia at query time**. Groq/Gemini write the answer.
- * - Legacy (`PATIENT_CHAT_RAG_SOURCE=wikipedia`): live Wikipedia fetch per question.
- * - LLM order: **Groq → Gemini** → OpenAI → Anthropic → OpenRouter.
- * - Set **PATIENT_CHAT_DISABLE_LLM=1** for template-only replies.
+ * 1. **Normal questions** → **Groq** (then Gemini, …) answers directly; Q&A stored in Postgres.
+ * 2. **Live / date / year questions** → fetch **Wikipedia** context, then Groq/Gemini synthesize.
+ *
+ * LLM order: **Groq → Gemini** → OpenAI → Anthropic → OpenRouter.
+ * `PATIENT_CHAT_DISABLE_LLM=1` → template-only (no external LLM).
  */
 
+import { QuestionKind, AnswerSource } from "@prisma/client";
 import { extractTextFromPdfBase64 } from "../report/pdfText.js";
+import { persistAnswer } from "../answers/persist.js";
+import { prisma } from "../lib/prisma.js";
 import { answerQuestionWithWebRag } from "../rag/dynamicWebRag.js";
 import type { DynamicWebRagResult } from "../rag/dynamicWebRag.js";
-import { answerQuestionWithTrainedCorpus } from "../rag/trainedCorpusRag.js";
-import type { TrainedCorpusRagResult } from "../rag/trainedCorpusRag.js";
+import { normalizeQuestionText, questionSlugFromText } from "../rag/questionSlug.js";
 
 const MAX_DOC_CHARS = 10_000;
 const MAX_RAG_CONTEXT_CHARS = 3_000;
@@ -51,14 +53,30 @@ export type PatientChatResponse = {
   /** When LLM is off, explains template-only mode. */
   languageNote?: string;
   disclaimer?: string;
-  rawRag?: DynamicWebRagResult | TrainedCorpusRagResult;
-  ragSource?: "trained_corpus" | "wikipedia";
+  rawRag?: DynamicWebRagResult;
+  ragSource?: "groq_direct" | "wikipedia_live";
+  stored?: boolean;
   error?: string;
 };
 
-function patientChatRagSource(): "trained" | "wikipedia" {
-  const v = (process.env.PATIENT_CHAT_RAG_SOURCE ?? "trained").toLowerCase();
-  return v === "wikipedia" || v === "web" ? "wikipedia" : "trained";
+/** Live / current-events style questions → Wikipedia RAG before LLM. */
+export function isLiveTemporalQuestion(message: string): boolean {
+  const m = message.toLowerCase();
+  const y = new Date().getFullYear();
+  if ([y - 2, y - 1, y, y + 1].some((yr) => m.includes(String(yr)))) return true;
+  if (/\b(19|20)\d{2}\b/.test(m)) return true;
+  if (
+    /\b(today|tonight|this week|this month|this year|right now|currently|current|latest|recent|as of now|what'?s new|up to date)\b/i.test(
+      m
+    )
+  ) {
+    return true;
+  }
+  if (/\b(in|since|during|after)\s+(19|20)\d{2}\b/i.test(m)) return true;
+  if (/\b(covid|coronavirus|pandemic|outbreak)\b/i.test(m) && /\b20\d{2}\b/.test(m)) {
+    return true;
+  }
+  return false;
 }
 
 // ---------------------------------------------------------------------------
@@ -117,39 +135,100 @@ function wikipediaSearchQueryFromMessage(message: string): string {
   return q.length >= 3 ? q : message.trim();
 }
 
-function buildSystemPrompt(
-  ragContext: string,
+function buildDirectGroqSystemPrompt(
   language: string,
-  hasPdf: boolean,
-  ragSource: "trained" | "wikipedia"
+  docExcerpt: string
 ): string {
-  const langNote = language.toLowerCase() === "english"
-    ? "Reply in clear, simple English."
-    : `Reply in ${language}. If you are not confident in that language, reply in English and add a note.`;
+  const langNote =
+    language.toLowerCase() === "english"
+      ? "Reply in clear, simple English."
+      : `Reply in ${language}. If you are not confident in that language, reply in English and add a note.`;
 
-  const docNote = hasPdf
-    ? "The user has also uploaded a document — relevant excerpts are included in the context."
-    : "";
+  const docBlock =
+    docExcerpt.length > 0
+      ? `\n--- Uploaded document excerpt ---\n${docExcerpt.slice(0, 2000)}\n--- End ---\n`
+      : "";
 
   return [
     "You are a patient-education assistant helping everyday people understand health topics.",
     langNote,
-    ragSource === "trained"
-      ? "The context below was retrieved from our pre-trained medical education corpus (indexed Q&A bank in the database — not live web search)."
-      : "The context below was retrieved from Wikipedia (and any uploaded document).",
-    "Answer ONLY about the user's topic using that context. Do not introduce unrelated articles or topics.",
-    "If the context does not clearly cover the question, say so briefly and suggest a clearer health-related question.",
-    "Write in short, simple sentences. Avoid jargon. If you must use a medical term, explain it immediately.",
+    "Use general, widely accepted medical education knowledge. Do not claim to have browsed the web unless the user asks about a specific year or current events.",
+    "Write in short, simple sentences. Avoid jargon; explain any medical term you use.",
     "Never give a personal diagnosis or prescribe treatment.",
-    "Always end your response with exactly one sentence starting with: 'Please speak with a doctor or healthcare professional'.",
+    "Always end with exactly one sentence starting with: 'Please speak with a doctor or healthcare professional'.",
+    docBlock,
+  ]
+    .filter(Boolean)
+    .join("\n");
+}
+
+function buildWikipediaLiveSystemPrompt(
+  ragContext: string,
+  language: string,
+  hasPdf: boolean
+): string {
+  const langNote =
+    language.toLowerCase() === "english"
+      ? "Reply in clear, simple English."
+      : `Reply in ${language}. If you are not confident in that language, reply in English and add a note.`;
+
+  const docNote = hasPdf
+    ? "The user has also uploaded a document — excerpts are in the context."
+    : "";
+
+  return [
+    "You are a patient-education assistant. The user asked about a current or date-specific topic.",
+    langNote,
+    "The context below was retrieved from Wikipedia for this live/time-sensitive question.",
+    "Answer ONLY using that context. If context is thin, say so briefly.",
+    "Write in short, simple sentences. Never give a personal diagnosis or prescribe treatment.",
+    "Always end with exactly one sentence starting with: 'Please speak with a doctor or healthcare professional'.",
     docNote,
     "",
-    "--- Retrieved context (ground truth for this answer) ---",
+    "--- Wikipedia context ---",
     ragContext.slice(0, MAX_RAG_CONTEXT_CHARS),
     "--- End of context ---",
   ]
     .filter(Boolean)
     .join("\n");
+}
+
+async function storePatientChatExchange(args: {
+  message: string;
+  patientText: string;
+  language: string;
+  llmProvider: string;
+  liveWikipedia: boolean;
+  sourcesUsed: string[];
+}): Promise<void> {
+  const question = normalizeQuestionText(args.message);
+  const slug = questionSlugFromText(question);
+  const title = question.length > 200 ? `${question.slice(0, 197)}…` : question;
+
+  const row = await prisma.question.upsert({
+    where: { slug },
+    create: {
+      slug,
+      title,
+      promptText: question,
+      kind: QuestionKind.DYNAMIC,
+    },
+    update: { title, promptText: question },
+  });
+
+  await persistAnswer({
+    questionId: row.id,
+    source: AnswerSource.WEB_RAG,
+    payload: {
+      message: question,
+      patientText: args.patientText,
+      language: args.language,
+      llmProvider: args.llmProvider,
+      liveWikipedia: args.liveWikipedia,
+      sourcesUsed: args.sourcesUsed,
+      storedAt: new Date().toISOString(),
+    },
+  });
 }
 
 /** Anthropic Claude — claude-haiku-4-5 is the cheapest/fastest option */
@@ -444,43 +523,41 @@ export async function executePatientChat(
   if (hasImage) sourcesUsed.push("image_attachment_meta");
 
   const searchQuery = wikipediaSearchQueryFromMessage(message);
-  const ragMode = patientChatRagSource();
+  const useLiveWikipedia = isLiveTemporalQuestion(message);
 
   const ragQuery =
     docExcerpt.length > 0
       ? `${searchQuery}\n\n---\nContext from uploaded document:\n${docExcerpt.slice(0, MAX_DOC_CHARS)}`
       : searchQuery;
 
-  let rag: DynamicWebRagResult | TrainedCorpusRagResult;
-  try {
-    if (ragMode === "wikipedia") {
+  let rag: DynamicWebRagResult | undefined;
+  let ragContext = docExcerpt ? docExcerpt.slice(0, 2000) : "";
+  let ragSource: PatientChatResponse["ragSource"] = "groq_direct";
+
+  if (useLiveWikipedia) {
+    try {
       rag = await answerQuestionWithWebRag(ragQuery, {
         refresh: true,
         skipGeminiSynthesis: true,
       });
       sourcesUsed.push("web_rag");
-    } else {
-      rag = await answerQuestionWithTrainedCorpus(ragQuery);
-      sourcesUsed.push("trained_rag");
+      ragSource = "wikipedia_live";
+      ragContext = [
+        ...rag.topMatches.slice(0, 4).map((m) => m.content),
+        ...(docExcerpt
+          ? [`--- From your uploaded document ---\n${docExcerpt.slice(0, 2000)}`]
+          : []),
+      ].join("\n\n");
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "Wikipedia RAG failed.";
+      return { ok: false, error: msg };
     }
-  } catch (e) {
-    const msg = e instanceof Error ? e.message : "RAG failed.";
-    return { ok: false, error: msg };
   }
 
-  // Build RAG context string for the LLM
-  const ragContext = [
-    ...rag.topMatches.slice(0, 4).map((m) => m.content),
-    ...(docExcerpt ? [`--- From your uploaded document ---\n${docExcerpt.slice(0, 2000)}`] : []),
-  ].join("\n\n");
+  const system = useLiveWikipedia
+    ? buildWikipediaLiveSystemPrompt(ragContext, language, docExcerpt.length > 0)
+    : buildDirectGroqSystemPrompt(language, docExcerpt);
 
-  // --- LLM synthesis (Groq → Gemini → …) ---
-  const system = buildSystemPrompt(
-    ragContext,
-    language,
-    docExcerpt.length > 0,
-    ragMode
-  );
   const chain = patientChatProviderChain();
   const llmConfigured = chain.length > 0;
 
@@ -488,7 +565,15 @@ export async function executePatientChat(
   let usedProvider: PatientChatLlmProvider | "none" = "none";
 
   if (!llmConfigured) {
-    patientText = fallbackResponse(message, ragContext, { llmConfigured: false });
+    if (useLiveWikipedia && ragContext) {
+      patientText = fallbackResponse(message, ragContext, { llmConfigured: false });
+    } else {
+      return {
+        ok: false,
+        error:
+          "No LLM configured. Add GROQ_API_KEY (preferred) or GEMINI_API_KEY on the server.",
+      };
+    }
   } else {
     const synth = await synthesizeWithFallback(system, history, message);
     usedProvider = synth.provider;
@@ -499,7 +584,29 @@ export async function executePatientChat(
   }
 
   if (!patientText.trim()) {
-    patientText = fallbackResponse(message, ragContext, { llmConfigured });
+    if (useLiveWikipedia) {
+      patientText = fallbackResponse(message, ragContext, { llmConfigured });
+    } else {
+      return { ok: false, error: "LLM returned an empty response. Try again." };
+    }
+  }
+
+  const finalProvider =
+    usedProvider === "none" ? detectProvider() : usedProvider;
+
+  let stored = false;
+  try {
+    await storePatientChatExchange({
+      message,
+      patientText,
+      language,
+      llmProvider: finalProvider === "none" ? "none" : finalProvider,
+      liveWikipedia: useLiveWikipedia,
+      sourcesUsed,
+    });
+    stored = true;
+  } catch (e) {
+    console.warn("[patientChat] store failed:", e);
   }
 
   const out: PatientChatResponse = {
@@ -507,20 +614,16 @@ export async function executePatientChat(
     patientText,
     requestedLanguage: language,
     sourcesUsed,
-    llmProvider: usedProvider === "none" ? detectProvider() : usedProvider,
+    llmProvider: finalProvider === "none" ? undefined : finalProvider,
     disclaimer: DISCLAIMER,
-    ragSource: rag.webSource === "trained_corpus" ? "trained_corpus" : "wikipedia",
-    languageNote:
-      usedProvider === "none"
-        ? ragMode === "trained"
-          ? "No LLM API key set. Reply uses trained corpus excerpts only. Add GROQ_API_KEY or GEMINI_API_KEY."
-          : "No LLM API key set. Reply is from Wikipedia excerpts only. Add GROQ_API_KEY or GEMINI_API_KEY."
-        : ragMode === "trained"
-          ? `Answer drafted by ${usedProvider} using trained RAG (Groq/Gemini + indexed corpus). Topic: "${searchQuery.slice(0, 80)}".`
-          : `Answer drafted by ${usedProvider} using Wikipedia context for: "${searchQuery.slice(0, 80)}".`
+    ragSource,
+    stored,
+    languageNote: useLiveWikipedia
+      ? `Live/date question → Wikipedia + ${finalProvider}. Stored in history.`
+      : `Answer from ${finalProvider} (Groq first). Question stored in history.`,
   };
 
-  if (body.includeRawRag === true) {
+  if (body.includeRawRag === true && rag) {
     out.rawRag = rag;
   }
 

@@ -14,8 +14,8 @@ type PatientChatApi = {
 };
 
 const SOURCE_LABELS: Record<string, string> = {
+  web_rag: "📖 Wikipedia (live)",
   trained_rag: "📚 Trained RAG",
-  web_rag: "📖 Wikipedia RAG",
   pdf_excerpt: "📄 PDF",
   llm_groq: "🤖 Groq",
   llm_gemini: "🤖 Gemini",
@@ -32,8 +32,8 @@ type Msg = { role: "user" | "ai"; text: string; sources: string[] };
 const WELCOME: Msg = {
   role: "ai",
   text:
-    "Hello — I'm your patient education assistant. Ask about health conditions, medications, or symptoms. Answers use our trained medical Q&A corpus plus Groq/Gemini (not live Wikipedia).",
-  sources: ["trained_rag"]
+    "Hello — I'm your patient education assistant. Most answers come from Groq (then Gemini). Your questions are saved to history. For date/year or “latest” topics, I use Wikipedia first.",
+  sources: ["llm_groq"]
 };
 
 export function StunningPatientChat() {
@@ -105,10 +105,10 @@ export function StunningPatientChat() {
       <div className="sec-h" style={{ flexShrink: 0 }}>
         <div>
           <div className="sec-title">Patient Chat</div>
-          <div className="sec-sub">Trained corpus RAG + Groq/Gemini · multi-turn</div>
+          <div className="sec-sub">Groq first · stored Q&A · Wikipedia for live/date questions</div>
         </div>
         <div style={{ display: "flex", flexDirection: "column", gap: 5, alignItems: "flex-end" }}>
-          <span className="src-pill">📚 Trained RAG</span>
+          <span className="src-pill">🤖 Groq-first</span>
           <span className="src-pill" style={{ color: "var(--acc)" }}>
             {llmBadge}
           </span>

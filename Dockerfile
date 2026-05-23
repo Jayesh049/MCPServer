@@ -13,6 +13,7 @@ COPY prisma ./prisma
 COPY tsconfig.json ./
 COPY scripts ./scripts
 COPY src ./src
+COPY public ./public
 
 RUN npx prisma generate && npx tsc -p tsconfig.json
 

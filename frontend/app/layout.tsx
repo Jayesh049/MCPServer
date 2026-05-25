@@ -1,11 +1,11 @@
 import "./globals.css";
 import "../styles/stunning.css";
 import "../styles/light-theme.css";
+import "../styles/health-flashcards.css";
+import "../styles/auth.css";
 import type { ReactNode } from "react";
 import { DM_Sans, Lora, Outfit, Playfair_Display } from "next/font/google";
-import { AppShell } from "../components/AppShell";
 import { Providers } from "../components/Providers";
-import { getDiseaseSummaries } from "../lib/fetch-diseases";
 
 const fontDisplayDark = Playfair_Display({
   subsets: ["latin"],
@@ -36,13 +36,11 @@ const fontBodyLight = DM_Sans({
 const themeInitScript = `(function(){try{var t=localStorage.getItem('aa-theme');document.documentElement.setAttribute('data-theme',t==='light'?'light':'dark');}catch(e){document.documentElement.setAttribute('data-theme','dark');}})();`;
 
 export const metadata = {
-  title: "Agents Assemble — Medical Intelligence",
-  description:
-    "Medical education platform: 20-disease MCP tester, patient chat, report analyzer, synthetic care plans."
+  title: "Agents Assemble — Doctor & Patient Platform",
+  description: "Sign in to the doctor/patient platform, consultations, and medical education tools."
 };
 
-export default async function RootLayout({ children }: { children: ReactNode }) {
-  const diseases = await getDiseaseSummaries();
+export default function RootLayout({ children }: { children: ReactNode }) {
   const fontVars = `${fontDisplayDark.variable} ${fontBodyDark.variable} ${fontDisplayLight.variable} ${fontBodyLight.variable}`;
 
   return (
@@ -51,9 +49,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
       </head>
       <body>
-        <Providers>
-          <AppShell diseases={diseases}>{children}</AppShell>
-        </Providers>
+        <Providers>{children}</Providers>
       </body>
     </html>
   );

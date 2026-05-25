@@ -96,7 +96,7 @@ export function StunningDiseaseDetector({ disease }: { disease: DiseaseSummary }
 
       <p className="disc" style={{ marginTop: 0, marginBottom: 18 }}>
         {disease.modelNotes} · Synthetic / non-PHI only.{" "}
-        <Link href="/" style={{ color: "var(--acc)" }}>
+        <Link href="/hub" style={{ color: "var(--acc)" }}>
           ← Disease hub
         </Link>{" "}
         ·{" "}

@@ -273,7 +273,7 @@ async function callGemini(
   message: string
 ): Promise<string> {
   const key = (process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY)!.trim();
-  const model = process.env.GEMINI_GENERATE_MODEL?.trim() || "gemini-1.5-flash";
+  const model = process.env.GEMINI_GENERATE_MODEL?.trim() || "gemini-2.0-flash";
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
 
   // Gemini uses a systemInstruction field + contents array
@@ -309,8 +309,20 @@ async function callGemini(
   return text.trim();
 }
 
+/** Groq model IDs to try (3.1-70b-versatile was decommissioned Jan 2025). */
+function groqModelCandidates(): string[] {
+  const preferred = process.env.GROQ_MODEL?.trim();
+  const defaults = ["llama-3.3-70b-versatile", "llama-3.1-8b-instant"];
+  const out: string[] = [];
+  if (preferred) out.push(preferred);
+  for (const m of defaults) {
+    if (!out.includes(m)) out.push(m);
+  }
+  return out;
+}
+
 /**
- * Groq — FREE tier, very fast (Llama 3.1 70B or Mixtral)
+ * Groq — FREE tier. Default: `llama-3.3-70b-versatile`.
  * Get key: https://console.groq.com/keys
  */
 async function callGroq(
@@ -318,31 +330,57 @@ async function callGroq(
   history: ChatTurn[],
   message: string
 ): Promise<string> {
-  const model = process.env.GROQ_MODEL?.trim() || "llama-3.1-70b-versatile";
-  const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${process.env.GROQ_API_KEY}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      model,
-      max_tokens: 900,
-      messages: [
-        { role: "system", content: system },
-        ...history.map((h) => ({ role: h.role, content: h.content })),
-        { role: "user", content: message },
-      ],
-    }),
-  });
-  if (!res.ok) {
-    const err = await res.text().catch(() => "");
-    throw new Error(`Groq error (${res.status}): ${err.slice(0, 400)}`);
+  const models = groqModelCandidates();
+  let lastErr = "";
+
+  for (const model of models) {
+    const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${process.env.GROQ_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model,
+        max_tokens: 900,
+        temperature: 0.35,
+        messages: [
+          { role: "system", content: system },
+          ...history.map((h) => ({ role: h.role, content: h.content })),
+          { role: "user", content: message },
+        ],
+      }),
+    });
+
+    const raw = await res.text().catch(() => "");
+    if (!res.ok) {
+      lastErr = `Groq ${model} (${res.status}): ${raw.slice(0, 300)}`;
+      console.warn(`[patientChat] ${lastErr}`);
+      continue;
+    }
+
+    let data: {
+      choices?: Array<{
+        message?: { content?: string | null };
+        finish_reason?: string;
+      }>;
+    };
+    try {
+      data = JSON.parse(raw) as typeof data;
+    } catch {
+      lastErr = `Groq ${model}: invalid JSON response`;
+      continue;
+    }
+
+    const text = data.choices?.[0]?.message?.content?.trim() ?? "";
+    if (text) return text;
+
+    const reason = data.choices?.[0]?.finish_reason ?? "unknown";
+    lastErr = `Groq ${model}: empty content (finish_reason=${reason})`;
+    console.warn(`[patientChat] ${lastErr}`);
   }
-  const data = (await res.json()) as {
-    choices?: Array<{ message?: { content?: string } }>;
-  };
-  return data.choices?.[0]?.message?.content?.trim() ?? "";
+
+  throw new Error(lastErr || "Groq: all models failed");
 }
 
 /** OpenAI GPT-4o-mini */
@@ -467,17 +505,25 @@ async function synthesizeWithFallback(
   system: string,
   history: ChatTurn[],
   message: string
-): Promise<{ text: string; provider: PatientChatLlmProvider | "none" }> {
+): Promise<{
+  text: string;
+  provider: PatientChatLlmProvider | "none";
+  lastError?: string;
+}> {
   const chain = patientChatProviderChain();
+  let lastError: string | undefined;
+
   for (const provider of chain) {
     try {
       const text = await synthesizeAnswer(system, history, message, provider);
       if (text.trim()) return { text: text.trim(), provider };
+      lastError = `${provider}: empty response`;
     } catch (e) {
+      lastError = e instanceof Error ? e.message : String(e);
       console.warn(`[patientChat] ${provider} failed, trying next provider:`, e);
     }
   }
-  return { text: "", provider: "none" };
+  return { text: "", provider: "none", lastError };
 }
 
 // ---------------------------------------------------------------------------
@@ -563,6 +609,7 @@ export async function executePatientChat(
 
   let patientText = "";
   let usedProvider: PatientChatLlmProvider | "none" = "none";
+  let synthLastError: string | undefined;
 
   if (!llmConfigured) {
     if (useLiveWikipedia && ragContext) {
@@ -576,6 +623,7 @@ export async function executePatientChat(
     }
   } else {
     const synth = await synthesizeWithFallback(system, history, message);
+    synthLastError = synth.lastError;
     usedProvider = synth.provider;
     patientText = synth.text;
     if (usedProvider !== "none") {
@@ -587,7 +635,13 @@ export async function executePatientChat(
     if (useLiveWikipedia) {
       patientText = fallbackResponse(message, ragContext, { llmConfigured });
     } else {
-      return { ok: false, error: "LLM returned an empty response. Try again." };
+      const hint = synthLastError ? ` ${synthLastError.slice(0, 280)}` : "";
+      return {
+        ok: false,
+        error:
+          `LLM returned an empty response.${hint} ` +
+          "On Render set GROQ_MODEL=llama-3.3-70b-versatile and redeploy.",
+      };
     }
   }
 

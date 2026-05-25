@@ -1,6 +1,7 @@
 const path = require("path");
-// Load .env / .env.local before reading MCP_API_BASE_URL (fixes wrong port on `npm start`).
+// Load repo root .env then frontend/.env.local (NEXT_PUBLIC_* must be visible to Next).
 const { loadEnvConfig } = require("@next/env");
+loadEnvConfig(path.join(__dirname, ".."));
 loadEnvConfig(path.join(__dirname));
 
 const apiBase = (

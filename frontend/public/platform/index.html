@@ -1,0 +1,1877 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<script>
+(function(){try{var t=localStorage.getItem('aa-theme');document.documentElement.setAttribute('data-theme',t==='light'?'light':'dark');}catch(e){document.documentElement.setAttribute('data-theme','dark');}})();
+</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Agents Assemble — Doctor & Patient Platform</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+:root,[data-theme="light"]{
+  --ink:#1a1f2e;--ink2:#3d4560;--ink3:#7a82a0;
+  --paper:#f8f6f2;--paper2:#eeeae3;--paper3:#e4dfd6;
+  --teal:#0d9488;--teal-l:#ccfbf1;--teal-d:#0f766e;
+  --gold:#b45309;--gold-l:#fef3c7;--gold-d:#92400e;
+  --rose:#be185d;--rose-l:#fce7f3;--rose-d:#9d174d;
+  --sky:#0369a1;--sky-l:#e0f2fe;--sky-d:#075985;
+  --violet:#6d28d9;--violet-l:#ede9fe;--violet-d:#5b21b6;
+  --green:#15803d;--green-l:#dcfce7;--green-d:#166534;
+  --r:12px;--r2:8px;--r3:20px;
+  --shadow:0 2px 16px rgba(26,31,46,.08);
+  --shadow-md:0 6px 32px rgba(26,31,46,.12);
+  --shadow-lg:0 16px 64px rgba(26,31,46,.16);
+  --surface-sidebar:#fff;--surface-topbar:#fff;--card-bg:#fff;--card-bg2:#fff;
+  --bdr-glow:rgba(26,31,46,.08);--hub-btn-bg:#fff;
+}
+[data-theme="dark"]{
+  --ink:#e8f4f8;--ink2:#a0c4ce;--ink3:#5a8a94;
+  --paper:#0a0f1e;--paper2:#0d1829;--paper3:#162a47;
+  --teal:#4fd1c7;--teal-l:rgba(79,209,199,.14);--teal-d:#81e6d9;
+  --gold:#f6c90e;--gold-l:rgba(246,201,14,.12);--gold-d:#f6c90e;
+  --rose:#f687b3;--rose-l:rgba(246,135,179,.12);--rose-d:#f687b3;
+  --sky:#63b3ed;--sky-l:rgba(99,179,237,.12);--sky-d:#90cdf4;
+  --violet:#b794f4;--violet-l:rgba(183,148,244,.14);--violet-d:#d6bcfa;
+  --green:#68d391;--green-l:rgba(104,211,145,.12);--green-d:#9ae6b4;
+  --shadow:0 2px 20px rgba(0,0,0,.45);
+  --shadow-md:0 8px 36px rgba(0,0,0,.5);
+  --shadow-lg:0 16px 64px rgba(0,0,0,.55);
+  --surface-sidebar:#0d1829;--surface-topbar:rgba(10,15,30,.96);--card-bg:rgba(13,24,41,.92);--card-bg2:#112240;
+  --bdr-glow:rgba(79,209,199,.12);--hub-btn-bg:rgba(13,24,41,.9);
+}
+[data-theme="dark"] body{
+  background:var(--paper);
+  background-image:
+    radial-gradient(ellipse 55% 45% at 85% 15%,rgba(79,209,199,.08) 0%,transparent 55%),
+    radial-gradient(ellipse 40% 40% at 10% 90%,rgba(246,201,14,.04) 0%,transparent 55%);
+}
+[data-theme="dark"] #screen-app{background:transparent}
+[data-theme="dark"] .app-sidebar{background:var(--surface-sidebar);border-right-color:var(--bdr-glow)}
+[data-theme="dark"] .sidebar-header,[data-theme="dark"] .sidebar-footer{border-color:var(--bdr-glow)}
+[data-theme="dark"] .app-topbar{background:var(--surface-topbar);border-bottom-color:var(--bdr-glow);backdrop-filter:blur(12px)}
+[data-theme="dark"] .card,[data-theme="dark"] .stat-card,[data-theme="dark"] .post-card,
+[data-theme="dark"] .chat-area,[data-theme="dark"] .consult-card,[data-theme="dark"] .degree-card,
+[data-theme="dark"] .modal-body,[data-theme="dark"] .toast,[data-theme="dark"] .doctor-card{
+  background:var(--card-bg);border-color:var(--bdr-glow);
+}
+[data-theme="dark"] .sni:hover{background:rgba(79,209,199,.06)}
+[data-theme="dark"] .sni.on{background:var(--teal-l);color:var(--teal-d)}
+[data-theme="dark"] .topbar-hub-btn{background:var(--hub-btn-bg);border-color:var(--bdr-glow);color:var(--ink2)}
+[data-theme="dark"] .topbar-hub-btn:hover{background:rgba(79,209,199,.12);border-color:var(--teal);color:var(--teal)}
+[data-theme="dark"] .topbar-role-switch,[data-theme="dark"] .notif-btn{background:var(--card-bg2);border-color:var(--bdr-glow)}
+[data-theme="dark"] .reply-btn{background:var(--card-bg2)}
+[data-theme="dark"] .modal-box{background:var(--paper2);border:1px solid var(--bdr-glow)}
+[data-theme="dark"] .form-input,[data-theme="dark"] .chat-input,[data-theme="dark"] .post-textarea{
+  background:rgba(255,255,255,.05);border-color:var(--bdr-glow);color:var(--ink);
+}
+[data-theme="dark"] .notif-dot{border-color:var(--surface-topbar)}
+[data-theme="dark"] .modal-bg{background:rgba(0,0,0,.72)}
+[data-theme="dark"] .amount-btn,[data-theme="dark"] .np-input,[data-theme="dark"] .np-textarea{background:var(--card-bg2);border-color:var(--bdr-glow);color:var(--ink)}
+[data-theme="dark"] .custom-amount{background:rgba(255,255,255,.05);border-color:var(--bdr-glow);color:var(--ink)}
+[data-theme="dark"] .msg-bubble.received{background:var(--paper2);color:var(--ink)}
+[data-theme="dark"] .profile-hero{background:linear-gradient(135deg,#0d1829 0%,#162a47 50%,#1a365d 100%)}
+@keyframes fadeUp{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes slideRight{from{transform:translateX(-20px);opacity:0}to{transform:translateX(0);opacity:1}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+@keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
+@keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
+
+body{font-family:'DM Sans',sans-serif;background:var(--paper);color:var(--ink);min-height:100vh}
+
+/* ─ SCREENS ─ */
+.screen{display:none;min-height:100vh;animation:fadeIn .3s ease}
+.screen.active{display:flex;flex-direction:column}
+
+/* ══════════ AUTH SCREEN ══════════ */
+#screen-auth{
+  background:var(--ink);
+  background-image:
+    radial-gradient(ellipse 60% 40% at 80% 20%,rgba(13,148,136,.15) 0%,transparent 60%),
+    radial-gradient(ellipse 40% 50% at 20% 80%,rgba(109,40,217,.1) 0%,transparent 60%);
+  align-items:center;justify-content:center;padding:20px;
+}
+.auth-card{
+  background:rgba(255,255,255,.06);
+  backdrop-filter:blur(20px);
+  border:1px solid rgba(255,255,255,.1);
+  border-radius:var(--r3);
+  padding:48px 44px;
+  width:100%;max-width:440px;
+  animation:fadeUp .5s ease;
+}
+.auth-logo{text-align:center;margin-bottom:32px}
+.auth-logo-mark{
+  width:56px;height:56px;border-radius:14px;
+  background:linear-gradient(135deg,var(--teal),#0e7490);
+  display:inline-flex;align-items:center;justify-content:center;
+  font-size:26px;margin-bottom:12px;
+}
+.auth-logo h1{
+  font-family:'Cormorant Garamond',serif;font-size:26px;font-weight:600;
+  color:#fff;line-height:1.2;
+}
+.auth-logo p{font-size:12px;color:rgba(255,255,255,.5);margin-top:4px;letter-spacing:.06em;text-transform:uppercase}
+
+.role-toggle{
+  display:grid;grid-template-columns:1fr 1fr;gap:6px;
+  background:rgba(255,255,255,.06);border-radius:var(--r2);padding:4px;
+  margin-bottom:24px;
+}
+.role-btn{
+  padding:10px;border-radius:6px;font-size:13px;font-weight:500;
+  border:none;background:none;color:rgba(255,255,255,.5);
+  cursor:pointer;transition:all .2s;font-family:'DM Sans',sans-serif;
+}
+.role-btn.active{background:var(--teal);color:#fff;box-shadow:0 2px 8px rgba(13,148,136,.4)}
+
+.auth-tabs{display:flex;gap:0;margin-bottom:28px;border-bottom:1px solid rgba(255,255,255,.1)}
+.auth-tab{
+  flex:1;padding:10px;text-align:center;font-size:13px;font-weight:500;
+  color:rgba(255,255,255,.4);cursor:pointer;border:none;background:none;
+  font-family:'DM Sans',sans-serif;border-bottom:2px solid transparent;
+  transition:all .2s;margin-bottom:-1px;
+}
+.auth-tab.active{color:#fff;border-bottom-color:var(--teal)}
+
+.form-group{margin-bottom:16px}
+.form-label{display:block;font-size:12px;font-weight:500;color:rgba(255,255,255,.6);margin-bottom:6px;letter-spacing:.03em}
+.form-input{
+  width:100%;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);
+  border-radius:var(--r2);padding:11px 14px;font-size:13.5px;
+  color:#fff;font-family:'DM Sans',sans-serif;outline:none;transition:border-color .2s;
+}
+.form-input::placeholder{color:rgba(255,255,255,.3)}
+.form-input:focus{border-color:var(--teal)}
+.form-select{
+  width:100%;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);
+  border-radius:var(--r2);padding:11px 14px;font-size:13.5px;
+  color:#fff;font-family:'DM Sans',sans-serif;outline:none;
+  appearance:none;cursor:pointer;
+}
+.form-select option{background:#1a1f2e;color:#fff}
+
+.upload-area{
+  border:1.5px dashed rgba(255,255,255,.2);border-radius:var(--r2);
+  padding:24px;text-align:center;cursor:pointer;transition:all .2s;
+  background:rgba(255,255,255,.04);
+}
+.upload-area:hover{border-color:var(--teal);background:rgba(13,148,136,.08)}
+.upload-area.uploaded{border-color:var(--teal);background:rgba(13,148,136,.1);border-style:solid}
+
+.btn-primary{
+  width:100%;padding:12px;background:var(--teal);color:#fff;
+  border:none;border-radius:var(--r2);font-size:14px;font-weight:500;
+  cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .2s;
+  letter-spacing:.02em;
+}
+.btn-primary:hover{background:var(--teal-d);transform:translateY(-1px);box-shadow:0 4px 16px rgba(13,148,136,.4)}
+
+.divider{display:flex;align-items:center;gap:12px;margin:20px 0;color:rgba(255,255,255,.3);font-size:12px}
+.divider::before,.divider::after{content:'';flex:1;height:1px;background:rgba(255,255,255,.1)}
+
+/* ══════════ MAIN APP ══════════ */
+#screen-app{background:var(--paper);flex-direction:row}
+
+/* ── SIDEBAR ── */
+.app-sidebar{
+  width:260px;flex-shrink:0;background:var(--surface-sidebar);
+  border-right:1px solid var(--paper3);
+  display:flex;flex-direction:column;
+  position:sticky;top:0;height:100vh;overflow-y:auto;
+  scrollbar-width:none;
+}
+.app-sidebar::-webkit-scrollbar{display:none}
+
+.sidebar-header{
+  padding:20px 18px 16px;border-bottom:1px solid var(--paper2);
+}
+.sidebar-user{display:flex;align-items:center;gap:10px}
+.user-avatar{
+  width:40px;height:40px;border-radius:50%;
+  background:linear-gradient(135deg,var(--teal),var(--sky));
+  display:flex;align-items:center;justify-content:center;
+  font-size:16px;flex-shrink:0;color:#fff;font-weight:600;font-size:14px;
+}
+.user-name{font-size:13.5px;font-weight:500;color:var(--ink)}
+.user-role{font-size:11px;color:var(--ink3);margin-top:1px;display:flex;align-items:center;gap:4px}
+.role-badge{
+  display:inline-flex;align-items:center;gap:3px;
+  padding:1px 7px;border-radius:20px;font-size:9.5px;font-weight:500;
+}
+.rb-doctor{background:var(--teal-l);color:var(--teal-d)}
+.rb-patient{background:var(--violet-l);color:var(--violet-d)}
+
+.sidebar-nav{padding:10px 10px;flex:1}
+.nav-sec-lbl{font-size:9.5px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--ink3);padding:8px 8px 4px}
+.sni{
+  display:flex;align-items:center;gap:9px;padding:8px 10px;
+  border-radius:var(--r2);font-size:13px;color:var(--ink2);
+  cursor:pointer;border:none;background:none;width:100%;text-align:left;
+  font-family:'DM Sans',sans-serif;transition:all .18s;
+}
+.sni:hover{background:var(--paper);color:var(--ink)}
+.sni.on{background:var(--teal-l);color:var(--teal-d);font-weight:500}
+.sni-icon{width:30px;height:30px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;background:var(--paper2)}
+.sni.on .sni-icon{background:var(--teal);color:#fff}
+.sni-badge{margin-left:auto;background:var(--rose);color:#fff;border-radius:20px;padding:1px 7px;font-size:10px;font-weight:600}
+
+.sidebar-footer{padding:12px 10px;border-top:1px solid var(--paper2)}
+.verified-badge{
+  display:flex;align-items:center;gap:8px;
+  background:var(--green-l);border:1px solid rgba(21,128,61,.2);
+  border-radius:var(--r2);padding:8px 12px;font-size:11.5px;color:var(--green-d);
+}
+.vb-dot{width:6px;height:6px;border-radius:50%;background:var(--green);flex-shrink:0;animation:pulse 2s infinite}
+
+/* ── MAIN CONTENT ── */
+.app-main{flex:1;display:flex;flex-direction:column;min-width:0}
+
+.app-topbar{
+  padding:14px 28px;background:var(--surface-topbar);border-bottom:1px solid var(--paper2);
+  display:flex;align-items:center;justify-content:space-between;
+  position:sticky;top:0;z-index:20;flex-shrink:0;
+}
+.page-title-area h2{font-family:'Cormorant Garamond',serif;font-size:20px;font-weight:600;color:var(--ink)}
+.page-title-area p{font-size:12px;color:var(--ink3);margin-top:2px}
+.topbar-actions{display:flex;align-items:center;gap:10px}
+.notif-btn{
+  width:36px;height:36px;border-radius:50%;background:var(--paper);
+  border:1px solid var(--paper3);display:flex;align-items:center;justify-content:center;
+  cursor:pointer;font-size:16px;position:relative;transition:all .15s;
+}
+.notif-btn:hover{background:var(--paper2)}
+.notif-dot{
+  position:absolute;top:7px;right:7px;width:7px;height:7px;
+  border-radius:50%;background:var(--rose);border:1.5px solid #fff;
+}
+.topbar-role-switch{
+  display:flex;align-items:center;background:var(--paper);
+  border:1px solid var(--paper3);border-radius:999px;padding:3px;gap:2px;
+}
+.topbar-role-switch .trs-btn{
+  border:none;background:transparent;padding:6px 12px;border-radius:999px;
+  font-size:11.5px;font-weight:600;color:var(--ink3);cursor:pointer;
+  transition:all .15s;white-space:nowrap;
+}
+.topbar-role-switch .trs-btn.on{background:var(--teal);color:#fff}
+.topbar-role-switch .trs-btn.on.pat-on{background:var(--violet);color:#fff}
+.topbar-role-switch .trs-btn.locked-off{opacity:.35;cursor:not-allowed}
+.topbar-hub-btn{
+  border:1px solid var(--paper3);background:var(--hub-btn-bg);color:var(--ink2);
+  padding:7px 12px;border-radius:999px;font-size:11.5px;font-weight:600;
+  cursor:pointer;transition:all .15s;white-space:nowrap;font-family:'DM Sans',sans-serif;
+}
+.topbar-hub-btn:hover{background:var(--teal-l);border-color:var(--teal);color:var(--teal-d)}
+.platform-theme-toggle{
+  display:inline-flex;align-items:center;gap:8px;padding:6px 12px 6px 8px;
+  border-radius:999px;border:1px solid var(--paper3);background:var(--hub-btn-bg);
+  color:var(--ink2);font-family:'DM Sans',sans-serif;font-size:11px;font-weight:600;
+  cursor:pointer;transition:all .15s;white-space:nowrap;
+}
+.platform-theme-toggle:hover{border-color:var(--teal);color:var(--teal);background:var(--teal-l)}
+.ptt-track{
+  width:34px;height:18px;border-radius:20px;background:var(--paper2);
+  border:1px solid var(--paper3);position:relative;flex-shrink:0;
+}
+.ptt-thumb{
+  position:absolute;top:2px;left:2px;width:12px;height:12px;border-radius:50%;
+  background:var(--teal);transition:transform .2s ease;box-shadow:0 1px 4px rgba(0,0,0,.25);
+}
+.ptt-thumb.light{transform:translateX(16px);background:var(--gold)}
+[data-theme="dark"] .platform-theme-toggle{border-color:var(--bdr-glow);background:var(--card-bg2)}
+[data-theme="dark"] .platform-theme-toggle:hover{border-color:var(--teal);background:rgba(79,209,199,.1)}
+[data-theme="dark"] .ptt-track{background:rgba(255,255,255,.06);border-color:var(--bdr-glow)}
+
+.app-content{flex:1;overflow-y:auto;padding:28px 32px;scrollbar-width:thin;scrollbar-color:var(--paper3) transparent}
+.panel{display:none;animation:fadeUp .28s ease}
+.panel.active{display:block}
+
+/* ── CARDS ── */
+.card{background:var(--card-bg);border:1px solid var(--paper2);border-radius:var(--r);box-shadow:var(--shadow)}
+.card-pad{padding:20px 22px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+
+/* ── STAT CARDS ── */
+.stat-card{
+  background:var(--card-bg);border:1px solid var(--paper2);border-radius:var(--r);
+  padding:18px 20px;transition:all .2s;
+}
+.stat-card:hover{box-shadow:var(--shadow-md);transform:translateY(-2px)}
+.stat-icon{
+  width:40px;height:40px;border-radius:10px;
+  display:flex;align-items:center;justify-content:center;font-size:18px;
+  margin-bottom:12px;
+}
+.stat-val{font-family:'Cormorant Garamond',serif;font-size:28px;font-weight:600;color:var(--ink)}
+.stat-lbl{font-size:12px;color:var(--ink3);margin-top:3px}
+.stat-chg{font-size:11px;margin-top:4px}
+
+/* ── STATUS BADGES ── */
+.badge{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:20px;font-size:10.5px;font-weight:500}
+.badge-verified{background:var(--green-l);color:var(--green-d);border:1px solid rgba(21,128,61,.2)}
+.badge-pending{background:var(--gold-l);color:var(--gold-d);border:1px solid rgba(180,83,9,.2)}
+.badge-online{background:var(--teal-l);color:var(--teal-d);border:1px solid rgba(13,148,136,.2)}
+.badge-busy{background:var(--rose-l);color:var(--rose-d);border:1px solid rgba(190,24,93,.2)}
+.badge-new{background:var(--sky-l);color:var(--sky-d);border:1px solid rgba(3,105,161,.2)}
+
+/* ══════════ PROFILE PANEL ══════════ */
+.profile-hero{
+  background:linear-gradient(135deg,var(--ink) 0%,#2d3561 100%);
+  border-radius:var(--r);padding:28px;position:relative;overflow:hidden;
+  margin-bottom:20px;
+}
+.profile-hero::before{
+  content:'';position:absolute;top:-60px;right:-60px;
+  width:200px;height:200px;border-radius:50%;
+  background:radial-gradient(circle,rgba(13,148,136,.2),transparent 70%);
+}
+.profile-hero::after{
+  content:'';position:absolute;bottom:-40px;left:40px;
+  width:150px;height:150px;border-radius:50%;
+  background:radial-gradient(circle,rgba(109,40,217,.1),transparent 70%);
+}
+.profile-hero-inner{position:relative;z-index:1;display:flex;align-items:flex-start;gap:20px}
+.profile-avatar-lg{
+  width:72px;height:72px;border-radius:50%;flex-shrink:0;
+  background:linear-gradient(135deg,var(--teal),#0e7490);
+  display:flex;align-items:center;justify-content:center;
+  font-size:24px;font-weight:600;color:#fff;
+  border:3px solid rgba(255,255,255,.2);
+}
+.profile-hero-info{flex:1}
+.profile-hero-name{font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:600;color:#fff}
+.profile-hero-spec{font-size:13px;color:rgba(255,255,255,.6);margin-top:3px}
+.profile-hero-stats{display:flex;gap:24px;margin-top:14px}
+.phs{text-align:center}
+.phs-val{font-family:'Cormorant Garamond',serif;font-size:20px;font-weight:600;color:#fff}
+.phs-lbl{font-size:10px;color:rgba(255,255,255,.5);margin-top:1px;text-transform:uppercase;letter-spacing:.05em}
+
+.profile-actions{display:flex;gap:8px;margin-left:auto;align-items:flex-start}
+.btn-outline-white{
+  padding:8px 16px;border:1px solid rgba(255,255,255,.3);border-radius:var(--r2);
+  background:rgba(255,255,255,.08);color:#fff;font-size:12.5px;font-weight:500;
+  cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .2s;
+}
+.btn-outline-white:hover{background:rgba(255,255,255,.15)}
+
+.degree-card{
+  background:var(--card-bg);border:1px solid var(--paper2);border-radius:var(--r2);
+  padding:14px 16px;display:flex;align-items:center;gap:12px;
+}
+.degree-icon{
+  width:40px;height:40px;border-radius:8px;background:var(--sky-l);
+  display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;
+}
+.degree-info{flex:1}
+.degree-name{font-size:13.5px;font-weight:500;color:var(--ink)}
+.degree-meta{font-size:11.5px;color:var(--ink3);margin-top:2px}
+
+/* ══════════ DISEASE BOARD ══════════ */
+.board-header{
+  display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;
+}
+.btn-post{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:9px 18px;background:var(--teal);color:#fff;
+  border:none;border-radius:var(--r2);font-size:13px;font-weight:500;
+  cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .2s;
+}
+.btn-post:hover{background:var(--teal-d);transform:translateY(-1px);box-shadow:0 4px 14px rgba(13,148,136,.35)}
+
+.post-card{
+  background:var(--card-bg);border:1px solid var(--paper2);border-radius:var(--r);
+  margin-bottom:14px;overflow:hidden;transition:all .2s;
+}
+.post-card:hover{box-shadow:var(--shadow-md);border-color:var(--paper3)}
+.post-header{padding:18px 20px 14px;display:flex;align-items:flex-start;gap:12px;border-bottom:1px solid var(--paper2)}
+.post-avatar{
+  width:38px;height:38px;border-radius:50%;flex-shrink:0;
+  background:linear-gradient(135deg,var(--violet),#7c3aed);
+  display:flex;align-items:center;justify-content:center;
+  font-size:14px;font-weight:600;color:#fff;
+}
+.post-meta{flex:1}
+.post-author{font-size:13.5px;font-weight:500;color:var(--ink)}
+.post-time{font-size:11px;color:var(--ink3);margin-top:1px}
+.post-body{padding:0 20px 16px}
+.post-title{
+  font-family:'Cormorant Garamond',serif;font-size:18px;font-weight:600;
+  color:var(--ink);margin:12px 0 8px;line-height:1.35;
+}
+.post-text{font-size:13px;color:var(--ink2);line-height:1.65}
+.post-tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+.post-tag{
+  display:inline-flex;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:500;
+  background:var(--teal-l);color:var(--teal-d);border:1px solid rgba(13,148,136,.2);
+}
+.post-footer{
+  padding:12px 20px;background:var(--paper);border-top:1px solid var(--paper2);
+  display:flex;align-items:center;justify-content:space-between;
+}
+.post-stats{display:flex;align-items:center;gap:16px}
+.post-stat{font-size:12px;color:var(--ink3);display:flex;align-items:center;gap:5px;cursor:pointer;transition:color .15s}
+.post-stat:hover{color:var(--teal)}
+.reply-btn{
+  padding:6px 14px;background:var(--card-bg2);border:1px solid var(--paper3);
+  border-radius:var(--r2);font-size:12px;font-weight:500;color:var(--ink2);
+  cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .15s;
+}
+.reply-btn:hover{border-color:var(--teal);color:var(--teal);background:var(--teal-l)}
+.reply-btn.doctor{background:var(--teal);color:#fff;border-color:var(--teal)}
+.reply-btn.doctor:hover{background:var(--teal-d)}
+
+/* REPLIES */
+.replies-section{padding:0 20px 16px;border-top:1px solid var(--paper2)}
+.reply-item{
+  display:flex;gap:10px;padding:14px 0;
+  border-bottom:1px solid var(--paper2);
+}
+.reply-item:last-child{border-bottom:none}
+.reply-avatar{
+  width:32px;height:32px;border-radius:50%;flex-shrink:0;
+  background:linear-gradient(135deg,var(--teal),#0e7490);
+  display:flex;align-items:center;justify-content:center;
+  font-size:12px;font-weight:600;color:#fff;
+}
+.reply-content{flex:1}
+.reply-author{font-size:13px;font-weight:500;color:var(--ink);display:flex;align-items:center;gap:7px}
+.reply-text{font-size:12.5px;color:var(--ink2);margin-top:5px;line-height:1.6}
+.tip-btn{
+  display:inline-flex;align-items:center;gap:5px;
+  padding:6px 14px;background:var(--gold-l);color:var(--gold-d);
+  border:1px solid rgba(180,83,9,.2);border-radius:var(--r2);
+  font-size:11.5px;font-weight:500;cursor:pointer;
+  font-family:'DM Sans',sans-serif;transition:all .2s;margin-top:8px;
+}
+.tip-btn:hover{background:var(--gold);color:#fff;border-color:var(--gold)}
+
+/* ══════════ CONSULTATION ══════════ */
+.consult-layout{display:grid;grid-template-columns:1fr 320px;gap:20px;height:calc(100vh - 200px);min-height:500px}
+.chat-area{background:var(--card-bg);border:1px solid var(--paper2);border-radius:var(--r);display:flex;flex-direction:column;overflow:hidden}
+.chat-top{
+  padding:14px 18px;border-bottom:1px solid var(--paper2);
+  display:flex;align-items:center;gap:12px;
+}
+.chat-user-info{flex:1}
+.chat-username{font-size:14px;font-weight:500;color:var(--ink)}
+.chat-userstatus{font-size:11.5px;color:var(--teal);margin-top:1px;display:flex;align-items:center;gap:5px}
+.online-dot{width:6px;height:6px;border-radius:50%;background:var(--teal);animation:pulse 2s infinite}
+.chat-actions{display:flex;gap:8px}
+.chat-action-btn{
+  width:34px;height:34px;border-radius:50%;background:var(--paper);
+  border:1px solid var(--paper3);display:flex;align-items:center;justify-content:center;
+  cursor:pointer;font-size:15px;transition:all .15s;
+}
+.chat-action-btn:hover{background:var(--teal-l);border-color:var(--teal)}
+.chat-action-btn.active{background:var(--teal);border-color:var(--teal);color:#fff}
+
+.chat-messages{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:12px;scrollbar-width:thin;scrollbar-color:var(--paper3) transparent}
+.msg-row{display:flex;gap:8px;animation:slideRight .2s ease}
+.msg-row.sent{flex-direction:row-reverse}
+.msg-av{width:28px;height:28px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:#fff}
+.msg-av.doc{background:linear-gradient(135deg,var(--teal),#0e7490)}
+.msg-av.pat{background:linear-gradient(135deg,var(--violet),#7c3aed)}
+.msg-bubble{
+  max-width:68%;padding:10px 13px;border-radius:14px;
+  font-size:13px;line-height:1.55;color:var(--ink);
+}
+.msg-bubble.received{background:var(--paper);border-radius:4px 14px 14px 14px;border:1px solid var(--paper2)}
+.msg-bubble.sent{background:var(--teal);color:#fff;border-radius:14px 4px 14px 14px}
+.msg-time{font-size:10px;margin-top:4px;opacity:.6}
+
+.chat-input-area{
+  padding:12px 16px;border-top:1px solid var(--paper2);
+  display:flex;gap:9px;align-items:flex-end;
+}
+.chat-textarea{
+  flex:1;background:var(--paper);border:1px solid var(--paper2);
+  border-radius:var(--r2);padding:9px 13px;font-size:13px;
+  font-family:'DM Sans',sans-serif;color:var(--ink);resize:none;
+  outline:none;transition:border-color .15s;min-height:38px;max-height:100px;
+}
+.chat-textarea:focus{border-color:var(--teal)}
+.chat-send{
+  width:38px;height:38px;border-radius:50%;background:var(--teal);
+  border:none;display:flex;align-items:center;justify-content:center;
+  cursor:pointer;font-size:16px;transition:all .2s;flex-shrink:0;
+}
+.chat-send:hover{background:var(--teal-d);transform:scale(1.05)}
+
+.consult-sidebar{display:flex;flex-direction:column;gap:14px}
+.consult-card{background:var(--card-bg);border:1px solid var(--paper2);border-radius:var(--r);padding:16px 18px}
+.consult-card-title{font-family:'Cormorant Garamond',serif;font-size:16px;font-weight:600;color:var(--ink);margin-bottom:12px}
+.patient-brief{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.pb-avatar{
+  width:44px;height:44px;border-radius:50%;flex-shrink:0;
+  background:linear-gradient(135deg,var(--violet),#7c3aed);
+  display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:600;color:#fff;
+}
+.pb-name{font-size:14px;font-weight:500;color:var(--ink)}
+.pb-age{font-size:12px;color:var(--ink3);margin-top:1px}
+
+.info-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--paper2);font-size:12.5px}
+.info-row:last-child{border-bottom:none}
+.info-lbl{color:var(--ink3)}
+.info-val{color:var(--ink);font-weight:500}
+
+.payment-section{background:var(--paper);border-radius:var(--r2);padding:14px;margin-top:12px}
+.pay-amount{font-family:'Cormorant Garamond',serif;font-size:28px;font-weight:600;color:var(--teal);text-align:center;margin:8px 0}
+.pay-desc{font-size:11.5px;color:var(--ink3);text-align:center;margin-bottom:12px}
+.pay-btn{
+  width:100%;padding:11px;background:var(--gold);color:#fff;
+  border:none;border-radius:var(--r2);font-size:13px;font-weight:500;
+  cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .2s;
+}
+.pay-btn:hover{background:var(--gold-d);transform:translateY(-1px);box-shadow:0 4px 14px rgba(180,83,9,.3)}
+
+/* ══════════ TIP MODAL ══════════ */
+.modal-bg{
+  position:fixed;inset:0;background:rgba(26,31,46,.6);
+  backdrop-filter:blur(6px);z-index:100;
+  display:flex;align-items:center;justify-content:center;padding:20px;
+  opacity:0;pointer-events:none;transition:opacity .2s;
+}
+.modal-bg.open{opacity:1;pointer-events:auto}
+.modal-box{
+  background:var(--card-bg);border-radius:var(--r3);
+  max-width:420px;width:100%;
+  box-shadow:var(--shadow-lg);
+  transform:translateY(14px) scale(.98);transition:all .25s;
+}
+.modal-bg.open .modal-box{transform:translateY(0) scale(1)}
+.modal-top{
+  padding:24px 24px 0;border-radius:var(--r3) var(--r3) 0 0;
+  background:linear-gradient(135deg,var(--ink),#2d3561);
+  padding-bottom:24px;text-align:center;
+}
+.modal-top h3{font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:600;color:#fff}
+.modal-top p{font-size:12.5px;color:rgba(255,255,255,.6);margin-top:4px}
+.modal-body{padding:24px}
+.amount-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px}
+.amount-btn{
+  padding:12px;border:1.5px solid var(--paper2);border-radius:var(--r2);
+  text-align:center;cursor:pointer;transition:all .2s;background:var(--card-bg2);
+  font-family:'DM Sans',sans-serif;
+}
+.amount-btn:hover,.amount-btn.selected{border-color:var(--gold);background:var(--gold-l)}
+.amount-val{font-family:'Cormorant Garamond',serif;font-size:20px;font-weight:600;color:var(--gold-d)}
+.amount-lbl{font-size:10px;color:var(--ink3);margin-top:1px}
+.custom-amount{
+  width:100%;border:1.5px solid var(--paper2);border-radius:var(--r2);
+  padding:10px 14px;font-size:14px;font-family:'DM Sans',sans-serif;
+  color:var(--ink);outline:none;text-align:center;margin-bottom:16px;
+}
+.custom-amount:focus{border-color:var(--gold)}
+.modal-close{
+  background:var(--paper);border:1px solid var(--paper2);border-radius:var(--r2);
+  padding:9px;font-size:12.5px;color:var(--ink3);cursor:pointer;
+  font-family:'DM Sans',sans-serif;flex:1;transition:all .15s;
+}
+.modal-close:hover{background:var(--paper2)}
+.modal-pay{
+  background:var(--gold);border:none;border-radius:var(--r2);
+  padding:9px;font-size:12.5px;font-weight:500;color:#fff;cursor:pointer;
+  font-family:'DM Sans',sans-serif;flex:2;transition:all .2s;
+}
+.modal-pay:hover{background:var(--gold-d)}
+.modal-footer{display:flex;gap:8px}
+
+/* NEW POST MODAL */
+.np-modal{max-width:540px}
+.np-modal .modal-body{padding:20px 24px}
+.np-input{
+  width:100%;border:1px solid var(--paper2);border-radius:var(--r2);
+  padding:10px 13px;font-size:13.5px;font-family:'DM Sans',sans-serif;
+  color:var(--ink);outline:none;transition:border-color .2s;margin-bottom:12px;
+  background:var(--card-bg2);
+}
+.np-input:focus{border-color:var(--teal)}
+.np-textarea{
+  width:100%;border:1px solid var(--paper2);border-radius:var(--r2);
+  padding:10px 13px;font-size:13.5px;font-family:'DM Sans',sans-serif;
+  color:var(--ink);outline:none;transition:border-color .2s;
+  resize:none;height:100px;margin-bottom:12px;background:var(--card-bg);
+}
+.np-textarea:focus{border-color:var(--teal)}
+
+/* ─ MISC ─ */
+.spinner{width:16px;height:16px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .5s linear infinite;display:inline-block}
+.section-title{font-family:'Cormorant Garamond',serif;font-size:18px;font-weight:600;color:var(--ink);margin-bottom:16px}
+.sec-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.profile-form .pf-label{display:block;font-size:11.5px;font-weight:500;color:var(--ink3);margin-bottom:5px;letter-spacing:.03em}
+.profile-form .pf-field{margin-bottom:12px}
+.profile-save-btn{
+  width:100%;margin-top:8px;padding:11px;background:var(--teal);color:#fff;
+  border:none;border-radius:var(--r2);font-size:13.5px;font-weight:600;
+  cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .15s;
+}
+.profile-save-btn:hover{background:var(--teal-d)}
+.profile-save-btn:disabled{opacity:.55;cursor:not-allowed}
+.pf-hint{font-size:11px;color:var(--ink3);margin-top:4px}
+
+/* ─ DOCTOR LIST ─ */
+.doctor-card{
+  background:var(--card-bg);border:1px solid var(--paper2);border-radius:var(--r);
+  padding:18px;display:flex;gap:14px;align-items:flex-start;
+  transition:all .2s;cursor:pointer;
+}
+.doctor-card:hover{box-shadow:var(--shadow-md);border-color:var(--paper3);transform:translateY(-1px)}
+.doctor-avatar{
+  width:52px;height:52px;border-radius:50%;flex-shrink:0;
+  background:linear-gradient(135deg,var(--teal),#0e7490);
+  display:flex;align-items:center;justify-content:center;font-size:18px;color:#fff;
+  font-weight:600;border:2px solid rgba(13,148,136,.2);
+}
+.doctor-info{flex:1}
+.doctor-name{font-family:'Cormorant Garamond',serif;font-size:17px;font-weight:600;color:var(--ink)}
+.doctor-spec{font-size:12px;color:var(--ink3);margin-top:2px}
+.doctor-stats{display:flex;gap:14px;margin-top:8px}
+.ds{font-size:12px;color:var(--ink3)}
+.ds strong{color:var(--ink);font-weight:500}
+.doctor-action{
+  padding:7px 14px;background:var(--teal-l);color:var(--teal-d);
+  border:1px solid rgba(13,148,136,.2);border-radius:var(--r2);
+  font-size:12px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;
+  white-space:nowrap;transition:all .2s;
+}
+.doctor-action:hover{background:var(--teal);color:#fff}
+
+/* ─ TOAST ─ */
+.toast{
+  position:fixed;bottom:24px;right:24px;
+  background:var(--ink);color:#fff;
+  border-radius:var(--r2);padding:12px 18px;
+  font-size:13px;z-index:200;max-width:320px;
+  opacity:0;transform:translateY(8px);transition:all .25s;pointer-events:none;
+  display:flex;align-items:center;gap:9px;
+}
+.toast.show{opacity:1;transform:translateY(0)}
+.toast.success{background:var(--green)}
+.toast.gold{background:var(--gold-d)}
+
+/* ─ EMPTY STATE ─ */
+.empty-state{text-align:center;padding:48px 20px;color:var(--ink3)}
+.empty-icon{font-size:40px;margin-bottom:12px;opacity:.5}
+.empty-text{font-size:14px;line-height:1.6}
+
+/* RESPONSIVE */
+@media(max-width:900px){
+  .consult-layout{grid-template-columns:1fr}
+  .consult-sidebar{display:none}
+  .grid4{grid-template-columns:1fr 1fr}
+  .grid3{grid-template-columns:1fr 1fr}
+}
+@media(max-width:640px){
+  .app-sidebar{display:none}
+  .app-content{padding:18px 16px}
+  .grid2,.grid3,.grid4{grid-template-columns:1fr}
+  .form-row{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════
+     AUTH SCREEN
+══════════════════════════════════════════════ -->
+<div class="screen active" id="screen-auth" style="align-items:center;justify-content:center">
+  <div class="auth-card">
+    <div class="auth-logo">
+      <div class="auth-logo-mark">🧬</div>
+      <h1>Agents Assemble</h1>
+      <p>Doctor &amp; Patient Platform</p>
+    </div>
+
+    <div class="role-toggle" id="role-toggle">
+      <button class="role-btn active" onclick="setRole('patient',this)">👤 Patient</button>
+      <button class="role-btn" onclick="setRole('doctor',this)">🩺 Doctor</button>
+    </div>
+
+    <div class="auth-tabs">
+      <button class="auth-tab active" onclick="setTab('login',this)">Sign in</button>
+      <button class="auth-tab" onclick="setTab('register',this)">Register</button>
+    </div>
+
+    <!-- LOGIN -->
+    <div id="tab-login">
+      <div class="form-group">
+        <label class="form-label">Email address</label>
+        <input class="form-input" type="email" placeholder="you@example.com" id="login-email">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Password</label>
+        <input class="form-input" type="password" placeholder="••••••••" id="login-pass">
+      </div>
+      <button class="btn-primary" onclick="doLogin()" style="margin-top:4px">Sign in</button>
+      <div class="divider">or demo</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <button class="btn-primary" style="background:var(--violet)" onclick="demoLogin('patient')">Demo Patient</button>
+        <button class="btn-primary" style="background:var(--teal-d)" onclick="demoLogin('doctor')">Demo Doctor</button>
+      </div>
+    </div>
+
+    <!-- REGISTER -->
+    <div id="tab-register" style="display:none">
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">First name</label>
+          <input class="form-input" type="text" placeholder="Arjun">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Last name</label>
+          <input class="form-input" type="text" placeholder="Sharma">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Email address</label>
+        <input class="form-input" type="email" placeholder="you@example.com">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Password</label>
+        <input class="form-input" type="password" placeholder="At least 8 characters">
+      </div>
+
+      <!-- Doctor extra fields -->
+      <div id="doctor-fields" style="display:none">
+        <div class="form-group">
+          <label class="form-label">Medical Council Registration No.</label>
+          <input class="form-input" type="text" placeholder="e.g. MCI-12345">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Specialisation</label>
+          <select class="form-select">
+            <option>General Physician</option>
+            <option>Cardiologist</option>
+            <option>Neurologist</option>
+            <option>Hepatologist</option>
+            <option>Nephrologist</option>
+            <option>Endocrinologist</option>
+            <option>Pulmonologist</option>
+            <option>Dermatologist</option>
+            <option>Oncologist</option>
+            <option>Psychiatrist</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Years of experience</label>
+          <input class="form-input" type="number" placeholder="e.g. 10" min="0">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Upload Degree / Licence (PDF or image)</label>
+          <div class="upload-area" id="degree-upload" onclick="document.getElementById('degree-file').click()">
+            <input type="file" id="degree-file" accept=".pdf,.jpg,.jpeg,.png" style="display:none" onchange="degreeUploaded(this)">
+            <div style="font-size:24px;margin-bottom:8px">📜</div>
+            <div style="font-size:13px;color:rgba(255,255,255,.6)">Click to upload your medical degree</div>
+            <div style="font-size:11px;color:rgba(255,255,255,.35);margin-top:4px">PDF, JPG, PNG — max 10 MB</div>
+          </div>
+        </div>
+      </div>
+
+      <button class="btn-primary" onclick="doRegister()">Create account</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════
+     MAIN APP
+══════════════════════════════════════════════ -->
+<div class="screen" id="screen-app">
+
+  <!-- SIDEBAR -->
+  <aside class="app-sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-user">
+        <div class="user-avatar" id="sb-avatar">A</div>
+        <div>
+          <div class="user-name" id="sb-name">Dr. Arjun Sharma</div>
+          <div class="user-role"><span class="role-badge rb-doctor" id="sb-role-badge">🩺 Doctor</span></div>
+        </div>
+      </div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-sec-lbl">Main</div>
+      <button class="sni on" onclick="showPanel('dashboard')">
+        <span class="sni-icon">📊</span>Dashboard
+      </button>
+      <button class="sni" onclick="showPanel('profile')">
+        <span class="sni-icon">👤</span>My Profile
+      </button>
+      <button class="sni" onclick="showPanel('board')">
+        <span class="sni-icon">📋</span>Disease Board
+        <span class="sni-badge" id="board-count">3</span>
+      </button>
+      <button class="sni" onclick="showPanel('doctors')">
+        <span class="sni-icon">🩺</span><span id="sb-doctors-lbl">Find Doctors</span>
+      </button>
+      <button class="sni" onclick="showPanel('consult')">
+        <span class="sni-icon">💬</span>Consultations
+      </button>
+      <div class="nav-sec-lbl" style="margin-top:6px">Account</div>
+      <button class="sni" onclick="showPanel('earnings')" id="sb-earnings" style="display:none">
+        <span class="sni-icon">💰</span>Earnings
+      </button>
+      <button class="sni" onclick="showPanel('settings')">
+        <span class="sni-icon">⚙️</span>Settings
+      </button>
+      <button class="sni" onclick="doLogout()">
+        <span class="sni-icon">🚪</span>Sign out
+      </button>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="verified-badge" id="sb-verified-badge">
+        <span class="vb-dot"></span>
+        <span id="sb-verified-text">Verified Doctor</span>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="app-main">
+    <header class="app-topbar">
+      <div class="page-title-area">
+        <h2 id="panel-title">Dashboard</h2>
+        <p id="panel-sub">Welcome back</p>
+      </div>
+      <div class="topbar-actions">
+        <button type="button" class="platform-theme-toggle" id="platform-theme-toggle" onclick="togglePlatformTheme()" title="Toggle dark / light theme (syncs with Medical Hub)" aria-label="Toggle theme">
+          <span class="ptt-track" aria-hidden><span class="ptt-thumb" id="ptt-thumb"></span></span>
+          <span class="ptt-label" id="ptt-label">Dark</span>
+          <span class="ptt-icon" id="ptt-icon" aria-hidden>☽</span>
+        </button>
+        <button type="button" class="topbar-hub-btn" onclick="openMedicalHub()" title="Disease Hub &amp; MCP tools">
+          🧬 Medical Hub
+        </button>
+        <div class="topbar-role-switch" id="topbar-role-switch" role="group" aria-label="Doctor or Patient view">
+          <button type="button" class="trs-btn" data-role="doctor" onclick="switchPlatformRole('doctor')">🩺 Doctor</button>
+          <button type="button" class="trs-btn pat-on" data-role="patient" onclick="switchPlatformRole('patient')">👤 Patient</button>
+        </div>
+        <div class="notif-btn" title="Notifications">🔔<span class="notif-dot"></span></div>
+      </div>
+    </header>
+
+    <div class="app-content">
+
+      <!-- ── DASHBOARD ── -->
+      <div class="panel active" id="panel-dashboard">
+        <!-- Doctor dashboard -->
+        <div id="dashboard-doctor">
+          <div class="grid4" style="margin-bottom:20px">
+            <div class="stat-card">
+              <div class="stat-icon" style="background:var(--teal-l)">🏥</div>
+              <div class="stat-val">24</div>
+              <div class="stat-lbl">Total consultations</div>
+              <div class="stat-chg" style="color:var(--green)">↑ 4 this week</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon" style="background:var(--violet-l)">💬</div>
+              <div class="stat-val">12</div>
+              <div class="stat-lbl">Board replies given</div>
+              <div class="stat-chg" style="color:var(--green)">↑ 2 today</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon" style="background:var(--gold-l)">💰</div>
+              <div class="stat-val">₹4,800</div>
+              <div class="stat-lbl">Total tips received</div>
+              <div class="stat-chg" style="color:var(--green)">↑ ₹600 this week</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon" style="background:var(--rose-l)">⭐</div>
+              <div class="stat-val">4.9</div>
+              <div class="stat-lbl">Patient rating</div>
+              <div class="stat-chg" style="color:var(--ink3)">Based on 18 reviews</div>
+            </div>
+          </div>
+          <div class="grid2">
+            <div class="card card-pad">
+              <div class="section-title">Pending board questions</div>
+              <div style="display:flex;flex-direction:column;gap:10px" id="dash-pending-questions"></div>
+            </div>
+            <div class="card card-pad">
+              <div class="section-title">Recent tips received</div>
+              <div id="dash-tips"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Patient dashboard -->
+        <div id="dashboard-patient" style="display:none">
+          <div class="grid3" style="margin-bottom:20px">
+            <div class="stat-card">
+              <div class="stat-icon" style="background:var(--teal-l)">📋</div>
+              <div class="stat-val">3</div>
+              <div class="stat-lbl">My disease posts</div>
+              <div class="stat-chg" style="color:var(--sky)">7 doctor replies</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon" style="background:var(--violet-l)">💬</div>
+              <div class="stat-val">2</div>
+              <div class="stat-lbl">Active consultations</div>
+              <div class="stat-chg" style="color:var(--green)">1 online now</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon" style="background:var(--gold-l)">💸</div>
+              <div class="stat-val">₹1,200</div>
+              <div class="stat-lbl">Tips given</div>
+              <div class="stat-chg" style="color:var(--ink3)">3 doctors thanked</div>
+            </div>
+          </div>
+          <div class="grid2">
+            <div class="card card-pad">
+              <div class="section-title">Recent replies to my posts</div>
+              <div id="dash-patient-replies"></div>
+            </div>
+            <div class="card card-pad">
+              <div class="section-title">My active consultations</div>
+              <div id="dash-patient-consults"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── PROFILE ── -->
+      <div class="panel" id="panel-profile">
+        <!-- Doctor profile -->
+        <div id="profile-doctor">
+          <div class="profile-hero">
+            <div class="profile-hero-inner">
+              <div class="profile-avatar-lg" id="ph-avatar">DS</div>
+              <div class="profile-hero-info">
+                <div class="profile-hero-name" id="ph-name">Dr. Arjun Sharma</div>
+                <div class="profile-hero-spec" id="ph-spec">Hepatologist · Mountain View Hospital, Delhi</div>
+                <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
+                  <span class="badge badge-verified">✓ Degree verified</span>
+                  <span class="badge badge-online" id="ph-status-badge">● Online</span>
+                </div>
+                <div class="profile-hero-stats">
+                  <div class="phs"><div class="phs-val">24</div><div class="phs-lbl">Consultations</div></div>
+                  <div class="phs"><div class="phs-val">4.9</div><div class="phs-lbl">Rating</div></div>
+                  <div class="phs"><div class="phs-val">16</div><div class="phs-lbl">Yrs exp.</div></div>
+                </div>
+              </div>
+              <div class="profile-actions">
+                <button class="btn-outline-white" onclick="editProfile()">Edit profile</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="grid2">
+            <div class="card card-pad">
+              <div class="section-title">Professional details</div>
+              <div class="info-row"><span class="info-lbl">Specialisation</span><span class="info-val" id="pi-spec">Hepatology</span></div>
+              <div class="info-row"><span class="info-lbl">Registration no.</span><span class="info-val">MCI-48271</span></div>
+              <div class="info-row"><span class="info-lbl">Experience</span><span class="info-val">16 years</span></div>
+              <div class="info-row"><span class="info-lbl">Hospital</span><span class="info-val">Mountain View Hospital, Delhi</span></div>
+              <div class="info-row"><span class="info-lbl">Consultation fee</span><span class="info-val">₹500 / session</span></div>
+              <div class="info-row"><span class="info-lbl">Languages</span><span class="info-val">Hindi, English</span></div>
+            </div>
+            <div class="card card-pad">
+              <div class="section-title">Uploaded credentials</div>
+              <div class="degree-card" style="margin-bottom:10px">
+                <div class="degree-icon">📜</div>
+                <div class="degree-info">
+                  <div class="degree-name">MBBS — AIIMS Delhi</div>
+                  <div class="degree-meta">Uploaded 12 Jan 2025 · Verified ✓</div>
+                </div>
+                <span class="badge badge-verified">✓ Verified</span>
+              </div>
+              <div class="degree-card" style="margin-bottom:10px">
+                <div class="degree-icon">🎓</div>
+                <div class="degree-info">
+                  <div class="degree-name">MD (Hepatology) — PGI Chandigarh</div>
+                  <div class="degree-meta">Uploaded 12 Jan 2025 · Verified ✓</div>
+                </div>
+                <span class="badge badge-verified">✓ Verified</span>
+              </div>
+              <div class="degree-card">
+                <div class="degree-icon">📋</div>
+                <div class="degree-info">
+                  <div class="degree-name">MCI Registration Certificate</div>
+                  <div class="degree-meta">Uploaded 12 Jan 2025 · Verified ✓</div>
+                </div>
+                <span class="badge badge-verified">✓ Verified</span>
+              </div>
+              <div class="upload-area" style="margin-top:12px;background:var(--paper);border-color:var(--paper3)" onclick="toast('Upload new credential','')" >
+                <div style="font-size:13px;color:var(--ink3)">+ Upload additional credential</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Patient profile -->
+        <div id="profile-patient" style="display:none">
+          <div class="profile-hero" style="background:linear-gradient(135deg,#4c1d95,#6d28d9)">
+            <div class="profile-hero-inner">
+              <div class="profile-avatar-lg" id="pat-ph-avatar" style="background:linear-gradient(135deg,var(--violet),#7c3aed)">—</div>
+              <div class="profile-hero-info">
+                <div class="profile-hero-name" id="pat-ph-name">Patient</div>
+                <div class="profile-hero-spec" id="pat-ph-spec">Patient</div>
+                <div style="margin-top:10px"><span class="badge badge-new" id="pat-ph-member">Member</span></div>
+                <div class="profile-hero-stats">
+                  <div class="phs"><div class="phs-val" id="pat-stat-posts">0</div><div class="phs-lbl">Posts</div></div>
+                  <div class="phs"><div class="phs-val" id="pat-stat-consults">0</div><div class="phs-lbl">Consultations</div></div>
+                  <div class="phs"><div class="phs-val" id="pat-stat-tips">0</div><div class="phs-lbl">Tips sent</div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <form class="grid2 profile-form" id="patient-profile-form" onsubmit="savePatientProfile(event)">
+            <div class="card card-pad">
+              <div class="section-title">Personal details</div>
+              <p class="pf-hint">Saved to PostgreSQL when you click Save.</p>
+              <div class="pf-field">
+                <label class="pf-label" for="pf-name">Full name</label>
+                <input id="pf-name" class="np-input" type="text" required autocomplete="name" />
+              </div>
+              <div class="form-row">
+                <div class="pf-field">
+                  <label class="pf-label" for="pf-age">Age</label>
+                  <input id="pf-age" class="np-input" type="number" min="1" max="120" placeholder="28" />
+                </div>
+                <div class="pf-field">
+                  <label class="pf-label" for="pf-blood">Blood group</label>
+                  <input id="pf-blood" class="np-input" type="text" placeholder="B+" />
+                </div>
+              </div>
+              <div class="pf-field">
+                <label class="pf-label" for="pf-city">City</label>
+                <input id="pf-city" class="np-input" type="text" placeholder="Mumbai, Maharashtra" />
+              </div>
+              <div class="pf-field">
+                <label class="pf-label" for="pf-languages">Languages</label>
+                <input id="pf-languages" class="np-input" type="text" placeholder="Hindi, English" />
+              </div>
+            </div>
+            <div class="card card-pad">
+              <div class="section-title">Medical summary</div>
+              <div class="pf-field">
+                <label class="pf-label" for="pf-conditions">Known conditions</label>
+                <textarea id="pf-conditions" class="np-textarea" rows="2" placeholder="Type 2 Diabetes (comma-separated)"></textarea>
+              </div>
+              <div class="pf-field">
+                <label class="pf-label" for="pf-medications">Current medications</label>
+                <textarea id="pf-medications" class="np-textarea" rows="2" placeholder="Metformin 500mg"></textarea>
+              </div>
+              <div class="pf-field">
+                <label class="pf-label" for="pf-allergies">Allergies</label>
+                <textarea id="pf-allergies" class="np-textarea" rows="2" placeholder="Penicillin"></textarea>
+              </div>
+              <button type="submit" class="profile-save-btn" id="pf-save-btn">Save to database</button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- ── DISEASE BOARD ── -->
+      <div class="panel" id="panel-board">
+        <div class="board-header">
+          <div>
+            <div class="section-title" style="margin-bottom:4px">Disease Board</div>
+            <div style="font-size:12.5px;color:var(--ink3)">Patients post their conditions — doctors reply with advice</div>
+          </div>
+          <button class="btn-post" id="new-post-btn" onclick="openNewPost()">+ Post a question</button>
+        </div>
+
+        <div id="posts-container"></div>
+      </div>
+
+      <!-- ── FIND DOCTORS / PATIENTS LIST ── -->
+      <div class="panel" id="panel-doctors">
+        <div class="sec-row">
+          <div>
+            <div class="section-title" style="margin-bottom:4px" id="doctors-panel-title">Find Doctors</div>
+            <div style="font-size:12.5px;color:var(--ink3)" id="doctors-panel-sub">Connect with verified specialists</div>
+          </div>
+        </div>
+        <div id="doctors-list" style="display:flex;flex-direction:column;gap:12px"></div>
+      </div>
+
+      <!-- ── CONSULTATION ── -->
+      <div class="panel" id="panel-consult">
+        <div class="consult-layout">
+          <div class="chat-area">
+            <div class="chat-top">
+              <div class="msg-av doc" style="width:38px;height:38px;font-size:14px">DS</div>
+              <div class="chat-user-info">
+                <div class="chat-username" id="consult-name">Dr. Arjun Sharma</div>
+                <div class="chat-userstatus"><span class="online-dot"></span>Online — Hepatologist</div>
+              </div>
+              <div class="chat-actions">
+                <div class="chat-action-btn" title="Video call">📹</div>
+                <div class="chat-action-btn" title="Voice call">📞</div>
+                <div class="chat-action-btn" title="Share report">📎</div>
+              </div>
+            </div>
+            <div class="chat-messages" id="chat-msgs-consult"></div>
+            <div class="chat-input-area">
+              <textarea class="chat-textarea" id="consult-input" rows="1" placeholder="Type your message…" onkeydown="consultKey(event)"></textarea>
+              <button class="chat-send" onclick="sendConsultMsg()">↑</button>
+            </div>
+          </div>
+
+          <div class="consult-sidebar">
+            <div class="consult-card">
+              <div class="consult-card-title" id="cs-card-title">Patient Details</div>
+              <div class="patient-brief">
+                <div class="pb-avatar" id="cs-avatar">PR</div>
+                <div>
+                  <div class="pb-name" id="cs-name">Priya Rajan</div>
+                  <div class="pb-age" id="cs-sub">28 yrs · Mumbai</div>
+                </div>
+              </div>
+              <div class="info-row"><span class="info-lbl">Condition</span><span class="info-val">Type 2 Diabetes</span></div>
+              <div class="info-row"><span class="info-lbl">Blood group</span><span class="info-val">B+</span></div>
+              <div class="info-row"><span class="info-lbl">Last report</span><span class="info-val">2 days ago</span></div>
+              <div class="info-row"><span class="info-lbl">Session</span><span class="info-val">23 min</span></div>
+            </div>
+
+            <div class="consult-card">
+              <div class="consult-card-title">Send a tip</div>
+              <div style="font-size:12px;color:var(--ink3);line-height:1.55;margin-bottom:10px">
+                Happy with the consultation? Send a thank-you tip to the doctor.
+              </div>
+              <div class="payment-section">
+                <div style="font-size:11px;color:var(--ink3);text-align:center">Suggested tip</div>
+                <div class="pay-amount">₹200</div>
+                <div class="pay-desc">for this session</div>
+                <button class="pay-btn" onclick="openTipModal()">💛 Send tip to doctor</button>
+              </div>
+            </div>
+
+            <div class="consult-card">
+              <div class="consult-card-title">Consultation notes</div>
+              <textarea style="width:100%;border:1px solid var(--paper2);border-radius:var(--r2);padding:8px 10px;font-size:12px;font-family:'DM Sans',sans-serif;color:var(--ink);resize:none;outline:none;height:80px;background:var(--paper)" placeholder="Add session notes…"></textarea>
+              <button style="margin-top:8px;width:100%;padding:8px;background:var(--paper);border:1px solid var(--paper2);border-radius:var(--r2);font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif;color:var(--ink2)">Save notes</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── EARNINGS ── -->
+      <div class="panel" id="panel-earnings">
+        <div class="grid4" style="margin-bottom:20px">
+          <div class="stat-card"><div class="stat-icon" style="background:var(--gold-l)">💰</div><div class="stat-val">₹4,800</div><div class="stat-lbl">Total earned</div></div>
+          <div class="stat-card"><div class="stat-icon" style="background:var(--teal-l)">📅</div><div class="stat-val">₹1,200</div><div class="stat-lbl">This month</div></div>
+          <div class="stat-card"><div class="stat-icon" style="background:var(--green-l)">✓</div><div class="stat-val">18</div><div class="stat-lbl">Tips received</div></div>
+          <div class="stat-card"><div class="stat-icon" style="background:var(--sky-l)">⭐</div><div class="stat-val">₹267</div><div class="stat-lbl">Avg tip size</div></div>
+        </div>
+        <div class="card card-pad">
+          <div class="section-title">Recent tips</div>
+          <div id="earnings-list"></div>
+        </div>
+      </div>
+
+      <!-- ── SETTINGS ── -->
+      <div class="panel" id="panel-settings">
+        <div class="grid2">
+          <div class="card card-pad">
+            <div class="section-title">Account settings</div>
+            <div class="form-group"><label style="display:block;font-size:12px;color:var(--ink3);margin-bottom:5px">Full name</label><input style="width:100%;border:1px solid var(--paper2);border-radius:var(--r2);padding:9px 12px;font-size:13px;font-family:'DM Sans',sans-serif;color:var(--ink);outline:none" value="Dr. Arjun Sharma" id="settings-name"></div>
+            <div class="form-group"><label style="display:block;font-size:12px;color:var(--ink3);margin-bottom:5px">Email</label><input style="width:100%;border:1px solid var(--paper2);border-radius:var(--r2);padding:9px 12px;font-size:13px;font-family:'DM Sans',sans-serif;color:var(--ink);outline:none" value="arjun@example.com"></div>
+            <div class="form-group"><label style="display:block;font-size:12px;color:var(--ink3);margin-bottom:5px">Availability status</label><select style="width:100%;border:1px solid var(--paper2);border-radius:var(--r2);padding:9px 12px;font-size:13px;font-family:'DM Sans',sans-serif;color:var(--ink);outline:none;appearance:none"><option>Online — available now</option><option>Busy — in consultation</option><option>Away</option><option>Offline</option></select></div>
+            <button style="padding:10px 18px;background:var(--teal);color:#fff;border:none;border-radius:var(--r2);font-size:13px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif" onclick="toast('Settings saved','success')">Save changes</button>
+          </div>
+          <div class="card card-pad">
+            <div class="section-title">Notifications</div>
+            <div style="display:flex;flex-direction:column;gap:12px">
+              <div class="info-row"><span class="info-lbl">New board questions</span><span style="width:40px;height:22px;background:var(--teal);border-radius:20px;cursor:pointer;position:relative;flex-shrink:0"></span></div>
+              <div class="info-row"><span class="info-lbl">Direct messages</span><span style="width:40px;height:22px;background:var(--teal);border-radius:20px;cursor:pointer;position:relative;flex-shrink:0"></span></div>
+              <div class="info-row"><span class="info-lbl">Tips received</span><span style="width:40px;height:22px;background:var(--teal);border-radius:20px;cursor:pointer;position:relative;flex-shrink:0"></span></div>
+              <div class="info-row"><span class="info-lbl">Consultation reminders</span><span style="width:40px;height:22px;background:var(--paper2);border-radius:20px;cursor:pointer;position:relative;flex-shrink:0"></span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /app-content -->
+  </main>
+</div><!-- /screen-app -->
+
+<!-- ══════════ TIP MODAL ══════════ -->
+<div class="modal-bg" id="tip-modal" onclick="tipModalBg(event)">
+  <div class="modal-box">
+    <div class="modal-top">
+      <div style="font-size:28px;margin-bottom:8px">💛</div>
+      <h3>Send a tip</h3>
+      <p>Show your gratitude to <span id="tip-doctor-name">Dr. Arjun Sharma</span></p>
+    </div>
+    <div class="modal-body">
+      <div class="amount-grid">
+        <div class="amount-btn selected" onclick="selectAmount(this,50)"><div class="amount-val">₹50</div><div class="amount-lbl">Small thanks</div></div>
+        <div class="amount-btn" onclick="selectAmount(this,100)"><div class="amount-val">₹100</div><div class="amount-lbl">Good help</div></div>
+        <div class="amount-btn" onclick="selectAmount(this,200)"><div class="amount-val">₹200</div><div class="amount-lbl">Great advice</div></div>
+        <div class="amount-btn" onclick="selectAmount(this,500)"><div class="amount-val">₹500</div><div class="amount-lbl">Excellent!</div></div>
+        <div class="amount-btn" onclick="selectAmount(this,1000)"><div class="amount-val">₹1,000</div><div class="amount-lbl">Life-changing</div></div>
+        <div class="amount-btn" onclick="selectAmount(this,'custom')"><div class="amount-val">✏️</div><div class="amount-lbl">Custom</div></div>
+      </div>
+      <input class="custom-amount" type="number" id="custom-tip-input" placeholder="Enter custom amount (₹)" style="display:none">
+      <div style="background:var(--paper);border-radius:var(--r2);padding:12px;margin-bottom:16px;font-size:12.5px;color:var(--ink3);line-height:1.55">
+        💛 Tips are entirely voluntary. 100% goes to the doctor. This unlocks direct consultation access.
+      </div>
+      <div class="modal-footer">
+        <button class="modal-close" onclick="closeTipModal()">Cancel</button>
+        <button class="modal-pay" onclick="sendTip()">Send ₹<span id="pay-amount-display">50</span></button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ NEW POST MODAL ══════════ -->
+<div class="modal-bg" id="new-post-modal" onclick="newPostModalBg(event)">
+  <div class="modal-box np-modal">
+    <div class="modal-top" style="background:linear-gradient(135deg,#0f766e,#0e7490)">
+      <div style="font-size:26px;margin-bottom:8px">📋</div>
+      <h3>Post your question</h3>
+      <p>Describe your condition — verified doctors will reply</p>
+    </div>
+    <div class="modal-body">
+      <input class="np-input" placeholder="Title — e.g. Persistent fatigue and elevated ALT levels" id="np-title">
+      <textarea class="np-textarea" placeholder="Describe your symptoms, duration, and any existing diagnoses or test results…" id="np-body"></textarea>
+      <div style="margin-bottom:12px">
+        <div style="font-size:12px;color:var(--ink3);margin-bottom:6px;font-weight:500">Tags (select all that apply)</div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px" id="np-tags">
+          <span class="post-tag" style="cursor:pointer" onclick="toggleTag(this)">Liver</span>
+          <span class="post-tag" style="cursor:pointer;background:var(--paper2);color:var(--ink3);border-color:var(--paper3)" onclick="toggleTag(this)">Diabetes</span>
+          <span class="post-tag" style="cursor:pointer;background:var(--paper2);color:var(--ink3);border-color:var(--paper3)" onclick="toggleTag(this)">Heart</span>
+          <span class="post-tag" style="cursor:pointer;background:var(--paper2);color:var(--ink3);border-color:var(--paper3)" onclick="toggleTag(this)">Kidney</span>
+          <span class="post-tag" style="cursor:pointer;background:var(--paper2);color:var(--ink3);border-color:var(--paper3)" onclick="toggleTag(this)">Fatigue</span>
+          <span class="post-tag" style="cursor:pointer;background:var(--paper2);color:var(--ink3);border-color:var(--paper3)" onclick="toggleTag(this)">Pain</span>
+          <span class="post-tag" style="cursor:pointer;background:var(--paper2);color:var(--ink3);border-color:var(--paper3)" onclick="toggleTag(this)">Blood work</span>
+          <span class="post-tag" style="cursor:pointer;background:var(--paper2);color:var(--ink3);border-color:var(--paper3)" onclick="toggleTag(this)">Urgent</span>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="modal-close" onclick="closeNewPost()">Cancel</button>
+        <button class="modal-pay" style="background:var(--teal)" onclick="submitPost()">Post question →</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ── THEME (sync with Medical Hub via localStorage aa-theme) ───────────────
+const PLATFORM_THEME_KEY = 'aa-theme';
+
+function applyPlatformTheme(theme) {
+  const t = theme === 'light' ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', t);
+  try { localStorage.setItem(PLATFORM_THEME_KEY, t); } catch (e) {}
+  const thumb = document.getElementById('ptt-thumb');
+  const label = document.getElementById('ptt-label');
+  const icon = document.getElementById('ptt-icon');
+  if (thumb) thumb.classList.toggle('light', t === 'light');
+  if (label) label.textContent = t === 'light' ? 'Light' : 'Dark';
+  if (icon) icon.textContent = t === 'light' ? '☀' : '☽';
+  try {
+    if (window.top && window.top !== window && window.top.document) {
+      window.top.document.documentElement.setAttribute('data-theme', t);
+      window.top.localStorage.setItem(PLATFORM_THEME_KEY, t);
+    }
+  } catch (e) { /* cross-origin */ }
+}
+
+function togglePlatformTheme() {
+  const cur = document.documentElement.getAttribute('data-theme') || 'dark';
+  applyPlatformTheme(cur === 'dark' ? 'light' : 'dark');
+}
+
+function initPlatformTheme() {
+  let theme = 'dark';
+  try {
+    const stored = localStorage.getItem(PLATFORM_THEME_KEY);
+    if (stored === 'light' || stored === 'dark') theme = stored;
+  } catch (e) {}
+  applyPlatformTheme(theme);
+}
+
+document.addEventListener('DOMContentLoaded', initPlatformTheme);
+
+// ── STATE ──────────────────────────────────────────────────────────────────
+let currentRole = 'patient';
+let currentUser = null;
+/** Logged-in account role from API (locks switch to doctor OR patient). */
+let authAccountRole = null;
+let selectedTipAmount = 50;
+let consultHistory = [];
+
+const DEMO_USERS = {
+  doctor:{
+    name:'Dr. Arjun Sharma',role:'doctor',initials:'AS',
+    specialty:'Hepatology',hospital:'Mountain View Hospital, Delhi',
+    experience:'16',regNo:'MCI-48271',verified:true,
+  },
+  patient:{
+    name:'Priya Rajan',role:'patient',initials:'PR',
+    city:'Mumbai',age:'28',bloodGroup:'B+',
+    condition:'Type 2 Diabetes',
+  },
+};
+
+const BOARD_POSTS = [
+  {
+    id:1,author:'Priya Rajan',initials:'PR',time:'2 hours ago',
+    title:'Persistent elevated ALT and fatigue for 3 months',
+    body:'I am 28F, diagnosed with Type 2 Diabetes last year. My recent blood work shows ALT at 78 U/L (normal <40) and I have been experiencing persistent fatigue, loss of appetite, and mild right upper quadrant discomfort. No alcohol use. HbA1c is 7.2%. Should I be concerned about liver involvement?',
+    tags:['Liver','Diabetes','Blood work','Fatigue'],
+    replies:2,views:84,
+    doctorReplies:[
+      {
+        doctor:'Dr. Arjun Sharma',initials:'AS',specialty:'Hepatology',verified:true,
+        time:'1 hour ago',
+        text:'Hello Priya — elevated ALT in the context of Type 2 Diabetes is quite common and often indicates non-alcoholic fatty liver disease (NAFLD). An HbA1c of 7.2 is not well-controlled, and poor glycaemic control significantly worsens hepatic fat accumulation. I would recommend: (1) an abdominal ultrasound to assess liver echogenicity, (2) fasting lipid profile, (3) AST/ALT ratio, and (4) a Fibroscan if available. Please consult a hepatologist in person for a thorough evaluation. I am happy to guide you further through consultation.',
+      },
+      {
+        doctor:'Dr. Meena Pillai',initials:'MP',specialty:'Endocrinologist',verified:true,
+        time:'45 min ago',
+        text:'Agreed with Dr. Sharma. The diabetes-liver connection is bidirectional — fatty liver worsens insulin resistance. Prioritise HbA1c control first. Also consider checking TSH (hypothyroidism can cause elevated liver enzymes). Dietary changes: reduce refined carbs and fructose. Happy to assist with the diabetes management aspect.',
+      },
+    ],
+  },
+  {
+    id:2,author:'Rajesh Kumar',initials:'RK',time:'5 hours ago',
+    title:'Unexplained shortness of breath and chest tightness at rest',
+    body:'55 year old male. Non-smoker. Experiencing shortness of breath even while sitting. Mild chest tightness. BP is 145/90. No history of heart disease but father had a heart attack at 60. ECG was done 2 days ago and was normal. Should I get an echo or stress test?',
+    tags:['Heart','Urgent'],
+    replies:1,views:112,
+    doctorReplies:[
+      {
+        doctor:'Dr. Vijay Menon',initials:'VM',specialty:'Cardiologist',verified:true,
+        time:'4 hours ago',
+        text:'Given your age, family history of premature CAD, BP 145/90, and symptoms at rest — a normal resting ECG does NOT rule out significant coronary artery disease. I strongly recommend: (1) 2D Echocardiogram immediately to assess wall motion and ejection fraction, (2) TMT (Treadmill Test) / Stress Echo, (3) Lipid profile, HbA1c, and hsCRP. Please do NOT delay — dyspnoea at rest with these risk factors needs urgent evaluation. Book an appointment and I can review your reports directly.',
+      },
+    ],
+  },
+  {
+    id:3,author:'Sunita Nair',initials:'SN',time:'1 day ago',
+    title:'HbA1c 9.4 despite being on Metformin 1000mg for 6 months',
+    body:'I am 42F, diagnosed with T2DM 8 months ago. Started Metformin 1000mg twice daily but my latest HbA1c came back at 9.4. I eat mostly home-cooked food and walk 30 min daily. My doctor wants to add a second medication but I am nervous about side effects. Any guidance?',
+    tags:['Diabetes','Blood work'],
+    replies:3,views:67,
+    doctorReplies:[
+      {
+        doctor:'Dr. Daniel Okafor',initials:'DO',specialty:'Internal Medicine',verified:true,
+        time:'20 hours ago',
+        text:'An HbA1c of 9.4 despite 6 months of Metformin indicates inadequate control — adding a second agent is the correct next step per ADA guidelines. Options with good safety profiles include: (1) SGLT2 inhibitors (Empagliflozin, Dapagliflozin) — also cardioprotective, (2) DPP-4 inhibitors (Sitagliptin, Vildagliptin) — very well tolerated with minimal side effects, (3) GLP-1 analogues if weight loss is a goal. I would particularly favour a DPP-4 inhibitor for your profile given the minimal side effect burden. Happy to discuss in detail via consultation.',
+      },
+    ],
+  },
+];
+
+const DOCTORS_LIST = [
+  {name:'Dr. Arjun Sharma',initials:'AS',specialty:'Hepatology',exp:'16 yrs',rating:'4.9',consults:24,status:'online',hospital:'Mountain View Hospital, Delhi'},
+  {name:'Dr. Meena Pillai',initials:'MP',specialty:'Endocrinologist',exp:'12 yrs',rating:'4.8',consults:31,status:'online',hospital:'Apollo Hospitals, Chennai'},
+  {name:'Dr. Vijay Menon',initials:'VM',specialty:'Cardiologist',exp:'18 yrs',rating:'4.9',consults:52,status:'busy',hospital:'Fortis Hospital, Bangalore'},
+  {name:'Dr. Daniel Okafor',initials:'DO',specialty:'Internal Medicine',exp:'12 yrs',rating:'4.7',consults:45,status:'online',hospital:'Lotus Bay Multispecialty, Singapore'},
+  {name:'Dr. Olivia Park',initials:'OP',specialty:'Infectious Disease',exp:'15 yrs',rating:'4.8',consults:38,status:'online',hospital:'Cedarbrook Institute, Seattle'},
+  {name:'Dr. Beatrice Lin',initials:'BL',specialty:'Geriatric Medicine',exp:'18 yrs',rating:'4.9',consults:29,status:'away',hospital:'Greenfield Research Hospital, Berlin'},
+];
+
+const CONSULT_MSGS = [
+  {from:'patient',text:'Hello Dr. Sharma, thank you for your detailed reply on the board. I have been concerned about my liver test results. Can you help me understand what the next steps should be?',time:'10:02 AM'},
+  {from:'doctor',text:'Hello Priya, of course. I reviewed your case — the combination of Type 2 Diabetes with elevated ALT at 78 is very suggestive of NAFLD (non-alcoholic fatty liver disease). This is very common in diabetic patients. Tell me, have you done an abdominal ultrasound recently?',time:'10:05 AM'},
+  {from:'patient',text:'No, I have not. My GP only did the blood tests. Should I get one done urgently?',time:'10:07 AM'},
+  {from:'doctor',text:'Yes — an ultrasound is the first step. It is non-invasive, inexpensive, and will tell us if there is fat in the liver and whether the liver size is enlarged. In parallel, I would like you to get an AST test alongside your ALT, and a fasting lipid profile. These together will give us the full picture.',time:'10:09 AM'},
+  {from:'patient',text:'Okay, I will schedule that this week. One more thing — my HbA1c is 7.2. Is that contributing to the liver issue?',time:'10:12 AM'},
+  {from:'doctor',text:'Absolutely. Elevated blood glucose over time leads to fat deposition in liver cells (hepatocytes). The good news is that improving your HbA1c to below 7 often leads to significant improvement in liver enzymes as well. So controlling your diabetes IS treating your liver. I will send you a brief management plan.',time:'10:14 AM'},
+];
+
+const EARNINGS_DATA = [
+  {patient:'Priya Rajan',initials:'PR',amount:'₹200',type:'Consultation tip',time:'Today, 10:15 AM'},
+  {patient:'Rajesh Kumar',initials:'RK',amount:'₹500',type:'Board reply tip',time:'Yesterday, 3:20 PM'},
+  {patient:'Sunita Nair',initials:'SN',amount:'₹100',type:'Board reply tip',time:'2 days ago'},
+  {patient:'Ankit Gupta',initials:'AG',amount:'₹1,000',type:'Consultation tip',time:'3 days ago'},
+  {patient:'Deepa Verma',initials:'DV',amount:'₹200',type:'Board reply tip',time:'4 days ago'},
+];
+
+// ── AUTH ───────────────────────────────────────────────────────────────────
+function setRole(role, btn) {
+  currentRole = role;
+  document.querySelectorAll('.role-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('doctor-fields').style.display = role==='doctor' ? 'block':'none';
+}
+
+function setTab(tab, btn) {
+  document.querySelectorAll('.auth-tab').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('tab-login').style.display = tab==='login' ? 'block':'none';
+  document.getElementById('tab-register').style.display = tab==='register' ? 'block':'none';
+}
+
+function degreeUploaded(inp) {
+  if(!inp.files[0]) return;
+  const el = document.getElementById('degree-upload');
+  el.classList.add('uploaded');
+  el.innerHTML = `<div style="font-size:20px;margin-bottom:6px">✅</div><div style="font-size:13px;color:rgba(255,255,255,.8)">${inp.files[0].name}</div><div style="font-size:11px;color:rgba(255,255,255,.5);margin-top:3px">Uploaded successfully</div>`;
+}
+
+function doLogin() {
+  const email = document.getElementById('login-email').value;
+  const pass = document.getElementById('login-pass').value;
+  if(!email || !pass){ toast('Please enter email and password'); return; }
+  demoLogin(currentRole);
+}
+
+function demoLogin(role) {
+  currentUser = DEMO_USERS[role];
+  currentRole = role;
+  bootApp();
+}
+
+function doRegister() {
+  toast('Account created! Verification email sent.','success');
+  setTimeout(()=>demoLogin(currentRole), 800);
+}
+
+function doLogout() {
+  currentUser = null;
+  document.getElementById('screen-auth').classList.add('active');
+  document.getElementById('screen-app').classList.remove('active');
+  toast('Signed out successfully');
+}
+
+function openMedicalHub() {
+  const role = currentRole || authAccountRole || 'patient';
+  try { sessionStorage.setItem('aa_hub_role', role); } catch (e) {}
+  (window.top || window).location.href = '/hub?role=' + role;
+}
+
+function initTopbarRoleSwitch() {
+  document.querySelectorAll('#topbar-role-switch .trs-btn').forEach((btn) => {
+    const r = btn.getAttribute('data-role');
+    const on = r === currentRole;
+    btn.classList.toggle('on', on);
+    btn.classList.toggle('pat-on', r === 'patient');
+    btn.classList.toggle('locked-off', Boolean(authAccountRole && authAccountRole !== r));
+  });
+}
+
+function applyPlatformRole(role) {
+  currentRole = role;
+  const u = currentUser;
+  if (!u) return;
+  document.getElementById('sb-avatar').textContent = u.initials;
+  document.getElementById('sb-name').textContent = u.name;
+
+  if (role === 'doctor') {
+    document.getElementById('sb-role-badge').textContent = '🩺 Doctor';
+    document.getElementById('sb-role-badge').className = 'role-badge rb-doctor';
+    document.getElementById('sb-verified-text').textContent = 'Verified Doctor';
+    document.getElementById('sb-verified-badge').style.background = 'var(--teal-l)';
+    document.getElementById('sb-earnings').style.display = 'flex';
+    document.getElementById('sb-doctors-lbl').textContent = 'My Patients';
+    document.getElementById('dashboard-doctor').style.display = 'block';
+    document.getElementById('dashboard-patient').style.display = 'none';
+    document.getElementById('profile-doctor').style.display = 'block';
+    document.getElementById('profile-patient').style.display = 'none';
+    document.getElementById('new-post-btn').style.display = 'none';
+    document.getElementById('doctors-panel-title').textContent = 'My Patients';
+    document.getElementById('doctors-panel-sub').textContent = 'Patients you are consulting with';
+  } else {
+    document.getElementById('sb-role-badge').textContent = '👤 Patient';
+    document.getElementById('sb-role-badge').className = 'role-badge rb-patient';
+    document.getElementById('sb-verified-text').textContent = 'Active patient';
+    document.getElementById('sb-verified-badge').style.background = 'var(--violet-l)';
+    const dot = document.getElementById('sb-verified-badge')?.querySelector('.vb-dot');
+    if (dot) dot.style.background = 'var(--violet)';
+    document.getElementById('sb-earnings').style.display = 'none';
+    document.getElementById('sb-doctors-lbl').textContent = 'Find Doctors';
+    document.getElementById('dashboard-doctor').style.display = 'none';
+    document.getElementById('dashboard-patient').style.display = 'block';
+    document.getElementById('profile-doctor').style.display = 'none';
+    document.getElementById('profile-patient').style.display = 'block';
+    document.getElementById('new-post-btn').style.display = 'inline-flex';
+    document.getElementById('doctors-panel-title').textContent = 'Find Doctors';
+    document.getElementById('doctors-panel-sub').textContent = 'Connect with verified specialists';
+  }
+  initTopbarRoleSwitch();
+}
+
+function switchPlatformRole(role) {
+  if (authAccountRole && authAccountRole !== role) {
+    toast(
+      'Your account is registered as ' +
+        (authAccountRole === 'doctor' ? 'Doctor' : 'Patient') +
+        '. Sign out and use a ' +
+        (role === 'doctor' ? 'doctor' : 'patient') +
+        ' account to open that view.',
+      'gold'
+    );
+    initTopbarRoleSwitch();
+    return;
+  }
+  applyPlatformRole(role);
+  populateDashboard();
+  if (typeof window.populatePosts === 'function') window.populatePosts();
+  if (typeof window.populateDoctors === 'function') window.populateDoctors();
+  populateConsult();
+  if (role === 'doctor' && typeof window.populateEarnings === 'function') window.populateEarnings();
+}
+
+function bootApp() {
+  document.getElementById('screen-auth').classList.remove('active');
+  document.getElementById('screen-app').classList.add('active');
+
+  const u = currentUser;
+  if (!u) return;
+  if (authAccountRole) currentRole = authAccountRole;
+  else currentRole = u.role || currentRole;
+
+  applyPlatformRole(currentRole);
+  populateDashboard();
+  populatePosts();
+  populateDoctors();
+  populateConsult();
+  populateEarnings();
+}
+
+// ── PANELS ────────────────────────────────────────────────────────────────
+const PANEL_META = {
+  dashboard:{t:'Dashboard',s:'Your activity at a glance'},
+  profile:{t:'My Profile',s:'Personal and professional details'},
+  board:{t:'Disease Board',s:'Patients post conditions — doctors reply with advice'},
+  doctors:{t:'',s:''},
+  consult:{t:'Online Consultation',s:'Secure encrypted messaging'},
+  earnings:{t:'Earnings',s:'Tips and consultation fees received'},
+  settings:{t:'Settings',s:'Manage your account preferences'},
+};
+
+function showPanel(name) {
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.getElementById('panel-'+name).classList.add('active');
+  document.querySelectorAll('.sni').forEach(b=>b.classList.remove('on'));
+  event.currentTarget.classList.add('on');
+  const m = PANEL_META[name]||{};
+  document.getElementById('panel-title').textContent = name==='doctors'
+    ? document.getElementById('doctors-panel-title').textContent
+    : (m.t||name);
+  document.getElementById('panel-sub').textContent = name==='doctors'
+    ? document.getElementById('doctors-panel-sub').textContent
+    : (m.s||'');
+  if (name === 'profile' && typeof window.loadPlatformProfile === 'function') {
+    window.loadPlatformProfile();
+  }
+}
+
+function savePatientProfile(e) {
+  e.preventDefault();
+  if (typeof window.platformSaveProfile === 'function') {
+    return window.platformSaveProfile(e);
+  }
+  toast('Sign in to save your profile', 'gold');
+}
+
+// ── POPULATE ──────────────────────────────────────────────────────────────
+function populateDashboard() {
+  if(currentRole === 'doctor') {
+    // Pending questions
+    const pq = document.getElementById('dash-pending-questions');
+    pq.innerHTML = BOARD_POSTS.slice(0,3).map(p=>`
+      <div style="display:flex;align-items:flex-start;gap:10px;padding:10px;background:var(--paper);border-radius:var(--r2);cursor:pointer" onclick="showPanel('board')">
+        <div style="font-size:20px">${p.tags[0]==='Heart'?'❤️':p.tags[0]==='Diabetes'?'🩸':'🍃'}</div>
+        <div><div style="font-size:12.5px;font-weight:500;color:var(--ink);line-height:1.3">${p.title}</div>
+        <div style="font-size:11px;color:var(--ink3);margin-top:3px">${p.author} · ${p.time}</div></div>
+      </div>`).join('');
+
+    // Recent tips
+    const tips = document.getElementById('dash-tips');
+    tips.innerHTML = EARNINGS_DATA.slice(0,4).map(t=>`
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--paper2)">
+        <div style="display:flex;align-items:center;gap:8px">
+          <div style="width:28px;height:28px;border-radius:50%;background:var(--violet-l);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:var(--violet-d)">${t.initials}</div>
+          <div><div style="font-size:12.5px;font-weight:500;color:var(--ink)">${t.patient}</div><div style="font-size:10.5px;color:var(--ink3)">${t.time}</div></div>
+        </div>
+        <span style="font-family:'Cormorant Garamond',serif;font-size:16px;font-weight:600;color:var(--gold-d)">${t.amount}</span>
+      </div>`).join('');
+  } else {
+    // Patient: recent replies
+    const pr = document.getElementById('dash-patient-replies');
+    pr.innerHTML = `
+      <div style="display:flex;gap:10px;padding:10px;background:var(--teal-l);border-radius:var(--r2);margin-bottom:8px">
+        <div style="width:30px;height:30px;border-radius:50%;background:var(--teal);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:#fff;flex-shrink:0">AS</div>
+        <div><div style="font-size:12.5px;font-weight:500;color:var(--teal-d)">Dr. Arjun Sharma replied to your post</div><div style="font-size:11.5px;color:var(--teal-d);margin-top:3px;opacity:.8">Hello Priya — elevated ALT in the context of T2DM is very suggestive of NAFLD…</div><div style="font-size:11px;color:var(--teal-d);opacity:.6;margin-top:4px">1 hour ago</div></div>
+      </div>`;
+
+    const pc = document.getElementById('dash-patient-consults');
+    pc.innerHTML = `
+      <div style="display:flex;align-items:center;gap:10px;padding:10px;background:var(--paper);border-radius:var(--r2);cursor:pointer;border:1px solid var(--paper2)" onclick="showPanel('consult')">
+        <div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,var(--teal),#0e7490);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;color:#fff;flex-shrink:0">AS</div>
+        <div style="flex:1"><div style="font-size:13px;font-weight:500;color:var(--ink)">Dr. Arjun Sharma</div><div style="font-size:11px;color:var(--teal)">● Online now · Hepatologist</div></div>
+        <div style="font-size:11.5px;color:var(--ink3)">Now →</div>
+      </div>`;
+  }
+}
+
+function populatePosts() {
+  const container = document.getElementById('posts-container');
+  container.innerHTML = BOARD_POSTS.map(post => `
+    <div class="post-card" id="post-${post.id}">
+      <div class="post-header">
+        <div class="post-avatar">${post.initials}</div>
+        <div class="post-meta">
+          <div class="post-author">${post.author}</div>
+          <div class="post-time">${post.time}</div>
+        </div>
+        <span class="badge badge-new">${post.replies} ${post.replies===1?'reply':'replies'}</span>
+      </div>
+      <div class="post-body">
+        <div class="post-title">${post.title}</div>
+        <div class="post-text">${post.body}</div>
+        <div class="post-tags">${post.tags.map(t=>`<span class="post-tag">${t}</span>`).join('')}</div>
+      </div>
+      <div class="post-footer">
+        <div class="post-stats">
+          <span class="post-stat">💬 ${post.replies} replies</span>
+          <span class="post-stat">👁 ${post.views} views</span>
+        </div>
+        ${currentRole==='doctor'
+          ? `<button class="reply-btn doctor" onclick="toggleReplies(${post.id})">✍️ Add reply</button>`
+          : `<button class="reply-btn" onclick="toggleReplies(${post.id})">View replies</button>`}
+      </div>
+      <div class="replies-section" id="replies-${post.id}" style="display:none">
+        ${post.doctorReplies.map(r=>`
+          <div class="reply-item">
+            <div class="reply-avatar" style="background:linear-gradient(135deg,var(--teal),#0e7490)">${r.initials}</div>
+            <div class="reply-content">
+              <div class="reply-author">
+                ${r.doctor}
+                <span class="badge badge-verified" style="font-size:9px">✓ ${r.specialty}</span>
+                <span style="font-size:10.5px;color:var(--ink3);font-weight:400">${r.time}</span>
+              </div>
+              <div class="reply-text">${r.text}</div>
+              <div style="display:flex;gap:8px;align-items:center;margin-top:8px;flex-wrap:wrap">
+                ${currentRole==='patient'?`<button class="tip-btn" onclick="openTipModal('${r.doctor}')">💛 Send tip to ${r.doctor.split(' ')[0]}</button>`:''}
+                <button style="padding:5px 12px;background:var(--sky-l);color:var(--sky-d);border:1px solid rgba(3,105,161,.2);border-radius:var(--r2);font-size:11px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif" onclick="startConsult('${r.doctor}','${r.initials}','${r.specialty}')">
+                  💬 Start consultation
+                </button>
+              </div>
+            </div>
+          </div>`).join('')}
+        ${currentRole==='doctor'?`
+          <div style="padding:12px 0">
+            <textarea style="width:100%;border:1px solid var(--paper2);border-radius:var(--r2);padding:10px 13px;font-size:13px;font-family:'DM Sans',sans-serif;color:var(--ink);resize:none;outline:none;background:var(--paper);height:80px" placeholder="Write your medical response…" id="reply-input-${post.id}"></textarea>
+            <div style="display:flex;justify-content:flex-end;margin-top:8px;gap:8px">
+              <button onclick="submitReply(${post.id})" style="padding:7px 16px;background:var(--teal);color:#fff;border:none;border-radius:var(--r2);font-size:12.5px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif">Post reply</button>
+            </div>
+          </div>`:''
+        }
+      </div>
+    </div>`).join('');
+}
+
+function toggleReplies(id) {
+  const el = document.getElementById('replies-'+id);
+  el.style.display = el.style.display === 'none' ? 'block' : 'none';
+}
+
+function submitReply(postId) {
+  const inp = document.getElementById('reply-input-'+postId);
+  const text = inp.value.trim();
+  if(!text) { toast('Please write your response'); return; }
+  toast('Reply posted successfully','success');
+  inp.value = '';
+}
+
+function populateDoctors() {
+  const el = document.getElementById('doctors-list');
+  if(currentRole === 'patient') {
+    el.innerHTML = DOCTORS_LIST.map(d=>`
+      <div class="doctor-card">
+        <div class="doctor-avatar">${d.initials}</div>
+        <div class="doctor-info">
+          <div class="doctor-name">${d.name}</div>
+          <div class="doctor-spec">${d.specialty} · ${d.hospital}</div>
+          <div class="doctor-stats">
+            <span class="ds">⭐ <strong>${d.rating}</strong> rating</span>
+            <span class="ds">💬 <strong>${d.consults}</strong> consultations</span>
+            <span class="ds">🕒 <strong>${d.exp}</strong> experience</span>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:7px;align-items:flex-end">
+          <span class="badge ${d.status==='online'?'badge-online':d.status==='busy'?'badge-busy':''}">● ${d.status==='online'?'Online':d.status==='busy'?'Busy':'Away'}</span>
+          <button class="doctor-action" onclick="startConsult('${d.name}','${d.initials}','${d.specialty}')">💬 Consult</button>
+        </div>
+      </div>`).join('');
+  } else {
+    // Doctor sees patients
+    const patients = [
+      {name:'Priya Rajan',initials:'PR',condition:'Type 2 Diabetes',age:'28F',status:'Active'},
+      {name:'Rajesh Kumar',initials:'RK',condition:'Hypertension · Chest pain',age:'55M',status:'Active'},
+      {name:'Sunita Nair',initials:'SN',condition:'T2DM — HbA1c 9.4',age:'42F',status:'Active'},
+    ];
+    el.innerHTML = patients.map(p=>`
+      <div class="doctor-card">
+        <div class="doctor-avatar" style="background:linear-gradient(135deg,var(--violet),#7c3aed)">${p.initials}</div>
+        <div class="doctor-info">
+          <div class="doctor-name">${p.name}</div>
+          <div class="doctor-spec">${p.condition} · ${p.age}</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:7px;align-items:flex-end">
+          <span class="badge badge-online">● ${p.status}</span>
+          <button class="doctor-action" onclick="startConsultPatient('${p.name}','${p.initials}','${p.condition}')">💬 Message</button>
+        </div>
+      </div>`).join('');
+  }
+}
+
+function populateConsult() {
+  const msgs = document.getElementById('chat-msgs-consult');
+  msgs.innerHTML = CONSULT_MSGS.map(m=>`
+    <div class="msg-row ${m.from==='doctor'&&currentRole==='doctor'?'sent':m.from==='patient'&&currentRole==='patient'?'sent':''}">
+      <div class="msg-av ${m.from==='doctor'?'doc':'pat'}">${m.from==='doctor'?'AS':'PR'}</div>
+      <div>
+        <div class="msg-bubble ${m.from==='doctor'&&currentRole==='doctor'?'sent':m.from==='patient'&&currentRole==='patient'?'sent':'received'}">${m.text}</div>
+        <div class="msg-time" style="text-align:${m.from==='doctor'&&currentRole==='doctor'?'right':m.from==='patient'&&currentRole==='patient'?'right':'left'};color:var(--ink3)">${m.time}</div>
+      </div>
+    </div>`).join('');
+  msgs.scrollTop = msgs.scrollHeight;
+
+  // Set consult header based on role
+  if(currentRole === 'patient') {
+    document.getElementById('consult-name').textContent = 'Dr. Arjun Sharma';
+    document.getElementById('cs-card-title').textContent = 'Doctor Details';
+    document.getElementById('cs-avatar').textContent = 'AS';
+    document.getElementById('cs-avatar').style.background = 'linear-gradient(135deg,var(--teal),#0e7490)';
+    document.getElementById('cs-name').textContent = 'Dr. Arjun Sharma';
+    document.getElementById('cs-sub').textContent = 'Hepatologist · Delhi';
+  } else {
+    document.getElementById('consult-name').textContent = 'Priya Rajan';
+    document.getElementById('cs-card-title').textContent = 'Patient Details';
+  }
+}
+
+function populateEarnings() {
+  const el = document.getElementById('earnings-list');
+  el.innerHTML = EARNINGS_DATA.map(t=>`
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:11px 0;border-bottom:1px solid var(--paper2)">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div style="width:34px;height:34px;border-radius:50%;background:var(--violet-l);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;color:var(--violet-d)">${t.initials}</div>
+        <div>
+          <div style="font-size:13px;font-weight:500;color:var(--ink)">${t.patient}</div>
+          <div style="font-size:11px;color:var(--ink3);margin-top:1px">${t.type} · ${t.time}</div>
+        </div>
+      </div>
+      <span style="font-family:'Cormorant Garamond',serif;font-size:18px;font-weight:600;color:var(--gold-d)">${t.amount}</span>
+    </div>`).join('');
+}
+
+// ── CONSULTATION CHAT ─────────────────────────────────────────────────────
+function consultKey(e) { if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendConsultMsg()} }
+
+function sendConsultMsg() {
+  const inp = document.getElementById('consult-input');
+  const text = inp.value.trim(); if(!text) return;
+  inp.value = '';
+  const msgs = document.getElementById('chat-msgs-consult');
+  msgs.insertAdjacentHTML('beforeend',`
+    <div class="msg-row sent" style="animation:slideRight .2s ease">
+      <div class="msg-av ${currentRole==='doctor'?'doc':'pat'}">${currentUser.initials}</div>
+      <div>
+        <div class="msg-bubble sent">${text}</div>
+        <div class="msg-time" style="text-align:right;color:var(--ink3)">Just now</div>
+      </div>
+    </div>`);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+function startConsult(name, initials, specialty) {
+  document.getElementById('consult-name').textContent = name;
+  document.getElementById('cs-name').textContent = name;
+  document.getElementById('cs-sub').textContent = specialty;
+  document.getElementById('cs-avatar').textContent = initials;
+  document.getElementById('tip-doctor-name').textContent = name;
+  showPanel('consult');
+  document.querySelectorAll('.sni').forEach(b=>b.classList.remove('on'));
+  document.querySelectorAll('.sni')[4].classList.add('on');
+}
+
+function startConsultPatient(name, initials, condition) {
+  document.getElementById('consult-name').textContent = name;
+  document.getElementById('cs-name').textContent = name;
+  document.getElementById('cs-sub').textContent = condition;
+  document.getElementById('cs-avatar').textContent = initials;
+  showPanel('consult');
+}
+
+// ── TIP MODAL ─────────────────────────────────────────────────────────────
+function openTipModal(doctorName) {
+  if(doctorName) document.getElementById('tip-doctor-name').textContent = doctorName;
+  document.getElementById('tip-modal').classList.add('open');
+}
+function closeTipModal() { document.getElementById('tip-modal').classList.remove('open') }
+function tipModalBg(e) { if(e.target===e.currentTarget) closeTipModal() }
+
+function selectAmount(btn, amount) {
+  document.querySelectorAll('.amount-btn').forEach(b=>b.classList.remove('selected'));
+  btn.classList.add('selected');
+  const custom = document.getElementById('custom-tip-input');
+  if(amount === 'custom') {
+    custom.style.display = 'block'; custom.focus();
+    selectedTipAmount = 0;
+    document.getElementById('pay-amount-display').textContent = '…';
+  } else {
+    custom.style.display = 'none';
+    selectedTipAmount = amount;
+    document.getElementById('pay-amount-display').textContent = amount;
+  }
+}
+
+function sendTip() {
+  const customVal = document.getElementById('custom-tip-input').value;
+  const amount = customVal ? parseInt(customVal) : selectedTipAmount;
+  if(!amount || amount < 1) { toast('Please select or enter a tip amount'); return; }
+  closeTipModal();
+  toast(`₹${amount} sent successfully! 💛`,'gold');
+}
+
+// ── NEW POST MODAL ─────────────────────────────────────────────────────────
+function openNewPost() { document.getElementById('new-post-modal').classList.add('open') }
+function closeNewPost() { document.getElementById('new-post-modal').classList.remove('open') }
+function newPostModalBg(e) { if(e.target===e.currentTarget) closeNewPost() }
+
+function toggleTag(el) {
+  const active = el.style.background !== 'rgb(248, 246, 242)' && el.style.background !== '';
+  if(!active || el.classList.contains('post-tag') && el.style.color !== 'var(--ink3)') {
+    el.style.background='var(--teal-l)';el.style.color='var(--teal-d)';el.style.borderColor='rgba(13,148,136,.2)';
+  } else {
+    el.style.background='var(--paper2)';el.style.color='var(--ink3)';el.style.borderColor='var(--paper3)';
+  }
+}
+
+function submitPost() {
+  const title = document.getElementById('np-title').value.trim();
+  const body = document.getElementById('np-body').value.trim();
+  if(!title || !body) { toast('Please fill in title and description'); return; }
+  closeNewPost();
+  toast('Question posted! Doctors will reply soon.','success');
+  document.getElementById('board-count').textContent = parseInt(document.getElementById('board-count').textContent)+1;
+}
+
+function editProfile() { toast('Profile editor opened','success') }
+
+// ── TOAST ─────────────────────────────────────────────────────────────────
+function toast(msg, type='') {
+  const t = document.getElementById('toast');
+  const icons = {success:'✅',gold:'💛','':'ℹ️'};
+  t.innerHTML = `<span>${icons[type]||'ℹ️'}</span><span>${msg}</span>`;
+  t.className = `toast show ${type}`;
+  setTimeout(()=>t.classList.remove('show'), 3000);
+}
+
+document.addEventListener('keydown', e=>{if(e.key==='Escape'){closeTipModal();closeNewPost()}});
+</script>
+<script src="platform-bridge.js"></script>
+</body>
+</html>

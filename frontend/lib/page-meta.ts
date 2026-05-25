@@ -1,13 +1,17 @@
 export type PageMeta = { title: string; subtitle: string };
 
 export const PAGE_META: Record<string, PageMeta> = {
-  "/": {
+  "/hub": {
     title: "Disease Hub",
     subtitle: "All 20 supported detection models — imaging + clinical"
   },
+  "/platform": {
+    title: "Doctors & Patients",
+    subtitle: "Disease board · consultations · tips (sign in required)"
+  },
   "/chat": {
     title: "Patient Chat",
-    subtitle: "Wikipedia RAG + LLM synthesis · multi-turn conversation"
+    subtitle: "Groq-first answers · stored Q&A · Wikipedia for live/date questions"
   },
   "/report": {
     title: "Report Analyzer",

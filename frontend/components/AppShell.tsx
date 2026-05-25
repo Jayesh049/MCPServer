@@ -9,7 +9,8 @@ import type { DiseaseSummary } from "../lib/types";
 import { SidebarDiseaseDropdowns } from "./SidebarDiseaseDropdowns";
 
 const MAIN_NAV = [
-  { href: "/", label: "Disease Hub", match: (p: string) => p === "/" },
+  { href: "/platform", label: "Doctors & Patients", match: (p: string) => p.startsWith("/platform") },
+  { href: "/hub", label: "Disease Hub", match: (p: string) => p === "/hub" || p.startsWith("/diseases/") },
   { href: "/chat", label: "Patient Chat", match: (p: string) => p.startsWith("/chat") },
   { href: "/report", label: "Report Analyzer", match: (p: string) => p.startsWith("/report") },
   { href: "/history", label: "History", match: (p: string) => p.startsWith("/history") },
@@ -17,7 +18,8 @@ const MAIN_NAV = [
 ];
 
 const TOP_TABS = [
-  { href: "/", label: "Diseases" },
+  { href: "/platform", label: "Platform" },
+  { href: "/hub", label: "Diseases" },
   { href: "/chat", label: "Chat" },
   { href: "/report", label: "Report" },
   { href: "/history", label: "History" },
@@ -43,7 +45,7 @@ export function AppShell({
         <aside className="stunning-sb" aria-label="Section navigation">
           <div className="sb-scan" aria-hidden />
           <div className="sb-logo">
-            <Link className="brand" href="/">
+            <Link className="brand" href="/platform">
               <div className="brand-mark">{brandIcon}</div>
               <div>
                 <div className="brand-name">
@@ -65,7 +67,7 @@ export function AppShell({
                   <Link key={item.href} href={item.href} className={`ni${on ? " on" : ""}`}>
                     <span className="ni-dot" />
                     {item.label}
-                    {item.href === "/" ? <span className="ni-badge">{diseases.length || "—"}</span> : null}
+                    {item.href === "/hub" ? <span className="ni-badge">{diseases.length || "—"}</span> : null}
                   </Link>
                 );
               })}
@@ -93,8 +95,8 @@ export function AppShell({
               <div className="tab-row" role="tablist" aria-label="Primary sections">
                 {TOP_TABS.map((tab) => {
                   const on =
-                    tab.href === "/"
-                      ? pathname === "/" || pathname.startsWith("/diseases/")
+                    tab.href === "/hub"
+                      ? pathname === "/hub" || pathname.startsWith("/diseases/")
                       : pathname === tab.href || pathname.startsWith(`${tab.href}/`);
                   return (
                     <Link key={tab.href} href={tab.href} className={`tab${on ? " on" : ""}`} role="tab">

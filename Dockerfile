@@ -14,6 +14,7 @@ COPY tsconfig.json ./
 COPY scripts ./scripts
 COPY src ./src
 COPY public ./public
+# platform/ includes index.html + platform-bridge.js
 
 RUN npx prisma generate && npx tsc -p tsconfig.json
 

@@ -20,3 +20,9 @@ jobs:
         env:
           # Prisma generate only — real DB connect build time pe nahi chahiye
           DATABASE_URL: postgresql://ci:ci@localhost:5432/ci?sslmode=disable
+      - run: npm ci
+        working-directory: frontend
+      - run: npm run build
+        working-directory: frontend
+        env:
+          MCP_API_BASE_URL: http://127.0.0.1:3333

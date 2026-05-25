@@ -1,4 +1,4 @@
-import "dotenv/config";
+import "../scripts/load-env-override.mjs";
 
 import { createMcpServer, startStdioServer } from "./mcp/server.js";
 import { startHttpTransport } from "./mcp/httpServer.js";

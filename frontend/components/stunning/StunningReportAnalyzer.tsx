@@ -5,7 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { analyzeReportPdf, fetchCarePlan } from "../../lib/api";
 import { demoReportResult } from "../../lib/report-demo";
 import type { CarePlan, DiseaseHit, ReportAnalysisResult } from "../../lib/types";
-import { StunningCarePlan } from "./StunningCarePlan";
+import { HealthFlashcardsReport } from "../HealthFlashcardsReport";
 
 function toBase64(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -302,7 +302,9 @@ export function StunningReportAnalyzer() {
         </div>
       ) : null}
 
-      {result?.carePlan ? <StunningCarePlan plan={result.carePlan} /> : null}
+      {(hits.length > 0 || result?.carePlan) && (
+        <HealthFlashcardsReport hits={hits} carePlan={result?.carePlan ?? null} />
+      )}
     </>
   );
 }

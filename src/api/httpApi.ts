@@ -22,12 +22,13 @@ import {
 import { executeUnifiedAsk, getUnifiedAskApiInfo } from "./qaAsk.js";
 import { executePatientChat } from "./patientChat.js";
 import { handleHealerApiRequest } from "./healerApi.js";
+import { handleDoctorPlatformRequest } from "./doctorPlatformApi.js";
 import { getTbLexiconMeta, loadTbLexicon } from "../report/tbLexicon.js";
 import { isTbSklearnModelAvailable, loadTbSklearnMeta } from "../diseases/predictors/tuberculosisSklearn.js";
 
 function setCors(res: ServerResponse) {
   res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Access-Control-Allow-Methods", "GET,POST,DELETE,OPTIONS");
+  res.setHeader("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS");
   res.setHeader(
     "Access-Control-Allow-Headers",
     "Content-Type,Authorization,X-FHIR-Server-URL,X-FHIR-Access-Token,X-Patient-ID"
@@ -64,6 +65,10 @@ export async function handleApiRequest(
   const url = new URL(req.url, `http://${req.headers.host ?? "localhost"}`);
 
   if (!url.pathname.startsWith("/api/")) return false;
+
+  if (url.pathname.startsWith("/api/platform")) {
+    return handleDoctorPlatformRequest(req, res);
+  }
 
   if (req.method === "OPTIONS") {
     setCors(res);

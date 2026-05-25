@@ -214,3 +214,141 @@ model ErrorFixPattern {
   @@index([techStack])
   @@index([patternHash])
 }
+
+// ── Doctor & Patient Platform (files 7) ─────────────────────────────────────
+
+enum UserRole {
+  DOCTOR
+  PATIENT
+}
+
+enum DoctorStatus {
+  ONLINE
+  BUSY
+  AWAY
+  OFFLINE
+}
+
+model PlatformUser {
+  id               String   @id @default(cuid())
+  email            String   @unique
+  passwordHash     String
+  role             UserRole
+  name             String
+  googleId         String?  @unique
+  totpSecret       String?
+  twoFactorEnabled Boolean  @default(false)
+  createdAt        DateTime @default(now())
+  doctor       PlatformDoctor?
+  patient      PlatformPatient?
+  posts        DiseasePost[]
+  replies      DoctorReply[]
+  tipsGiven    PlatformTip[]     @relation("TipGiver")
+  tipsReceived PlatformTip[]     @relation("TipReceiver")
+  consultsAs1  Consultation[]    @relation("ConsultUser1")
+  consultsAs2  Consultation[]    @relation("ConsultUser2")
+
+  @@map("PlatformUser")
+}
+
+model PlatformDoctor {
+  id            String       @id @default(cuid())
+  userId        String       @unique
+  user          PlatformUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+  specialty     String
+  regNo         String
+  hospital      String?
+  experience    Int          @default(0)
+  verified      Boolean      @default(false)
+  degreeFiles   String[]     @default([])
+  rating        Float        @default(4.8)
+  totalConsults Int          @default(0)
+  bio           String?      @db.Text
+  fee           Int          @default(500)
+  status        DoctorStatus @default(ONLINE)
+  createdAt     DateTime     @default(now())
+
+  @@map("PlatformDoctor")
+}
+
+model PlatformPatient {
+  id          String       @id @default(cuid())
+  userId      String       @unique
+  user        PlatformUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+  age         Int?
+  bloodGroup  String?
+  city        String?
+  languages   String?
+  medications String?      @db.Text
+  conditions  String[]     @default([])
+  allergies   String[]     @default([])
+
+  @@map("PlatformPatient")
+}
+
+model DiseasePost {
+  id        String        @id @default(cuid())
+  authorId  String
+  author    PlatformUser  @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  title     String
+  body      String        @db.Text
+  tags      String[]      @default([])
+  views     Int           @default(0)
+  createdAt DateTime      @default(now())
+  replies   DoctorReply[]
+
+  @@index([authorId])
+  @@index([createdAt])
+}
+
+model DoctorReply {
+  id        String       @id @default(cuid())
+  postId    String
+  post      DiseasePost  @relation(fields: [postId], references: [id], onDelete: Cascade)
+  doctorId  String
+  doctor    PlatformUser @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+  body      String       @db.Text
+  createdAt DateTime     @default(now())
+  tips      PlatformTip[]
+
+  @@index([postId])
+  @@index([doctorId])
+}
+
+model PlatformTip {
+  id         String       @id @default(cuid())
+  giverId    String
+  giver      PlatformUser @relation("TipGiver", fields: [giverId], references: [id], onDelete: Cascade)
+  receiverId String
+  receiver   PlatformUser @relation("TipReceiver", fields: [receiverId], references: [id], onDelete: Cascade)
+  replyId    String?
+  reply      DoctorReply? @relation(fields: [replyId], references: [id], onDelete: SetNull)
+  amount     Int
+  note       String?
+  createdAt  DateTime     @default(now())
+
+  @@index([receiverId])
+}
+
+model Consultation {
+  id        String            @id @default(cuid())
+  user1Id   String
+  user1     PlatformUser      @relation("ConsultUser1", fields: [user1Id], references: [id], onDelete: Cascade)
+  user2Id   String
+  user2     PlatformUser      @relation("ConsultUser2", fields: [user2Id], references: [id], onDelete: Cascade)
+  messages  ConsultMessage[]
+  startedAt DateTime          @default(now())
+
+  @@index([user1Id, user2Id])
+}
+
+model ConsultMessage {
+  id             String       @id @default(cuid())
+  consultationId String
+  consultation   Consultation @relation(fields: [consultationId], references: [id], onDelete: Cascade)
+  senderId       String
+  body           String       @db.Text
+  sentAt         DateTime     @default(now())
+
+  @@index([consultationId])
+}

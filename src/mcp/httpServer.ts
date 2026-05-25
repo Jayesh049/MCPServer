@@ -82,6 +82,55 @@ export async function startHttpTransport(
         return;
       }
 
+      if (
+        includeRestApi &&
+        req.method === "GET" &&
+        (url.pathname === "/platform" ||
+          url.pathname === "/platform/" ||
+          url.pathname === "/platform/index.html")
+      ) {
+        try {
+          const html = await readFile(
+            path.join(process.cwd(), "public", "platform", "index.html"),
+            "utf8"
+          );
+          res.statusCode = 200;
+          res.setHeader("Content-Type", "text/html; charset=utf-8");
+          res.end(html);
+        } catch {
+          res.statusCode = 404;
+          res.end("platform UI not found — copy public/platform/");
+        }
+        return;
+      }
+
+      if (
+        includeRestApi &&
+        req.method === "GET" &&
+        url.pathname.startsWith("/platform/")
+      ) {
+        const rel = url.pathname.replace(/^\/platform\//, "");
+        if (rel && !rel.includes("..")) {
+          try {
+            const filePath = path.join(process.cwd(), "public", "platform", rel);
+            const ext = path.extname(rel).toLowerCase();
+            const mime =
+              ext === ".js"
+                ? "application/javascript"
+                : ext === ".css"
+                  ? "text/css"
+                  : "application/octet-stream";
+            const body = await readFile(filePath);
+            res.statusCode = 200;
+            res.setHeader("Content-Type", mime);
+            res.end(body);
+            return;
+          } catch {
+            /* fall through */
+          }
+        }
+      }
+
       if (includeRestApi && (await handleApiRequest(req, res))) return;
 
       if (url.pathname !== mcpPath) {

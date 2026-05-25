@@ -86,6 +86,12 @@ You should see:
 
 - http://127.0.0.1:3333/api/health → JSON with `"ok": true`
 
+**Database errors on login** (`Can't reach database server at db.prisma.io`):
+
+1. Set **`DATABASE_URL`** in root **`.env`** to your **Neon** connection string (from [console.neon.tech](https://console.neon.tech)), not `db.prisma.io`, unless you actively use Prisma Postgres.
+2. Run `npm run db:migrate:deploy` once after changing the URL.
+3. **Restart** the backend (`npm run dev` in repo root) so it reloads `.env`.
+
 **PowerShell (persistent for session):**
 
 ```powershell

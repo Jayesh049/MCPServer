@@ -176,6 +176,24 @@
           "negativeValues": ["0"]
         }
       ]
+    },
+    {
+      "slug": "pneumonia",
+      "displayName": "Pneumonia (chest X-ray)",
+      "positiveLabel": "pneumonia_findings",
+      "negativeLabel": "normal_chest_xray",
+      "sources": [
+        {
+          "type": "hf_parquet",
+          "dataset": "mthandazo/chest-xray-pneumonia-images",
+          "parquetGlob": "data/train",
+          "maxParquetFiles": 2,
+          "imageColumn": "image",
+          "labelColumn": "label",
+          "positiveValues": ["PNEUMONIA", "pneumonia", "1", "positive"],
+          "negativeValues": ["NORMAL", "normal", "0", "negative"]
+        }
+      ]
     }
   ]
 }

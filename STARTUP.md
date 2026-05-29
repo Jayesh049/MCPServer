@@ -58,6 +58,12 @@ npm run db:seed
 npm run db:train-bank
 ```
 
+Optional: train **Ayurveda Yoga/Pranayama** corpus (used by `/api/ayurveda/yoga` and MCP tool `suggest_ayurveda_yoga`):
+
+```powershell
+npm run db:train-ayurveda
+```
+
 ### Build backend (optional for `npm run dev`)
 
 `npm run dev` uses `tsx` and does not require a build. For production-style `node dist/index.js`:
@@ -85,6 +91,7 @@ You should see:
 **Verify:**
 
 - http://127.0.0.1:3333/api/health → JSON with `"ok": true`
+- http://127.0.0.1:3333/api/ayurveda/yoga?disease=diabetes → Ayurveda yoga/pranayama JSON (requires `npm run db:train-ayurveda`)
 
 **Database errors on login** (`Can't reach database server at db.prisma.io`):
 
@@ -193,6 +200,37 @@ Restart **`npm run dev`** in the repo root after editing `.env`.
 **If the UI still says `LLM: none`:** keys must live in **repo root** `.env` (not `frontend/.env`). The Node server loads that file on startup (via `dotenv` in `src/index.ts`).
 
 **Security:** Never paste real API keys into chat or screenshots. **Rotate** the Gemini and Groq keys you posted here and put the new values only in **root `.env`** on your machine.
+
+---
+
+## 5c. DigiLocker + consultation social workflow
+
+New `/api/platform/*` flow:
+
+- Patient post creation remains allowed, but visibility is doctor-oriented.
+- Doctors can view and reply; patient can initiate consultation after doctor response.
+- Consultation now supports:
+  - listing and detail fetch
+  - dual-consent recording ingestion metadata
+  - bilateral 10-point ratings with 10-form answers + signature
+  - automated validation run + manual review queue
+
+New key endpoints:
+
+- `GET /api/platform/doctors/digilocker/start`
+- `GET /api/platform/doctors/digilocker/callback`
+- `GET /api/platform/doctors/verification-status`
+- `GET /api/platform/consultations`
+- `GET /api/platform/consultations/:id`
+- `POST /api/platform/consultations/:id/consent-recording`
+- `POST /api/platform/consultations/:id/recording`
+- `POST /api/platform/ratings/doctor`
+- `POST /api/platform/ratings/patient`
+- `GET /api/platform/ratings/review-queue`
+- `POST /api/platform/ratings/review/:id`
+
+Set DigiLocker env in root `.env` based on `.env.example`:
+`DIGILOCKER_CLIENT_ID`, `DIGILOCKER_CLIENT_SECRET`, `DIGILOCKER_REDIRECT_URI`, and optional DigiLocker endpoint overrides.
 
 ---
 

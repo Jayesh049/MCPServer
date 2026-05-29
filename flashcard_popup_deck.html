@@ -1,0 +1,638 @@
+
+<h2 class="sr-only">Health report flashcard deck — ek ek karke popup hoti hain, cross se band hoti hain, cards wapis apni jagah jaati hain</h2>
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font-sans);background:var(--color-background-tertiary);color:var(--color-text-primary)}
+
+.page{padding:1.5rem 1rem 3rem}
+
+/* ── Section heading ── */
+.sec-head{display:flex;align-items:center;gap:10px;margin-bottom:1rem}
+.sec-line{width:20px;height:2px;background:var(--color-text-info);flex-shrink:0}
+.sec-num{font-size:11px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--color-text-info)}
+.sec-name{font-size:11px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;color:var(--color-text-secondary)}
+.sec-pill{display:inline-flex;align-items:center;padding:2px 9px;border-radius:20px;background:var(--color-background-info);border:0.5px solid var(--color-border-info);font-size:10px;font-weight:500;letter-spacing:.06em;text-transform:uppercase;color:var(--color-text-info)}
+
+/* ── CARD DECK AREA ── */
+.deck-section{margin-bottom:2.5rem}
+.deck-label{font-size:12px;color:var(--color-text-tertiary);margin-bottom:.75rem;display:flex;align-items:center;gap:6px}
+.deck-label i{font-size:14px}
+
+/* ── Card grid (home position) ── */
+.card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px;position:relative}
+
+/* ── Individual home card ── */
+.home-card{
+  background:var(--color-background-primary);
+  border:0.5px solid var(--color-border-tertiary);
+  border-radius:var(--border-radius-lg);
+  padding:1rem;
+  cursor:pointer;
+  transition:border-color .18s, transform .18s;
+  position:relative;
+  min-height:120px;
+  display:flex;flex-direction:column;gap:8px;
+}
+.home-card:hover{border-color:var(--color-border-secondary);transform:translateY(-2px)}
+.home-card.done{opacity:.5;pointer-events:none}
+.home-card.active-source{border-color:var(--color-border-info)}
+
+.hc-icon{font-size:22px;line-height:1}
+.hc-title{font-size:13px;font-weight:500;color:var(--color-text-primary);line-height:1.35}
+.hc-sub{font-size:11.5px;color:var(--color-text-secondary);line-height:1.45;flex:1}
+.hc-badge{display:inline-flex;align-items:center;gap:3px;padding:2px 7px;border-radius:20px;font-size:10px;font-weight:500;margin-top:auto}
+.hc-badge.low{background:var(--color-background-success);border:0.5px solid var(--color-border-success);color:var(--color-text-success)}
+.hc-badge.moderate{background:var(--color-background-warning);border:0.5px solid var(--color-border-warning);color:var(--color-text-warning)}
+.hc-badge.high{background:var(--color-background-danger);border:0.5px solid var(--color-border-danger);color:var(--color-text-danger)}
+.hc-badge.teal{background:var(--color-background-info);border:0.5px solid var(--color-border-info);color:var(--color-text-info)}
+
+/* ── POPUP OVERLAY (faux-viewport, no fixed) ── */
+.popup-overlay{
+  background:rgba(0,0,0,.45);
+  border-radius:var(--border-radius-lg);
+  display:none;align-items:center;justify-content:center;
+  padding:1.5rem;
+  min-height:480px;
+  margin-bottom:1rem;
+}
+.popup-overlay.open{display:flex}
+
+/* ── Popup card ── */
+.popup-card{
+  background:var(--color-background-primary);
+  border:0.5px solid var(--color-border-secondary);
+  border-radius:var(--border-radius-lg);
+  width:100%;max-width:520px;
+  max-height:420px;overflow-y:auto;
+  scrollbar-width:thin;
+  animation:popIn .28s cubic-bezier(.34,1.56,.64,1) both;
+}
+@keyframes popIn{from{opacity:0;transform:scale(.88) translateY(24px)}to{opacity:1;transform:scale(1) translateY(0)}}
+@keyframes popOut{from{opacity:1;transform:scale(1) translateY(0)}to{opacity:0;transform:scale(.88) translateY(-20px)}}
+.popup-card.closing{animation:popOut .22s ease both}
+
+.pc-rainbow{height:3px;border-radius:var(--border-radius-lg) var(--border-radius-lg) 0 0;background:linear-gradient(90deg,var(--color-text-info),var(--color-text-success),var(--color-text-warning))}
+.pc-head{padding:1rem 1rem .75rem;border-bottom:0.5px solid var(--color-border-tertiary);display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+.pc-head-left{display:flex;align-items:center;gap:10px}
+.pc-av{width:40px;height:40px;border-radius:50%;background:var(--color-background-info);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;border:0.5px solid var(--color-border-info)}
+.pc-title{font-size:15px;font-weight:500;color:var(--color-text-primary);line-height:1.25}
+.pc-subtitle{font-size:12px;color:var(--color-text-secondary);margin-top:2px}
+
+.close-btn{
+  width:28px;height:28px;border-radius:50%;
+  border:0.5px solid var(--color-border-secondary);
+  background:var(--color-background-secondary);
+  color:var(--color-text-secondary);
+  cursor:pointer;font-size:15px;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+  transition:all .15s;
+}
+.close-btn:hover{background:var(--color-background-danger);border-color:var(--color-border-danger);color:var(--color-text-danger)}
+
+.pc-body{padding:1rem}
+
+/* ── Progress bar in popup ── */
+.pc-progress{display:flex;align-items:center;gap:8px;margin-bottom:1rem}
+.pp-dots{display:flex;gap:5px}
+.pp-dot{width:7px;height:7px;border-radius:50%;background:var(--color-border-secondary);transition:background .2s}
+.pp-dot.active{background:var(--color-text-info)}
+.pp-dot.done{background:var(--color-text-success)}
+.pp-count{font-size:11px;color:var(--color-text-tertiary);margin-left:auto}
+
+/* ── Content blocks inside popup ── */
+.info-row{display:flex;justify-content:space-between;align-items:flex-start;padding:8px 0;border-bottom:0.5px solid var(--color-border-tertiary);font-size:13px}
+.info-row:last-child{border-bottom:none}
+.ir-label{color:var(--color-text-secondary)}
+.ir-val{color:var(--color-text-primary);font-weight:500;text-align:right;max-width:55%}
+
+.risk-bar-wrap{margin:1rem 0}
+.rb-label{font-size:11px;color:var(--color-text-secondary);margin-bottom:5px;display:flex;justify-content:space-between}
+.rb-track{height:8px;background:var(--color-background-secondary);border-radius:4px;overflow:hidden;border:0.5px solid var(--color-border-tertiary)}
+.rb-fill{height:100%;border-radius:4px;transition:width .8s cubic-bezier(.4,0,.2,1) .2s}
+.rb-fill.high{background:var(--color-background-danger);border:0.5px solid var(--color-border-danger)}
+.rb-fill.medium{background:var(--color-background-warning);border:0.5px solid var(--color-border-warning)}
+.rb-fill.low{background:var(--color-background-success);border:0.5px solid var(--color-border-success)}
+
+.acronym-block{background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:.75rem;margin:.75rem 0}
+.ab-head{font-size:10.5px;font-weight:500;color:var(--color-text-info);letter-spacing:.06em;text-transform:uppercase;margin-bottom:.6rem;display:flex;align-items:center;gap:5px}
+.ac-item{display:flex;gap:8px;align-items:flex-start;margin-bottom:.5rem}
+.ac-item:last-child{margin-bottom:0}
+.ac-term{font-family:var(--font-mono);font-size:11px;font-weight:500;color:var(--color-text-info);min-width:48px;padding-top:1px;flex-shrink:0}
+.ac-meaning{font-size:12px;color:var(--color-text-secondary);line-height:1.55}
+
+.work-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:.75rem 0}
+.wk-card{border-radius:var(--border-radius-md);padding:.65rem .75rem;border-left:2px solid transparent}
+.wk-card.critical{background:var(--color-background-danger);border-left-color:var(--color-text-danger)}
+.wk-card.improve{background:var(--color-background-warning);border-left-color:var(--color-text-warning)}
+.wk-card.ok{background:var(--color-background-success);border-left-color:var(--color-text-success)}
+.wk-lbl{font-size:9.5px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;margin-bottom:2px}
+.wk-card.critical .wk-lbl{color:var(--color-text-danger)}
+.wk-card.improve .wk-lbl{color:var(--color-text-warning)}
+.wk-card.ok .wk-lbl{color:var(--color-text-success)}
+.wk-title{font-size:12.5px;font-weight:500;color:var(--color-text-primary);margin-bottom:2px}
+.wk-desc{font-size:11.5px;color:var(--color-text-secondary);line-height:1.45}
+
+.affirmation-card-inner{
+  border:0.5px solid var(--color-border-tertiary);
+  border-radius:var(--border-radius-md);
+  padding:1rem 1.25rem;
+  background:var(--color-background-secondary);
+  margin-bottom:.75rem;
+}
+.aff-theme{font-size:10px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--color-text-secondary);margin-bottom:.5rem}
+.aff-quote{font-family:var(--font-serif);font-size:14px;font-style:italic;color:var(--color-text-primary);line-height:1.65;border-left:2px solid var(--color-border-info);padding-left:12px}
+
+.doc-inner{border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);padding:.75rem;margin-bottom:.75rem}
+.di-row{display:flex;align-items:center;gap:10px;margin-bottom:.75rem}
+.di-av{width:38px;height:38px;border-radius:50%;background:var(--color-background-secondary);border:0.5px solid var(--color-border-secondary);display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0}
+.di-name{font-size:13.5px;font-weight:500;color:var(--color-text-primary)}
+.di-spec{font-size:11.5px;color:var(--color-text-secondary);margin-top:1px}
+.di-bio{font-size:12px;color:var(--color-text-secondary);line-height:1.55;margin-bottom:.65rem}
+.di-meds{font-size:11px;color:var(--color-text-tertiary)}
+
+.med-row{display:flex;align-items:center;justify-content:space-between;padding:5px 0;border-bottom:0.5px solid var(--color-border-tertiary);font-size:12px}
+.med-row:last-child{border-bottom:none}
+.med-name{font-weight:500;color:var(--color-text-primary)}
+.med-dose{color:var(--color-text-secondary)}
+
+/* Navigation buttons at bottom of popup */
+.pc-nav{padding:.75rem 1rem;border-top:0.5px solid var(--color-border-tertiary);display:flex;align-items:center;justify-content:space-between;gap:8px;position:sticky;bottom:0;background:var(--color-background-primary)}
+.nav-btn{display:inline-flex;align-items:center;gap:5px;padding:6px 14px;border-radius:var(--border-radius-md);font-size:12.5px;font-weight:500;cursor:pointer;font-family:var(--font-sans);transition:all .15s;border:0.5px solid var(--color-border-secondary);background:var(--color-background-secondary);color:var(--color-text-secondary)}
+.nav-btn:hover{background:var(--color-background-primary);color:var(--color-text-primary)}
+.nav-btn.next{background:var(--color-background-info);border-color:var(--color-border-info);color:var(--color-text-info)}
+.nav-btn.next:hover{opacity:.85}
+.nav-btn:disabled{opacity:.35;cursor:not-allowed}
+
+.rag-note{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--color-text-tertiary);padding:.5rem 1rem;border-top:0.5px solid var(--color-border-tertiary)}
+
+/* Return animation for home card */
+@keyframes cardReturn{0%{opacity:0;transform:scale(.9) translateY(-12px)}100%{opacity:1;transform:scale(1) translateY(0)}}
+.card-returned{animation:cardReturn .35s cubic-bezier(.34,1.2,.64,1) both}
+
+.disc-note{font-size:11px;color:var(--color-text-tertiary);background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:.75rem 1rem;margin-top:1rem;line-height:1.6}
+</style>
+
+<div class="page">
+
+<!-- ══ DISEASE DETECTION POPUP DECK ══ -->
+<div class="deck-section">
+  <div class="sec-head">
+    <div class="sec-line"></div>
+    <div class="sec-num">Detected diseases</div>
+    <span class="sec-pill">keyword match</span>
+  </div>
+  <div class="deck-label"><i class="ti ti-hand-click" aria-hidden="true"></i> Kisi bhi card par click karo — popup mein poori detail dekhein</div>
+  <div class="popup-overlay" id="pop-disease"><div class="popup-card" id="pop-disease-card">
+    <div class="pc-rainbow"></div>
+    <div class="pc-head">
+      <div class="pc-head-left">
+        <div class="pc-av" id="pd-av"><i class="ti ti-virus-search" aria-hidden="true" style="font-size:20px;color:var(--color-text-info)"></i></div>
+        <div><div class="pc-title" id="pd-title">—</div><div class="pc-subtitle" id="pd-sub">—</div></div>
+      </div>
+      <button class="close-btn" onclick="closePopup('disease')" title="Band karo — wapis apni jagah"><i class="ti ti-x" aria-hidden="true"></i></button>
+    </div>
+    <div class="pc-body">
+      <div class="pc-progress"><div class="pp-dots" id="pd-dots"></div><span class="pp-count" id="pd-count"></span></div>
+      <div class="risk-bar-wrap">
+        <div class="rb-label"><span>Match confidence</span><span id="pd-pct" style="font-weight:500">—</span></div>
+        <div class="rb-track"><div class="rb-fill" id="pd-bar" style="width:0%"></div></div>
+      </div>
+      <div class="acronym-block" id="pd-acronyms"></div>
+      <div style="font-size:11px;font-weight:500;letter-spacing:.07em;text-transform:uppercase;color:var(--color-text-secondary);margin-bottom:.6rem">Kya kaam karna hai?</div>
+      <div class="work-grid" id="pd-work"></div>
+    </div>
+    <div class="pc-nav">
+      <button class="nav-btn" id="pd-prev" onclick="navDisease(-1)"><i class="ti ti-chevron-left" aria-hidden="true"></i> Pehla</button>
+      <button class="nav-btn next" id="pd-next" onclick="navDisease(1)">Agla <i class="ti ti-chevron-right" aria-hidden="true"></i></button>
+    </div>
+  </div></div>
+  <div class="card-grid" id="disease-grid"></div>
+</div>
+
+<!-- ══ EXERCISE POPUP DECK ══ -->
+<div class="deck-section">
+  <div class="sec-head">
+    <div class="sec-line"></div>
+    <div class="sec-num">02 · Exercises</div>
+    <span class="sec-pill">synthetic · daily refresh</span>
+  </div>
+  <div class="deck-label"><i class="ti ti-hand-click" aria-hidden="true"></i> Exercise card click karo — detail popup mein</div>
+  <div class="popup-overlay" id="pop-ex"><div class="popup-card" id="pop-ex-card">
+    <div class="pc-rainbow"></div>
+    <div class="pc-head">
+      <div class="pc-head-left">
+        <div class="pc-av" id="ex-av" style="font-size:20px"></div>
+        <div><div class="pc-title" id="ex-title">—</div><div class="pc-subtitle" id="ex-freq">—</div></div>
+      </div>
+      <button class="close-btn" onclick="closePopup('ex')"><i class="ti ti-x" aria-hidden="true"></i></button>
+    </div>
+    <div class="pc-body">
+      <div class="pc-progress"><div class="pp-dots" id="ex-dots"></div><span class="pp-count" id="ex-count"></span></div>
+      <div class="info-row"><span class="ir-label">Description</span><span class="ir-val" id="ex-desc">—</span></div>
+      <div class="info-row"><span class="ir-label">Frequency</span><span class="ir-val" id="ex-f">—</span></div>
+      <div class="info-row"><span class="ir-label">Intensity</span><span class="ir-val" id="ex-int">—</span></div>
+      <div class="info-row"><span class="ir-label">RAG source</span><span class="ir-val" id="ex-src" style="color:var(--color-text-info)">—</span></div>
+      <div class="info-row"><span class="ir-label">Doctor specialty</span><span class="ir-val" id="ex-doc">—</span></div>
+    </div>
+    <div class="rag-note"><i class="ti ti-books" aria-hidden="true"></i> Source: Wikipedia RAG + consulted doctor specialty + dataPools.ts</div>
+    <div class="pc-nav">
+      <button class="nav-btn" id="ex-prev" onclick="navEx(-1)"><i class="ti ti-chevron-left" aria-hidden="true"></i> Pehla</button>
+      <button class="nav-btn next" id="ex-next" onclick="navEx(1)">Agla <i class="ti ti-chevron-right" aria-hidden="true"></i></button>
+    </div>
+  </div></div>
+  <div class="card-grid" id="ex-grid"></div>
+</div>
+
+<!-- ══ DOCTOR POPUP DECK ══ -->
+<div class="deck-section">
+  <div class="sec-head">
+    <div class="sec-line"></div>
+    <div class="sec-num">03 · Top Specialists</div>
+    <span class="sec-pill">fictional · date-seeded</span>
+  </div>
+  <div class="deck-label"><i class="ti ti-hand-click" aria-hidden="true"></i> Doctor card click karo — poora profile aur medications dekhein</div>
+  <div class="popup-overlay" id="pop-doc"><div class="popup-card" id="pop-doc-card">
+    <div class="pc-rainbow"></div>
+    <div class="pc-head">
+      <div class="pc-head-left">
+        <div class="pc-av" id="doc-av"><i class="ti ti-stethoscope" aria-hidden="true" style="font-size:20px;color:var(--color-text-info)"></i></div>
+        <div><div class="pc-title" id="doc-name">—</div><div class="pc-subtitle" id="doc-spec">—</div></div>
+      </div>
+      <button class="close-btn" onclick="closePopup('doc')"><i class="ti ti-x" aria-hidden="true"></i></button>
+    </div>
+    <div class="pc-body">
+      <div class="pc-progress"><div class="pp-dots" id="doc-dots"></div><span class="pp-count" id="doc-count"></span></div>
+      <div class="doc-inner">
+        <div class="di-row">
+          <div class="di-av"><i class="ti ti-user-circle" aria-hidden="true" style="font-size:22px;color:var(--color-text-secondary)"></i></div>
+          <div>
+            <div class="di-name" id="doc-fname">—</div>
+            <div class="di-spec" id="doc-hosp">—</div>
+          </div>
+        </div>
+        <div class="di-bio" id="doc-bio">—</div>
+      </div>
+      <div class="info-row"><span class="ir-label">Experience</span><span class="ir-val" id="doc-exp">—</span></div>
+      <div class="info-row"><span class="ir-label">Consultations</span><span class="ir-val" id="doc-con">—</span></div>
+      <div style="font-size:11px;font-weight:500;letter-spacing:.07em;text-transform:uppercase;color:var(--color-text-secondary);margin:.75rem 0 .5rem;display:flex;align-items:center;gap:5px"><i class="ti ti-pill" aria-hidden="true"></i> Suggested medications (illustrative only)</div>
+      <div id="doc-meds"></div>
+    </div>
+    <div class="rag-note"><i class="ti ti-books" aria-hidden="true"></i> Source: dataPools.ts date-seeded · synthetic · not clinical advice</div>
+    <div class="pc-nav">
+      <button class="nav-btn" id="doc-prev" onclick="navDoc(-1)"><i class="ti ti-chevron-left" aria-hidden="true"></i> Pehla</button>
+      <button class="nav-btn next" id="doc-next" onclick="navDoc(1)">Agla <i class="ti ti-chevron-right" aria-hidden="true"></i></button>
+    </div>
+  </div></div>
+  <div class="card-grid" id="doc-grid"></div>
+</div>
+
+<!-- ══ AFFIRMATION POPUP DECK ══ -->
+<div class="deck-section">
+  <div class="sec-head">
+    <div class="sec-line"></div>
+    <div class="sec-num">04 · Positive Manifestations</div>
+    <span class="sec-pill">mindfulness · care plan</span>
+  </div>
+  <div class="deck-label"><i class="ti ti-hand-click" aria-hidden="true"></i> Har card ek alag affirmation — click karke padhein</div>
+  <div class="popup-overlay" id="pop-aff"><div class="popup-card" id="pop-aff-card">
+    <div class="pc-rainbow"></div>
+    <div class="pc-head">
+      <div class="pc-head-left">
+        <div class="pc-av" id="aff-sym" style="font-size:22px;background:var(--color-background-warning);border-color:var(--color-border-warning)"></div>
+        <div><div class="pc-title" id="aff-theme">—</div><div class="pc-subtitle">Positive manifestation — daily reminder</div></div>
+      </div>
+      <button class="close-btn" onclick="closePopup('aff')"><i class="ti ti-x" aria-hidden="true"></i></button>
+    </div>
+    <div class="pc-body">
+      <div class="pc-progress"><div class="pp-dots" id="aff-dots"></div><span class="pp-count" id="aff-count"></span></div>
+      <div class="affirmation-card-inner">
+        <div class="aff-theme" id="aff-theme2">—</div>
+        <div class="aff-quote" id="aff-quote">—</div>
+      </div>
+      <div class="info-row"><span class="ir-label">Theme</span><span class="ir-val" id="aff-theme3" style="color:var(--color-text-info)">—</span></div>
+      <div class="info-row"><span class="ir-label">Source</span><span class="ir-val">Care plan · mindfulness protocol</span></div>
+      <div class="info-row"><span class="ir-label">Use</span><span class="ir-val">Baar baar padhein — subah ya raat</span></div>
+    </div>
+    <div class="pc-nav">
+      <button class="nav-btn" id="aff-prev" onclick="navAff(-1)"><i class="ti ti-chevron-left" aria-hidden="true"></i> Pehla</button>
+      <button class="nav-btn next" id="aff-next" onclick="navAff(1)">Agla <i class="ti ti-chevron-right" aria-hidden="true"></i></button>
+    </div>
+  </div></div>
+  <div class="card-grid" id="aff-grid"></div>
+</div>
+
+<div class="disc-note">
+  — Saare doctors, hospitals, aur patient details SYNTHETIC aur fictional hain.<br>
+  — Medicines ke naam real hain lekin doses/regimens illustrative only hain — clinical recommendation nahi.<br>
+  — Koi bhi treatment shuru ya band karne se pehle ek qualified doctor se milein.
+</div>
+
+</div>
+
+<script>
+// ── DATA ──────────────────────────────────────────────────────────────────
+const DISEASES=[
+  {name:'Liver disease (clinical)',score:100,risk:'high',icon:'ti-virus-search',
+   keywords:['alt','ast','bilirubin','cirrhosis','hepatitis','fatty liver'],
+   badge:'high',badgeText:'High risk',
+   acronyms:[
+     {t:'ALT',m:'Alanine Aminotransferase — liver enzyme. Elevated ALT = liver cells damage ho rahe hain. Normal: 7–56 U/L.'},
+     {t:'AST',m:'Aspartate Aminotransferase — aur ek liver enzyme. AST/ALT ratio >2 = advanced fibrosis. Near 1 = fatty liver (NAFLD).'},
+     {t:'Bilirubin',m:'Red blood cells toote toh banta hai, liver process karta hai. High = jaundice. Normal: 0.1–1.2 mg/dL.'},
+     {t:'Cirrhosis',m:'Liver ka severe scarring. Healthy tissue scar tissue se replace ho jaata hai. Progress slow ki ja sakti hai.'},
+   ],
+   work:[
+     {s:'critical',lbl:'Critical',t:'ALT Levels',d:'ALT elevated hai. Target: 56 U/L se neeche. 4–6 hafte mein recheck karein.'},
+     {s:'improve',lbl:'Work on this',t:'AST / ALT Ratio',d:'AST ÷ ALT calculate karein. >2 = serious. ~1 = fatty liver.'},
+     {s:'improve',lbl:'Lifestyle',t:'Fatty Liver (NAFLD)',d:'HbA1c control karein, refined carbs kam karein. Roz 30 min walk karein.'},
+     {s:'ok',lbl:'OK',t:'Bilirubin',d:'Normal values reassuring hain. Monitor karte rahein.'},
+   ]},
+  {name:'Diabetes risk (clinical)',score:80,risk:'medium',icon:'ti-droplet-half-2',
+   keywords:['diabetes','hbA1c','a1c'],badge:'moderate',badgeText:'Medium risk',
+   acronyms:[
+     {t:'HbA1c',m:'Haemoglobin A1c — 2–3 mahine ka average blood sugar. >6.5% = diabetes. 5.7–6.4% = prediabetes. T2DM target: 7% se neeche.'},
+     {t:'A1c',m:'HbA1c ka shorthand — same test hai. Har 1% reduction se complications risk ~14% kam ho jaata hai.'},
+   ],
+   work:[
+     {s:'critical',lbl:'Primary target',t:'HbA1c Control',d:'1% reduce karo = 14% kam complications. Target: 7% se neeche.'},
+     {s:'improve',lbl:'Linked risk',t:'Diabetes + Liver Loop',d:'Poorly controlled diabetes fatty liver ko worse banata hai. Dono saath treat karein.'},
+   ]},
+  {name:'Heart disease risk',score:65,risk:'medium',icon:'ti-heart-rate-monitor',
+   keywords:['cad','ascvd'],badge:'moderate',badgeText:'Medium risk',
+   acronyms:[
+     {t:'CAD',m:'Coronary Artery Disease — heart ki arteries mein plaque jamna. Heart attack ka main cause. Risk factors: BP, diabetes, high LDL, smoking.'},
+     {t:'ASCVD',m:'Atherosclerotic Cardiovascular Disease — plaque se hone wali saari diseases. 10-year ASCVD score >7.5% = statin therapy recommended.'},
+   ],
+   work:[
+     {s:'improve',lbl:'Risk score',t:'ASCVD Score Calculate Karein',d:'Age, cholesterol, BP, diabetes, smoking use karein. Score >7.5% = statin chahiye.'},
+     {s:'critical',lbl:'Critical marker',t:'Blood Pressure',d:'Target: 130/80 mmHg se kam. Stage 2 HTN >140/90 = turant treatment zaruri.'},
+   ]},
+  {name:'Chronic kidney disease',score:65,risk:'medium',icon:'ti-filter',
+   keywords:['creatinine','proteinuria','egfr'],badge:'moderate',badgeText:'Medium risk',
+   acronyms:[
+     {t:'eGFR',m:'Estimated Glomerular Filtration Rate — kidneys kitna filter kar rahi hain per minute. Normal: >90. CKD stage 3: 30–59. Trend zyada important hai single reading se.'},
+     {t:'Creatinine',m:'Muscle se banna waste, kidneys filter karti hain. High creatinine = kidneys theek se filter nahi kar rahi. Normal: 0.6–1.2 mg/dL.'},
+     {t:'Proteinuria',m:'Urine mein protein — normal mein protein blood mein rehta hai. Leak hona = kidney filter damaged hai. Microalbuminuria = earliest sign.'},
+   ],
+   work:[
+     {s:'improve',lbl:'Key test',t:'eGFR Trend Dekhein',d:'>5 mL/min/year giraawat = progressive CKD. Har 3–6 mahine test karein.'},
+     {s:'critical',lbl:'Best treatment',t:'BP + Glucose Control',d:'BP <130/80 aur HbA1c <7% — yahi CKD ko sabse zyada slow karta hai.'},
+   ]},
+];
+
+const EXERCISES=[
+  {icon:'🚶',t:'Walking program',desc:'Low-impact aerobic walks at a conversational pace.',freq:'20–30 min, 5×/week',intensity:'Moderate',docSpec:'Hepatology',src:'Hepatology RAG + dataPools.ts'},
+  {icon:'💪',t:'Strength basics',desc:'Sit-to-stands, wall push-ups, banded rows.',freq:'2–3 sets × 10, 2–3×/week',intensity:'Low',docSpec:'Internal Medicine',src:'Physical therapy RAG'},
+  {icon:'🧘',t:'Mobility & stretching',desc:'Full-body stretches — hips, shoulders, neck.',freq:'10 min daily',intensity:'Low',docSpec:'Physiotherapy',src:'WHO guidelines RAG'},
+  {icon:'🫁',t:'Mindful breathing',desc:'Box breathing 4-4-4-4 for stress regulation.',freq:'10 min, 2×/day',intensity:'Low',docSpec:'Psychiatry',src:'Mindfulness RAG + dataPools.ts'},
+];
+
+const DOCTORS=[
+  {name:'Dr. Idris Ahmed',spec:'Neuro-oncology',hosp:'Greenfield Research Hospital · Berlin',exp:'13 yrs',con:38,bio:'Expert in primary brain tumours and CNS metastases. 13 years in European clinical research. Specialises in glioma surgery.',meds:[{n:'Dexamethasone',d:'4 mg · q6h'},{n:'Levetiracetam',d:'500 mg · BD'},{n:'Omeprazole',d:'20 mg · OD'},{n:'Temozolomide',d:'75 mg/m²'},{n:'Ondansetron',d:'8 mg · PRN'}]},
+  {name:'Dr. Hannah Becker',spec:'Neurology',hosp:'Lighthouse University Hospital · London',exp:'17 yrs',con:52,bio:'Specialises in neurorehabilitation and seizure management. UCL trained. 24 published papers on post-surgical outcomes.',meds:[{n:'Levetiracetam',d:'1000 mg · BD'},{n:'Acetaminophen',d:'1000 mg · PRN'},{n:'Sertraline',d:'50 mg · OD'},{n:'Melatonin',d:'5 mg · bedtime'},{n:'Vitamin D3',d:'1000 IU · OD'}]},
+  {name:'Dr. Yuki Tanaka',spec:'Radiation Oncology',hosp:'Sapphire Coast Medical College · Mumbai',exp:'14 yrs',con:41,bio:'Expert in stereotactic radiosurgery — Gamma Knife, CyberKnife. Pioneered a low-dose fractionation protocol reducing side-effects by 40%.',meds:[{n:'Bevacizumab',d:'10 mg/kg'},{n:'Dexamethasone',d:'4 mg · TDS'},{n:'Ondansetron',d:'8 mg · TDS'},{n:'Metoclopramide',d:'10 mg · PRN'},{n:'Pantoprazole',d:'40 mg · OD'}]},
+  {name:'Dr. Priya Iyer',spec:'Surgical Oncology',hosp:'Mountain View Memorial Hospital · Denver',exp:'20 yrs',con:67,bio:'Head of Neuro-surgical Oncology. 20 years of awake craniotomies for tumour resection, preserving neurological function.',meds:[{n:'Cefazolin',d:'1g · IV pre-op'},{n:'Mannitol',d:'1 g/kg · IV'},{n:'Dexamethasone',d:'8 mg · q8h'},{n:'Tramadol',d:'50 mg · PRN'},{n:'Ondansetron',d:'4 mg · PRN'}]},
+  {name:'Dr. Samir Choudhury',spec:'Psychiatry',hosp:'Sapphire Coast Medical College · Mumbai',exp:'12 yrs',con:44,bio:'Psycho-oncology specialist — supporting patients through cognitive and emotional challenges of brain tumour diagnoses using CBT and mindfulness.',meds:[{n:'Sertraline',d:'50 mg · OD'},{n:'Alprazolam',d:'0.25 mg · PRN'},{n:'Melatonin',d:'3 mg · bedtime'},{n:'Mirtazapine',d:'15 mg · bedtime'},{n:'Vitamin B12',d:'500 mcg · OD'}]},
+];
+
+const AFFIRMATIONS=[
+  {sym:'✦',theme:'Presence',quote:'I take this one breath, one moment at a time.'},
+  {sym:'◈',theme:'Agency',quote:'I am an active participant in my own care, not a passive observer.'},
+  {sym:'⬡',theme:'Support',quote:'I let trusted people walk beside me on this path.'},
+  {sym:'♡',theme:'Compassion',quote:'I extend the same kindness to myself that I would to a dear friend.'},
+  {sym:'◎',theme:'Hope',quote:'Healing is not linear; small steps still count.'},
+  {sym:'◌',theme:'Rest',quote:'Resting is part of getting better, not the opposite of it.'},
+  {sym:'✧',theme:'Trust',quote:'I trust the team and the process even when it is hard.'},
+  {sym:'◆',theme:'Celebration',quote:'I notice and celebrate every small improvement.'},
+];
+
+// ── STATE ──
+let curDisease=0, curEx=0, curDoc=0, curAff=0;
+
+// ── DOTS ──
+function renderDots(containerId,total,cur){
+  const el=document.getElementById(containerId);
+  el.innerHTML=Array.from({length:total},(_,i)=>`<div class="pp-dot ${i<cur?'done':i===cur?'active':''}"></div>`).join('');
+}
+
+// ── DISEASE ──
+function buildDiseaseGrid(){
+  const g=document.getElementById('disease-grid');
+  g.innerHTML=DISEASES.map((d,i)=>`
+    <div class="home-card" id="dhc-${i}" onclick="openDisease(${i})" title="Click karein — detail dekhein">
+      <i class="ti ${d.icon}" aria-hidden="true" style="font-size:22px;color:var(--color-text-info)"></i>
+      <div class="hc-title">${d.name}</div>
+      <div class="hc-sub">${d.keywords.slice(0,3).join(' · ')}</div>
+      <span class="hc-badge ${d.badge}">${d.badgeText} · ${d.score}%</span>
+    </div>`).join('');
+}
+
+function openDisease(idx){
+  curDisease=idx;
+  fillDisease();
+  const ov=document.getElementById('pop-disease');
+  ov.style.display='flex';
+  const card=document.getElementById('pop-disease-card');
+  card.classList.remove('closing');
+  void card.offsetWidth;
+  card.style.animation='popIn .28s cubic-bezier(.34,1.56,.64,1) both';
+  ov.scrollIntoView({behavior:'smooth',block:'nearest'});
+  document.getElementById('dhc-'+idx).classList.add('active-source');
+}
+
+function fillDisease(){
+  const d=DISEASES[curDisease];
+  document.getElementById('pd-title').textContent=d.name;
+  document.getElementById('pd-sub').textContent='Match: '+d.score+'% · Risk: '+d.risk;
+  document.getElementById('pd-pct').textContent=d.score+'%';
+  const bar=document.getElementById('pd-bar');
+  bar.style.width='0%';bar.className='rb-fill '+d.risk;
+  setTimeout(()=>bar.style.width=d.score+'%',80);
+  document.getElementById('pd-acronyms').innerHTML=`<div class="ab-head"><i class="ti ti-book" aria-hidden="true"></i> In terms ka matlab?</div>`+d.acronyms.map(a=>`<div class="ac-item"><span class="ac-term">${a.t}</span><span class="ac-meaning">${a.m}</span></div>`).join('');
+  document.getElementById('pd-work').innerHTML=d.work.map(w=>`<div class="wk-card ${w.s}"><div class="wk-lbl">${w.lbl}</div><div class="wk-title">${w.t}</div><div class="wk-desc">${w.d}</div></div>`).join('');
+  renderDots('pd-dots',DISEASES.length,curDisease);
+  document.getElementById('pd-count').textContent=(curDisease+1)+' / '+DISEASES.length;
+  document.getElementById('pd-prev').disabled=curDisease===0;
+  document.getElementById('pd-next').disabled=curDisease===DISEASES.length-1;
+}
+
+function navDisease(dir){
+  document.getElementById('dhc-'+curDisease).classList.remove('active-source');
+  curDisease=Math.max(0,Math.min(DISEASES.length-1,curDisease+dir));
+  document.getElementById('dhc-'+curDisease).classList.add('active-source');
+  const card=document.getElementById('pop-disease-card');
+  card.style.animation='none';void card.offsetWidth;
+  card.style.animation='popIn .22s cubic-bezier(.34,1.4,.64,1) both';
+  fillDisease();
+}
+
+function closePopup(type){
+  const cardId='pop-'+type+'-card';
+  const ovId='pop-'+type;
+  const card=document.getElementById(cardId);
+  card.classList.add('closing');
+  setTimeout(()=>{
+    document.getElementById(ovId).style.display='none';
+    card.classList.remove('closing');
+    // Animate home cards back
+    const grid=document.getElementById(type+'-grid');
+    grid.querySelectorAll('.home-card').forEach((c,i)=>{
+      c.classList.remove('active-source','done');
+      c.style.animation='none';void c.offsetWidth;
+      c.style.animation=`cardReturn .35s cubic-bezier(.34,1.2,.64,1) ${i*0.05}s both`;
+    });
+  },200);
+}
+
+// ── EXERCISE ──
+function buildExGrid(){
+  document.getElementById('ex-grid').innerHTML=EXERCISES.map((e,i)=>`
+    <div class="home-card" id="exc-${i}" onclick="openEx(${i})">
+      <div style="font-size:24px;line-height:1">${e.icon}</div>
+      <div class="hc-title">${e.t}</div>
+      <div class="hc-sub">${e.desc}</div>
+      <span class="hc-badge teal">${e.intensity}</span>
+    </div>`).join('');
+}
+
+function openEx(idx){
+  curEx=idx;fillEx();
+  const ov=document.getElementById('pop-ex');
+  ov.style.display='flex';
+  const card=document.getElementById('pop-ex-card');
+  card.style.animation='none';void card.offsetWidth;
+  card.style.animation='popIn .28s cubic-bezier(.34,1.56,.64,1) both';
+  ov.scrollIntoView({behavior:'smooth',block:'nearest'});
+  document.getElementById('exc-'+idx).classList.add('active-source');
+}
+
+function fillEx(){
+  const e=EXERCISES[curEx];
+  document.getElementById('ex-av').textContent=e.icon;
+  document.getElementById('ex-title').textContent=e.t;
+  document.getElementById('ex-freq').textContent=e.freq;
+  document.getElementById('ex-desc').textContent=e.desc;
+  document.getElementById('ex-f').textContent=e.freq;
+  document.getElementById('ex-int').textContent=e.intensity;
+  document.getElementById('ex-src').textContent=e.src;
+  document.getElementById('ex-doc').textContent=e.docSpec;
+  renderDots('ex-dots',EXERCISES.length,curEx);
+  document.getElementById('ex-count').textContent=(curEx+1)+' / '+EXERCISES.length;
+  document.getElementById('ex-prev').disabled=curEx===0;
+  document.getElementById('ex-next').disabled=curEx===EXERCISES.length-1;
+}
+
+function navEx(dir){
+  document.getElementById('exc-'+curEx).classList.remove('active-source');
+  curEx=Math.max(0,Math.min(EXERCISES.length-1,curEx+dir));
+  document.getElementById('exc-'+curEx).classList.add('active-source');
+  const card=document.getElementById('pop-ex-card');
+  card.style.animation='none';void card.offsetWidth;
+  card.style.animation='popIn .22s cubic-bezier(.34,1.4,.64,1) both';
+  fillEx();
+}
+
+// ── DOCTORS ──
+function buildDocGrid(){
+  document.getElementById('doc-grid').innerHTML=DOCTORS.map((d,i)=>`
+    <div class="home-card" id="dcc-${i}" onclick="openDoc(${i})">
+      <i class="ti ti-stethoscope" aria-hidden="true" style="font-size:22px;color:var(--color-text-info)"></i>
+      <div class="hc-title">${d.name}</div>
+      <div class="hc-sub">${d.spec} · ${d.hosp.split('·')[0].trim()}</div>
+      <span class="hc-badge teal">${d.exp} experience</span>
+    </div>`).join('');
+}
+
+function openDoc(idx){
+  curDoc=idx;fillDoc();
+  const ov=document.getElementById('pop-doc');
+  ov.style.display='flex';
+  const card=document.getElementById('pop-doc-card');
+  card.style.animation='none';void card.offsetWidth;
+  card.style.animation='popIn .28s cubic-bezier(.34,1.56,.64,1) both';
+  ov.scrollIntoView({behavior:'smooth',block:'nearest'});
+  document.getElementById('dcc-'+idx).classList.add('active-source');
+}
+
+function fillDoc(){
+  const d=DOCTORS[curDoc];
+  document.getElementById('doc-name').textContent=d.name;
+  document.getElementById('doc-spec').textContent=d.spec;
+  document.getElementById('doc-fname').textContent=d.name;
+  document.getElementById('doc-hosp').textContent=d.hosp;
+  document.getElementById('doc-bio').textContent=d.bio;
+  document.getElementById('doc-exp').textContent=d.exp;
+  document.getElementById('doc-con').textContent=d.con+' consultations';
+  document.getElementById('doc-meds').innerHTML=d.meds.map((m,i)=>`
+    <div class="med-row">
+      <span class="med-name">${i+1}. ${m.n}</span>
+      <span class="med-dose">${m.d}</span>
+    </div>`).join('');
+  renderDots('doc-dots',DOCTORS.length,curDoc);
+  document.getElementById('doc-count').textContent=(curDoc+1)+' / '+DOCTORS.length;
+  document.getElementById('doc-prev').disabled=curDoc===0;
+  document.getElementById('doc-next').disabled=curDoc===DOCTORS.length-1;
+}
+
+function navDoc(dir){
+  document.getElementById('dcc-'+curDoc).classList.remove('active-source');
+  curDoc=Math.max(0,Math.min(DOCTORS.length-1,curDoc+dir));
+  document.getElementById('dcc-'+curDoc).classList.add('active-source');
+  const card=document.getElementById('pop-doc-card');
+  card.style.animation='none';void card.offsetWidth;
+  card.style.animation='popIn .22s cubic-bezier(.34,1.4,.64,1) both';
+  fillDoc();
+}
+
+// ── AFFIRMATIONS ──
+function buildAffGrid(){
+  document.getElementById('aff-grid').innerHTML=AFFIRMATIONS.map((a,i)=>`
+    <div class="home-card" id="affc-${i}" onclick="openAff(${i})">
+      <div style="font-size:22px;line-height:1">${a.sym}</div>
+      <div class="hc-title">${a.theme}</div>
+      <div class="hc-sub">"${a.quote.slice(0,55)}…"</div>
+      <span class="hc-badge teal">Mindfulness</span>
+    </div>`).join('');
+}
+
+function openAff(idx){
+  curAff=idx;fillAff();
+  const ov=document.getElementById('pop-aff');
+  ov.style.display='flex';
+  const card=document.getElementById('pop-aff-card');
+  card.style.animation='none';void card.offsetWidth;
+  card.style.animation='popIn .28s cubic-bezier(.34,1.56,.64,1) both';
+  ov.scrollIntoView({behavior:'smooth',block:'nearest'});
+  document.getElementById('affc-'+idx).classList.add('active-source');
+}
+
+function fillAff(){
+  const a=AFFIRMATIONS[curAff];
+  document.getElementById('aff-sym').textContent=a.sym;
+  document.getElementById('aff-theme').textContent=a.theme;
+  document.getElementById('aff-theme2').textContent=a.theme.toUpperCase();
+  document.getElementById('aff-theme3').textContent=a.theme;
+  document.getElementById('aff-quote').textContent='"'+a.quote+'"';
+  renderDots('aff-dots',AFFIRMATIONS.length,curAff);
+  document.getElementById('aff-count').textContent=(curAff+1)+' / '+AFFIRMATIONS.length;
+  document.getElementById('aff-prev').disabled=curAff===0;
+  document.getElementById('aff-next').disabled=curAff===AFFIRMATIONS.length-1;
+}
+
+function navAff(dir){
+  document.getElementById('affc-'+curAff).classList.remove('active-source');
+  curAff=Math.max(0,Math.min(AFFIRMATIONS.length-1,curAff+dir));
+  document.getElementById('affc-'+curAff).classList.add('active-source');
+  const card=document.getElementById('pop-aff-card');
+  card.style.animation='none';void card.offsetWidth;
+  card.style.animation='popIn .22s cubic-bezier(.34,1.4,.64,1) both';
+  fillAff();
+}
+
+// ── BOOT ──
+buildDiseaseGrid();
+buildExGrid();
+buildDocGrid();
+buildAffGrid();
+</script>

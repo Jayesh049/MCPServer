@@ -9,7 +9,7 @@
     "node": ">=18.18"
   },
   "scripts": {
-    "dev": "tsx watch src/index.ts",
+    "dev": "node ./node_modules/tsx/dist/cli.mjs watch src/index.ts",
     "start:mcp-http": "node dist/index-mcp-http.js",
     "build": "node scripts/run-env-cmd.mjs prisma generate && tsc -p tsconfig.json",
     "db:generate": "node scripts/prisma-generate.mjs",
@@ -19,6 +19,7 @@
     "db:seed": "node scripts/run-env-cmd.mjs npx tsx prisma/seed.ts",
     "db:seed-platform": "node scripts/run-env-cmd.mjs npx tsx prisma/seedPlatform.ts",
     "db:train-bank": "node scripts/run-env-cmd.mjs npx tsx prisma/seedQuestionBank.ts",
+    "db:train-ayurveda": "node scripts/run-env-cmd.mjs npx tsx scripts/train-ayurveda.ts",
     "train:rag-bank": "npm run db:train-bank",
     "setup:all": "node scripts/setup-all.mjs",
     "demo": "tsx demo/run_demo.ts",
@@ -34,7 +35,12 @@
     "healer": "tsx src/healer/cli.ts",
     "dev:heal": "tsx src/healer/cli.ts -- npm run dev",
     "dev:plan": "tsx src/healer/cli.ts --plan-only -- npm run dev",
-    "smoke:health": "node scripts/smoke-http-health.mjs"
+    "smoke:health": "node scripts/smoke-http-health.mjs",
+    "smoke:ayurveda": "node scripts/smoke-ayurveda.mjs",
+    "smoke:platform-social": "node scripts/smoke-platform-social.mjs",
+    "test:platform-flows": "node scripts/test-platform-flows.mjs",
+    "test:medical-hub": "node scripts/test-medical-hub.mjs",
+    "test:e2e": "node scripts/test-medical-hub.mjs && node scripts/test-platform-flows.mjs"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.29.0",

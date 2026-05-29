@@ -1,7 +1,7 @@
 {
   "diseaseSlug": "covid-19",
   "displayName": "COVID-19 (chest X-ray)",
-  "trainedAt": "2026-05-23T03:52:49.103536+00:00",
+  "trainedAt": "2026-05-29T06:19:25.445840+00:00",
   "methodology": {
     "features": "RGB histogram + gradient bins + 8x8 gray + stats (Pillow/numpy)",
     "classifiers": [

@@ -5,6 +5,11 @@ import {
 } from "../../llm/huggingface.js";
 import { bandToRiskLevel } from "../helpers.js";
 import type { DiseasePredictInput, Prediction } from "../types.js";
+import {
+  imagingSklearnToPrediction,
+  isImagingSklearnModelAvailable,
+  predictImagingSklearnImage
+} from "./imagingSklearn.js";
 
 const POSITIVE_KEYWORDS = ["pneumonia", "abnormal", "opacity"];
 const DEFAULT_HF_MODEL = "lxyuan/vit-xray-pneumonia-classification";
@@ -169,6 +174,19 @@ export async function predictPneumonia(
         { label: "Contrast (stub)", value: Number(contrast.toFixed(3)) }
       ]
     });
+  }
+
+  // Prefer the self-trained sklearn chest X-ray model when its artifact is present
+  // (added alongside the other imaging models). HF/Flask remain as fallbacks below.
+  if (isImagingSklearnModelAvailable("pneumonia")) {
+    const ml = await predictImagingSklearnImage("pneumonia", input.imageBase64);
+    const pred = imagingSklearnToPrediction(
+      ml,
+      "pneumonia_findings",
+      "normal_chest_xray",
+      "Pneumonia chest X-ray classification."
+    );
+    if (pred) return pred;
   }
 
   const modelId = pneumoniaModelId();

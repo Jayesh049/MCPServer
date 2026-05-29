@@ -2,64 +2,119 @@ import type { Affirmation, CarePlan, DiseaseHit, Doctor, Exercise } from "./type
 
 const PALETTE = ["#f97316", "#eab308", "#06b6d4", "#ec4899", "#8b5cf6", "#22c55e", "#ef4444", "#6366f1"];
 
-const KEYWORD_MARKER: Record<string, { name: string; value: string; status: "bad" | "warn"; note: string }> = {
-  alt: { name: "ALT (Alanine Aminotransferase)", value: "Elevated", status: "bad", note: "Elevated → possible liver cell stress. Normal: 7–56 U/L" },
-  ast: { name: "AST (Aspartate Aminotransferase)", value: "Elevated", status: "bad", note: "Elevated → liver or muscle injury signal. Normal: 10–40 U/L" },
-  bilirubin: { name: "Bilirubin", value: "High", status: "bad", note: "May indicate bile buildup or jaundice risk" },
-  cirrhosis: { name: "Cirrhosis indicators", value: "Present", status: "bad", note: "Scarring pattern mentioned — needs clinical follow-up" },
-  diabetes: { name: "Diabetes keywords", value: "Detected", status: "warn", note: "Glucose/diabetes terms in report text" },
-  hba1c: { name: "HbA1c", value: "Flagged", status: "warn", note: "5.7–6.4% pre-diabetes · ≥6.5% diabetes range" },
-  a1c: { name: "HbA1c", value: "Flagged", status: "warn", note: "Glycemic control marker referenced in report" },
-  tuberculosis: { name: "TB indicators", value: "Detected", status: "warn", note: "TB-related terms in clinical narrative" },
-  tb: { name: "TB indicators", value: "Detected", status: "warn", note: "Abbreviation matched in report" },
-  cad: { name: "CAD risk", value: "Detected", status: "warn", note: "Coronary artery disease terms in text" },
-  ascvd: { name: "ASCVD risk", value: "Detected", status: "warn", note: "Cardiovascular risk language in report" },
-  creatinine: { name: "Creatinine", value: "Elevated", status: "bad", note: "Kidney filtration marker referenced" },
-  proteinuria: { name: "Proteinuria", value: "Present", status: "bad", note: "Protein in urine — kidney stress signal" }
+const KEYWORD_ACRONYM: Record<string, { term: string; meaning: string }> = {
+  alt: {
+    term: "ALT",
+    meaning:
+      "Alanine aminotransferase — a liver enzyme. Elevated ALT suggests liver cell stress. Typical normal range: 7–56 U/L."
+  },
+  ast: {
+    term: "AST",
+    meaning:
+      "Aspartate aminotransferase — another liver enzyme. AST/ALT ratio above 2 may suggest advanced fibrosis; near 1 may suggest fatty liver (NAFLD)."
+  },
+  bilirubin: {
+    term: "Bilirubin",
+    meaning:
+      "Produced when red blood cells break down; processed by the liver. High levels may cause jaundice. Typical normal: 0.1–1.2 mg/dL."
+  },
+  cirrhosis: {
+    term: "Cirrhosis",
+    meaning: "Severe scarring of the liver. Healthy tissue is replaced by scar tissue. Progression can often be slowed with treatment."
+  },
+  diabetes: {
+    term: "Diabetes",
+    meaning: "A condition of impaired blood sugar regulation. Report text references glucose or diabetes-related terms."
+  },
+  hba1c: {
+    term: "HbA1c",
+    meaning:
+      "Hemoglobin A1c — average blood sugar over 2–3 months. Above 6.5% suggests diabetes; 5.7–6.4% is prediabetes. Common T2DM target: below 7%."
+  },
+  a1c: {
+    term: "A1c",
+    meaning: "Short for HbA1c — the same test. Each 1% reduction may lower complication risk by roughly 14%."
+  },
+  tuberculosis: {
+    term: "TB",
+    meaning: "Tuberculosis — infectious disease often affecting the lungs. Clinical or imaging terms appeared in the report."
+  },
+  tb: { term: "TB", meaning: "Tuberculosis abbreviation matched in report text." },
+  cad: {
+    term: "CAD",
+    meaning:
+      "Coronary artery disease — plaque buildup in heart arteries. Major heart attack risk factor. Linked to BP, diabetes, LDL, and smoking."
+  },
+  ascvd: {
+    term: "ASCVD",
+    meaning:
+      "Atherosclerotic cardiovascular disease — heart and vessel conditions from plaque. Ten-year ASCVD score above 7.5% often warrants statin discussion."
+  },
+  creatinine: {
+    term: "Creatinine",
+    meaning:
+      "Waste from muscle metabolism filtered by kidneys. Elevated levels may mean reduced filtration. Typical normal: 0.6–1.2 mg/dL."
+  },
+  proteinuria: {
+    term: "Proteinuria",
+    meaning:
+      "Protein in urine — normally protein stays in blood. Leakage suggests kidney filter damage; microalbuminuria is an early sign."
+  },
+  egfr: {
+    term: "eGFR",
+    meaning:
+      "Estimated glomerular filtration rate — how well kidneys filter per minute. Normal is above 90; CKD stage 3 is 30–59. Trend matters more than a single reading."
+  }
 };
 
 const WORK_ON: Record<string, string[]> = {
   "liver-disease": [
-    "Reduce alcohol and hepatotoxic supplements",
-    "Low-fat, high-fiber meals",
-    "Repeat liver function tests in 3 months",
-    "Consult hepatology if values stay elevated"
+    "ALT is elevated — target below 56 U/L and recheck in 4–6 weeks.",
+    "Calculate AST ÷ ALT ratio; above 2 is more serious, near 1 may suggest fatty liver.",
+    "Control HbA1c, reduce refined carbs, walk 30 minutes daily for NAFLD support.",
+    "If bilirubin is normal, that is reassuring — continue routine monitoring."
   ],
   diabetes: [
-    "Cut refined sugar and white carbs",
-    "Walk 30 minutes after meals",
-    "Track fasting glucose weekly",
-    "Target HbA1c under 5.7% with your clinician"
+    "HbA1c control is the primary target — each 1% drop may reduce complications risk.",
+    "Poorly controlled diabetes can worsen fatty liver — treat both together.",
+    "Walk after meals and track fasting glucose weekly.",
+    "Discuss targets with your clinician — typical goal under 7% for many adults."
   ],
   "heart-disease": [
-    "DASH-style diet — less sodium, more potassium",
-    "150 minutes moderate cardio per week",
-    "Discuss statin therapy with cardiology",
-    "Monitor blood pressure at home"
+    "Calculate ASCVD risk score with age, lipids, BP, diabetes, and smoking.",
+    "Keep blood pressure under 130/80 mmHg — stage 2 hypertension needs prompt care.",
+    "DASH-style diet and 150 minutes of moderate cardio per week.",
+    "Discuss statin therapy if risk score is elevated."
   ],
   "kidney-disease": [
-    "Low sodium and moderated protein intake",
-    "Tight blood pressure and glucose control",
-    "Avoid NSAIDs unless prescribed",
-    "Nephrology follow-up on schedule"
+    "Track eGFR trend — decline over 5 mL/min/year suggests progressive CKD.",
+    "Tight BP and glucose control slow CKD progression best.",
+    "Low sodium, moderated protein, avoid NSAIDs unless prescribed.",
+    "Nephrology follow-up every 3–6 months as advised."
   ]
 };
 
-export type MarkerView = {
-  name: string;
-  value: string;
-  status: "bad" | "warn" | "good";
-  note: string;
+export type AcronymView = { term: string; meaning: string };
+
+export type WorkItemView = {
+  severity: "critical" | "improve" | "ok";
+  label: string;
+  title: string;
+  desc: string;
 };
 
 export type DiseaseFlashView = {
   id: string;
   name: string;
   pct: number;
+  risk: "high" | "medium" | "low";
   keywords: string[];
   color: string;
-  markers: MarkerView[];
-  workOn: string[];
+  badge: "high" | "moderate" | "low" | "teal";
+  badgeText: string;
+  icon: string;
+  acronyms: AcronymView[];
+  work: WorkItemView[];
   affirmation: string;
 };
 
@@ -70,10 +125,13 @@ export type ExerciseFlashView = {
   desc: string;
   freq: string;
   intensity: string;
-  intensityColor: string;
-  doctor: string;
+  intensityBadge: "low" | "moderate" | "high" | "teal";
+  doctorSpec: string;
+  src: string;
   tip: string;
 };
+
+export type MedView = { name: string; dose: string };
 
 export type DoctorFlashView = {
   id: string;
@@ -81,15 +139,16 @@ export type DoctorFlashView = {
   spec: string;
   hospital: string;
   yrs: number;
-  exercises: string[];
+  consultations: number;
   bio: string;
-  approach: string;
+  meds: MedView[];
 };
 
 export type AffirmationFlashView = {
-  icon: string;
-  label: string;
-  text: string;
+  id: string;
+  sym: string;
+  theme: string;
+  quote: string;
 };
 
 function colorForSlug(slug: string, index: number): string {
@@ -98,25 +157,64 @@ function colorForSlug(slug: string, index: number): string {
   return PALETTE[Math.abs(h + index) % PALETTE.length];
 }
 
+function diseaseIcon(slug: string): string {
+  if (slug.includes("liver")) return "🫀";
+  if (slug.includes("diabetes")) return "💧";
+  if (slug.includes("heart")) return "❤️";
+  if (slug.includes("kidney")) return "🫘";
+  if (slug.includes("tb") || slug.includes("tuberculosis")) return "🫁";
+  return "🔬";
+}
+
+function scoreToRisk(score: number): "high" | "medium" | "low" {
+  if (score >= 0.75) return "high";
+  if (score >= 0.5) return "medium";
+  return "low";
+}
+
+function riskToBadge(risk: "high" | "medium" | "low"): { badge: DiseaseFlashView["badge"]; badgeText: string } {
+  if (risk === "high") return { badge: "high", badgeText: "High risk" };
+  if (risk === "medium") return { badge: "moderate", badgeText: "Medium risk" };
+  return { badge: "low", badgeText: "Lower risk" };
+}
+
+function workSeverity(index: number, total: number): WorkItemView["severity"] {
+  if (index === 0) return "critical";
+  if (index < Math.max(2, total - 1)) return "improve";
+  return "ok";
+}
+
+function workLabel(severity: WorkItemView["severity"]): string {
+  if (severity === "critical") return "Critical";
+  if (severity === "improve") return "Work on this";
+  return "OK";
+}
+
 function exerciseIcon(name: string): string {
   const n = name.toLowerCase();
   if (n.includes("walk")) return "🚶";
-  if (n.includes("breath") || n.includes("yoga")) return "🌬️";
+  if (n.includes("breath") || n.includes("yoga")) return "🫁";
   if (n.includes("stretch") || n.includes("mobil")) return "🧘";
   if (n.includes("strength")) return "💪";
   return "🏃";
 }
 
-const AFFIRMATION_ICONS: Record<string, string> = {
+function intensityBadge(level: Exercise["intensity"]): ExerciseFlashView["intensityBadge"] {
+  if (level === "high") return "high";
+  if (level === "moderate") return "moderate";
+  return "low";
+}
+
+const AFFIRMATION_SYMS: Record<string, string> = {
   presence: "✦",
-  agency: "◆",
-  support: "○",
+  agency: "◈",
+  support: "⬡",
   compassion: "♡",
-  hope: "⊕",
+  hope: "◎",
   resilience: "◇",
   rest: "◌",
-  trust: "★",
-  celebration: "✧",
+  trust: "✧",
+  celebration: "◆",
   renewal: "∞",
   strength: "★"
 };
@@ -127,72 +225,93 @@ export function mapDiseaseHits(hits: DiseaseHit[], carePlan: CarePlan | null): D
 
   return hits.map((h, i) => {
     const keywords = h.evidence?.length ? h.evidence : [h.slug.replace(/-/g, " ")];
-    const markers: MarkerView[] = [];
+    const acronyms: AcronymView[] = [];
     for (const kw of keywords.slice(0, 6)) {
       const key = kw.toLowerCase().trim();
-      const known = KEYWORD_MARKER[key];
+      const known = KEYWORD_ACRONYM[key];
       if (known) {
-        markers.push(known);
-      } else {
-        markers.push({
-          name: kw,
-          value: "Matched",
-          status: "warn",
-          note: h.evidenceSnippets?.[0] ?? "Keyword found in extracted report text"
+        acronyms.push(known);
+      } else if (kw.length <= 6) {
+        acronyms.push({
+          term: kw.toUpperCase(),
+          meaning: h.evidenceSnippets?.[0] ?? "Term matched in extracted report text."
         });
       }
     }
-    if (markers.length === 0) {
-      markers.push({
-        name: "Report match",
-        value: `${Math.round(h.score * 100)}%`,
-        status: h.score >= 0.7 ? "bad" : "warn",
-        note: "Score from keyword-weighted disease matching"
+    if (acronyms.length === 0) {
+      acronyms.push({
+        term: "Match",
+        meaning: `Keyword-weighted score ${Math.round(h.score * 100)}% from report analysis.`
       });
     }
 
-    const workOn =
+    const workStrings =
       WORK_ON[h.slug] ??
       (h.riskLevel === "high"
-        ? ["Consult a specialist promptly", "Repeat labs on clinician advice", "Track symptoms daily"]
-        : ["Review results with your care team", "Maintain healthy sleep and hydration", "Re-test on schedule"]);
+        ? [
+            "Consult a specialist promptly.",
+            "Repeat labs on your clinician's advice.",
+            "Track symptoms daily.",
+            "Maintain sleep, hydration, and follow-up visits."
+          ]
+        : [
+            "Review results with your care team.",
+            "Keep healthy sleep and hydration habits.",
+            "Re-test on the schedule your doctor recommends.",
+            "Note any new symptoms between visits."
+          ]);
 
+    const work: WorkItemView[] = workStrings.map((desc, wi) => {
+      const severity = workSeverity(wi, workStrings.length);
+      const parts = desc.split(" — ");
+      return {
+        severity,
+        label: workLabel(severity),
+        title: parts[0]?.slice(0, 48) ?? `Focus area ${wi + 1}`,
+        desc: parts[1] ?? desc
+      };
+    });
+
+    const risk = scoreToRisk(h.score);
+    const { badge, badgeText } = riskToBadge(risk);
     const affirmation =
       carePlan && h.slug === carePlan.diseaseSlug
-        ? carePlan.affirmations[0]?.statement ?? primaryAff
+        ? (carePlan.affirmations[0]?.statement ?? primaryAff)
         : primaryAff;
 
     return {
       id: h.slug,
       name: h.name,
       pct: Math.round(h.score * 100),
+      risk,
       keywords,
       color: colorForSlug(h.slug, i),
-      markers,
-      workOn,
+      badge,
+      badgeText,
+      icon: diseaseIcon(h.slug),
+      acronyms,
+      work,
       affirmation
     };
   });
 }
 
 export function mapExercises(plan: CarePlan, doctors: Doctor[]): ExerciseFlashView[] {
-  const intensityColor = (level: Exercise["intensity"]) => {
-    if (level === "high") return "#ef4444";
-    if (level === "moderate") return "#eab308";
-    return "#22c55e";
-  };
-
-  return plan.exercises.map((ex, i) => ({
-    id: `${ex.name}-${i}`,
-    icon: exerciseIcon(ex.name),
-    name: ex.name,
-    desc: ex.description,
-    freq: ex.frequency,
-    intensity: ex.intensity.toUpperCase(),
-    intensityColor: intensityColor(ex.intensity),
-    doctor: doctors[i % doctors.length]?.name ?? "Care team",
-    tip: ex.cautions?.[0] ?? "Start gently and increase only if you feel well."
-  }));
+  return plan.exercises.map((ex, i) => {
+    const doc = doctors[i % Math.max(doctors.length, 1)];
+    return {
+      id: `${ex.name}-${i}`,
+      icon: exerciseIcon(ex.name),
+      name: ex.name,
+      desc: ex.description,
+      freq: ex.frequency,
+      intensity: ex.intensity.charAt(0).toUpperCase() + ex.intensity.slice(1),
+      intensityBadge: intensityBadge(ex.intensity),
+      doctorSpec: doc?.specialty ?? "General practice",
+      src: `${doc?.specialty ?? "Care plan"} · synthetic daily refresh`,
+      tip: ex.cautions?.[0] ?? "Start gently and increase only if you feel well."
+    };
+  });
 }
 
 export function mapDoctors(plan: CarePlan): DoctorFlashView[] {
@@ -202,19 +321,20 @@ export function mapDoctors(plan: CarePlan): DoctorFlashView[] {
     spec: doc.specialty,
     hospital: `${doc.hospital.name} · ${doc.hospital.city}`,
     yrs: doc.yearsOfExperience,
-    exercises: plan.exercises
-      .filter((_, j) => j % plan.topDoctors.length === i)
-      .map((e) => e.name)
-      .slice(0, 3),
+    consultations: 30 + ((doc.name.length + i * 7) % 40),
     bio: doc.bio,
-    approach: doc.medications[0]?.rationale ?? doc.bio
+    meds: doc.medications.slice(0, 6).map((m) => ({
+      name: m.name,
+      dose: `${m.dose} · ${m.schedule}`
+    }))
   }));
 }
 
 export function mapAffirmations(plan: CarePlan): AffirmationFlashView[] {
-  return plan.affirmations.map((a: Affirmation) => ({
-    icon: AFFIRMATION_ICONS[a.theme.toLowerCase()] ?? "✨",
-    label: a.theme.toUpperCase(),
-    text: a.statement
+  return plan.affirmations.map((a: Affirmation, i) => ({
+    id: `aff-${a.theme}-${i}`,
+    sym: AFFIRMATION_SYMS[a.theme.toLowerCase()] ?? "✨",
+    theme: a.theme.charAt(0).toUpperCase() + a.theme.slice(1),
+    quote: a.statement
   }));
 }

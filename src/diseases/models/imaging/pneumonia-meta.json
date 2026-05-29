@@ -1,0 +1,30 @@
+{
+  "diseaseSlug": "pneumonia",
+  "displayName": "Pneumonia (chest X-ray)",
+  "trainedAt": "2026-05-29T07:53:58.536466+00:00",
+  "methodology": {
+    "features": "RGB histogram + gradient bins + 8x8 gray + stats (Pillow/numpy)",
+    "classifiers": [
+      "LogisticRegression",
+      "RandomForest"
+    ],
+    "selection": "best stratified CV ROC-AUC"
+  },
+  "metrics": {
+    "cvAuc": 0.9648,
+    "cvFolds": 10,
+    "formulaKey": "hog_lr",
+    "testAccuracy": 0.875,
+    "testF1": 0.875,
+    "nSamples": 160,
+    "nPositive": 80,
+    "nNegative": 80,
+    "featureDim": 246,
+    "imageSize": 128
+  },
+  "artifactPath": "ml/artifacts/imaging/pneumonia/pipeline.joblib",
+  "dataDirs": {
+    "positive": "data/imaging/pneumonia/positive",
+    "negative": "data/imaging/pneumonia/negative"
+  }
+}

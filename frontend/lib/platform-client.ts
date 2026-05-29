@@ -139,3 +139,76 @@ export function completeAuth(result: AuthResult): void {
     window.location.href = "/verify-2fa";
   }
 }
+
+export async function digilockerStart(token: string): Promise<{ authUrl: string; state: string }> {
+  return platformFetch("/doctors/digilocker/start", {
+    headers: { Authorization: `Bearer ${token}` }
+  });
+}
+
+export async function digilockerStatus(token: string): Promise<{
+  verified: boolean;
+  verifications: unknown[];
+}> {
+  return platformFetch("/doctors/verification-status", {
+    headers: { Authorization: `Bearer ${token}` }
+  });
+}
+
+export async function getConsultations(token: string) {
+  return platformFetch("/consultations", {
+    headers: { Authorization: `Bearer ${token}` }
+  });
+}
+
+export async function getConsultationById(token: string, consultationId: string) {
+  return platformFetch(`/consultations/${consultationId}`, {
+    headers: { Authorization: `Bearer ${token}` }
+  });
+}
+
+export async function respondConsultation(
+  token: string,
+  consultationId: string,
+  decision: "ACCEPT" | "REJECT"
+) {
+  return platformFetch(`/consultations/${consultationId}/respond`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ decision })
+  });
+}
+
+export async function submitDoctorRating(
+  token: string,
+  payload: {
+    consultationId: string;
+    doctorId: string;
+    score: number;
+    formAnswers: Record<string, unknown>;
+    signature?: string;
+  }
+) {
+  return platformFetch("/ratings/doctor", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` },
+    body: JSON.stringify(payload)
+  });
+}
+
+export async function submitPatientRating(
+  token: string,
+  payload: {
+    consultationId: string;
+    patientId: string;
+    score: number;
+    formAnswers: Record<string, unknown>;
+    signature?: string;
+  }
+) {
+  return platformFetch("/ratings/patient", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` },
+    body: JSON.stringify(payload)
+  });
+}

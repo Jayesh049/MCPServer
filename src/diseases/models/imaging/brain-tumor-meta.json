@@ -1,7 +1,7 @@
 {
   "diseaseSlug": "brain-tumor",
   "displayName": "Brain tumor (MRI)",
-  "trainedAt": "2026-05-23T00:25:00.577858+00:00",
+  "trainedAt": "2026-05-29T06:19:13.405240+00:00",
   "methodology": {
     "features": "RGB histogram + gradient bins + 8x8 gray + stats (Pillow/numpy)",
     "classifiers": [

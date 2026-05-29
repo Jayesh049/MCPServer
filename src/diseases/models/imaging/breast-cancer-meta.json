@@ -1,7 +1,7 @@
 {
   "diseaseSlug": "breast-cancer",
   "displayName": "Breast cancer (mammogram)",
-  "trainedAt": "2026-05-23T03:53:32.213031+00:00",
+  "trainedAt": "2026-05-29T06:20:03.654247+00:00",
   "methodology": {
     "features": "RGB histogram + gradient bins + 8x8 gray + stats (Pillow/numpy)",
     "classifiers": [

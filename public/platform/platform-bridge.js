@@ -147,15 +147,37 @@
       <div class="post-footer">
         <div class="post-stats">
           <span class="post-stat">💬 ${post.replies} replies</span>
+          <span class="post-stat">🗨️ ${(post.comments || []).length} comments</span>
+          <span class="post-stat">❤️ ${post.likes || 0} likes</span>
           <span class="post-stat">👁 ${post.views} views</span>
         </div>
-        ${
-          currentRole === "doctor"
-            ? `<button class="reply-btn doctor" onclick="toggleReplies('${post.id}')">✍️ Add reply</button>`
-            : `<button class="reply-btn" onclick="toggleReplies('${post.id}')">View replies</button>`
-        }
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="reply-btn" onclick="likePost('${post.id}')">${post.likedByMe ? "💔 Unlike" : "❤️ Like"}</button>
+          ${
+            currentRole === "doctor"
+              ? `<button class="reply-btn doctor" onclick="toggleReplies('${post.id}')">✍️ Add reply</button>`
+              : `<button class="reply-btn" onclick="toggleReplies('${post.id}')">View replies</button>`
+          }
+        </div>
       </div>
       <div class="replies-section" id="replies-${post.id}" style="display:none">
+        <div style="margin:8px 0 12px">
+          <div style="font-size:12px;color:var(--ink3);margin-bottom:6px">Comments</div>
+          ${(post.comments || [])
+            .map(
+              (c) => `
+            <div class="reply-item" style="margin-bottom:8px">
+              <div class="reply-avatar">${c.initials}</div>
+              <div class="reply-content">
+                <div class="reply-author">${c.author} <span class="badge">${c.role}</span></div>
+                <div class="reply-text">${c.text}</div>
+              </div>
+            </div>`
+            )
+            .join("")}
+          <textarea id="comment-input-${post.id}" placeholder="Write a comment…" style="width:100%;height:60px;margin-top:6px"></textarea>
+          <button onclick="submitComment('${post.id}')" style="margin-top:6px;padding:7px 12px;background:var(--teal);color:#fff;border:none;border-radius:8px;cursor:pointer">Post comment</button>
+        </div>
         ${(post.doctorReplies || [])
           .map(
             (r) => `
@@ -166,7 +188,8 @@
               <div class="reply-text">${r.text}</div>
               ${
                 currentRole === "patient"
-                  ? `<button class="tip-btn" onclick="openTipModal('${r.doctor}')">💛 Tip</button>`
+                  ? `<button class="tip-btn" onclick="openTipModal('${r.doctor}')">💛 Tip</button>
+                     <button class="tip-btn" onclick="startConsultFromReply('${post.id}','${r.id}','${r.doctorId}','${r.doctor}','${r.initials}','${r.specialty || "Doctor"}')">💬 Consult</button>`
                   : ""
               }
             </div>
@@ -207,6 +230,35 @@
       populatePosts();
     } catch (e) {
       toast(e.message || "Reply failed");
+    }
+  };
+
+  window.submitComment = async function (postId) {
+    const inp = document.getElementById("comment-input-" + postId);
+    const text = inp?.value?.trim();
+    if (!text) {
+      toast("Please write a comment");
+      return;
+    }
+    try {
+      await api("/posts/" + postId + "/comment", {
+        method: "POST",
+        body: JSON.stringify({ body: text }),
+      });
+      inp.value = "";
+      toast("Comment posted", "success");
+      populatePosts();
+    } catch (e) {
+      toast(e.message || "Comment failed");
+    }
+  };
+
+  window.likePost = async function (postId) {
+    try {
+      await api("/posts/" + postId + "/like", { method: "POST" });
+      populatePosts();
+    } catch (e) {
+      toast(e.message || "Like failed");
     }
   };
 
@@ -294,6 +346,51 @@
     }
   };
 
+  window.startConsultFromReply = async function (postId, replyId, doctorId, doctorName, doctorInitials, doctorSpec) {
+    try {
+      activeOtherUserId = doctorId;
+      const data = await api("/consultations/start", {
+        method: "POST",
+        body: JSON.stringify({ otherUserId: doctorId, postId, replyId })
+      });
+      activeConsultId = data.consultation?.id;
+      renderConsultMessages(data.consultation?.messages || []);
+      document.getElementById("consult-name").textContent = doctorName;
+      document.getElementById("cs-name").textContent = doctorName;
+      document.getElementById("cs-sub").textContent = doctorSpec;
+      document.getElementById("cs-avatar").textContent = doctorInitials;
+      showPanel("consult");
+    } catch (e) {
+      toast(e.message || "Could not start consultation");
+    }
+  };
+
+  window.startDigilockerVerification = async function () {
+    if (currentRole !== "doctor") {
+      toast("Doctor account required");
+      return;
+    }
+    try {
+      const data = await api("/doctors/digilocker/start");
+      window.location.href = data.authUrl;
+    } catch (e) {
+      toast(e.message || "Could not start DigiLocker flow");
+    }
+  };
+
+  window.refreshDigilockerStatus = async function () {
+    if (currentRole !== "doctor") return;
+    try {
+      const data = await api("/doctors/verification-status");
+      const el = document.getElementById("doctor-verify-status");
+      if (el) {
+        el.textContent = data.verified ? "DigiLocker Verified" : "Verification Pending";
+      }
+    } catch {
+      // ignore UI-only status refresh failures
+    }
+  };
+
   function renderConsultMessages(msgs) {
     const box = document.getElementById("chat-msgs-consult");
     if (!box) return;
@@ -309,6 +406,24 @@
       .join("");
     box.scrollTop = box.scrollHeight;
   }
+
+  window.respondConsult = async function (decision, consultId) {
+    const id = consultId || activeConsultId;
+    if (!id) {
+      toast("Open a consultation first");
+      return;
+    }
+    try {
+      await api("/consultations/" + id + "/respond", {
+        method: "POST",
+        body: JSON.stringify({ decision }),
+      });
+      toast(decision === "ACCEPT" ? "Consultation approved" : "Consultation declined", "success");
+      if (typeof window.populateConsultations === "function") window.populateConsultations();
+    } catch (e) {
+      toast(e.message || "Could not update consultation");
+    }
+  };
 
   window.sendConsultMsg = async function () {
     const inp = document.getElementById("consult-input");

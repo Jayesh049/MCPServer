@@ -1,7 +1,7 @@
 {
   "diseaseSlug": "glaucoma",
   "displayName": "Glaucoma",
-  "trainedAt": "2026-05-23T03:53:17.940202+00:00",
+  "trainedAt": "2026-05-29T06:19:48.811536+00:00",
   "methodology": {
     "features": "RGB histogram + gradient bins + 8x8 gray + stats (Pillow/numpy)",
     "classifiers": [

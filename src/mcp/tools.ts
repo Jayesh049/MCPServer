@@ -8,7 +8,14 @@ export type ToolDef = {
   inputSchema: Record<string, unknown>;
   inputZod: z.ZodTypeAny;
   requiresFhirContext?: boolean;
-  domain?: "care-gap" | "disease" | "care-plan" | "rag-web" | "manual-question" | "disease-ml";
+  domain?:
+    | "care-gap"
+    | "disease"
+    | "care-plan"
+    | "rag-web"
+    | "manual-question"
+    | "disease-ml"
+    | "ayurveda";
   diseaseSlug?: string;
   manualQuestionId?: "q2" | "q3" | "q4";
 };
@@ -45,6 +52,10 @@ const DiseasePredictInputZod = z.object({
 
 const CarePlanInputZod = z.object({
   diseaseSlug: z.string().min(1)
+});
+
+const AyurvedaYogaInputZod = z.object({
+  diseaseSlug: z.string().min(1).describe("Known disease slug (e.g. diabetes, lung-cancer).")
 });
 
 const ReportAnalyzeInputZod = z.object({
@@ -185,6 +196,26 @@ const carePlanTools: ToolDef[] = [
     },
     requiresFhirContext: false,
     domain: "care-plan"
+  }
+];
+
+const ayurvedaTools: ToolDef[] = [
+  {
+    name: "suggest_ayurveda_yoga",
+    title: "Suggest Ayurveda-aligned Yoga & Pranayama",
+    description:
+      "Suggest yoga asanas and pranayama for a known disease slug, grounded in an indexed corpus of yoga/ayurveda texts. " +
+      "Returns structured JSON with citations. Educational only — not medical advice.",
+    inputZod: AyurvedaYogaInputZod,
+    inputSchema: {
+      type: "object",
+      properties: {
+        diseaseSlug: { type: "string", description: "Disease slug from the disease catalog." }
+      },
+      required: ["diseaseSlug"]
+    },
+    requiresFhirContext: false,
+    domain: "ayurveda"
   }
 ];
 
@@ -448,6 +479,7 @@ export const tools: ToolDef[] = [
   ...careGapTools,
   ...diseaseTools,
   ...carePlanTools,
+  ...ayurvedaTools,
   ...reportTools,
   ...diseaseMlTools,
   ...ragWebTools,

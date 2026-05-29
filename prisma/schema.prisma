@@ -229,6 +229,32 @@ enum DoctorStatus {
   OFFLINE
 }
 
+enum VerificationStatus {
+  PENDING
+  VERIFIED
+  REJECTED
+}
+
+enum PostVisibility {
+  PUBLIC
+  DOCTORS_ONLY
+  PRIVATE
+}
+
+enum ConsultationStatus {
+  REQUESTED
+  ACTIVE
+  CLOSED
+  REJECTED
+}
+
+enum RatingStatus {
+  PENDING_VALIDATION
+  APPROVED
+  FLAGGED
+  REJECTED
+}
+
 model PlatformUser {
   id               String   @id @default(cuid())
   email            String   @unique
@@ -243,10 +269,17 @@ model PlatformUser {
   patient      PlatformPatient?
   posts        DiseasePost[]
   replies      DoctorReply[]
+  postComments PostComment[]
+  postLikes    PostLike[]
   tipsGiven    PlatformTip[]     @relation("TipGiver")
   tipsReceived PlatformTip[]     @relation("TipReceiver")
   consultsAs1  Consultation[]    @relation("ConsultUser1")
   consultsAs2  Consultation[]    @relation("ConsultUser2")
+  doctorRatingsGiven DoctorRating[]  @relation("DoctorRatingByPatient")
+  doctorRatingsReceived DoctorRating[] @relation("DoctorRatingForDoctor")
+  patientRatingsGiven PatientRating[] @relation("PatientRatingByDoctor")
+  patientRatingsReceived PatientRating[] @relation("PatientRatingForPatient")
+  reviewDecisions RatingValidationRun[] @relation("RatingReviewedBy")
 
   @@map("PlatformUser")
 }
@@ -267,6 +300,7 @@ model PlatformDoctor {
   fee           Int          @default(500)
   status        DoctorStatus @default(ONLINE)
   createdAt     DateTime     @default(now())
+  verifications DoctorVerification[]
 
   @@map("PlatformDoctor")
 }
@@ -293,12 +327,40 @@ model DiseasePost {
   title     String
   body      String        @db.Text
   tags      String[]      @default([])
+  visibility PostVisibility @default(PUBLIC)
   views     Int           @default(0)
   createdAt DateTime      @default(now())
   replies   DoctorReply[]
+  comments  PostComment[]
+  likes     PostLike[]
 
   @@index([authorId])
   @@index([createdAt])
+}
+
+model PostComment {
+  id        String       @id @default(cuid())
+  postId    String
+  post      DiseasePost  @relation(fields: [postId], references: [id], onDelete: Cascade)
+  authorId  String
+  author    PlatformUser @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  body      String       @db.Text
+  createdAt DateTime     @default(now())
+
+  @@index([postId, createdAt])
+  @@index([authorId])
+}
+
+model PostLike {
+  id        String       @id @default(cuid())
+  postId    String
+  post      DiseasePost  @relation(fields: [postId], references: [id], onDelete: Cascade)
+  userId    String
+  user      PlatformUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime     @default(now())
+
+  @@unique([postId, userId])
+  @@index([userId])
 }
 
 model DoctorReply {
@@ -337,7 +399,17 @@ model Consultation {
   user2Id   String
   user2     PlatformUser      @relation("ConsultUser2", fields: [user2Id], references: [id], onDelete: Cascade)
   messages  ConsultMessage[]
+  status    ConsultationStatus @default(REQUESTED)
+  requestedById String?
+  requestPostId String?
+  requestReplyId String?
+  patientConsentedRecording Boolean @default(false)
+  doctorConsentedRecording Boolean @default(false)
+  callRecordings ConsultationCallRecording[]
+  doctorRatings DoctorRating[]
+  patientRatings PatientRating[]
   startedAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
 
   @@index([user1Id, user2Id])
 }
@@ -351,4 +423,101 @@ model ConsultMessage {
   sentAt         DateTime     @default(now())
 
   @@index([consultationId])
+}
+
+model DoctorVerification {
+  id               String             @id @default(cuid())
+  doctorId         String
+  doctor           PlatformDoctor     @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+  provider         String             @default("digilocker")
+  digilockerUserId String?
+  documentUri      String?
+  documentHash     String?
+  status           VerificationStatus @default(PENDING)
+  rawMeta          Json?
+  reviewedAt       DateTime?
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+
+  @@index([doctorId, status])
+}
+
+model ConsultationCallRecording {
+  id                String       @id @default(cuid())
+  consultationId    String
+  consultation      Consultation @relation(fields: [consultationId], references: [id], onDelete: Cascade)
+  provider          String
+  recordingUrl      String?
+  storageKey        String?
+  durationSeconds   Int?
+  transcript        String?      @db.Text
+  patientConsented  Boolean      @default(false)
+  doctorConsented   Boolean      @default(false)
+  callStartedAt     DateTime?
+  callEndedAt       DateTime?
+  meta              Json?
+  createdAt         DateTime     @default(now())
+
+  @@index([consultationId, createdAt])
+}
+
+model DoctorRating {
+  id             String       @id @default(cuid())
+  consultationId String
+  consultation   Consultation @relation(fields: [consultationId], references: [id], onDelete: Cascade)
+  doctorId       String
+  doctor         PlatformUser @relation("DoctorRatingForDoctor", fields: [doctorId], references: [id], onDelete: Cascade)
+  patientId      String
+  patient        PlatformUser @relation("DoctorRatingByPatient", fields: [patientId], references: [id], onDelete: Cascade)
+  score          Int
+  formAnswers    Json
+  signature      String?
+  status         RatingStatus @default(PENDING_VALIDATION)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  validations    RatingValidationRun[]
+
+  @@unique([consultationId, patientId, doctorId])
+  @@index([doctorId, status])
+}
+
+model PatientRating {
+  id             String       @id @default(cuid())
+  consultationId String
+  consultation   Consultation @relation(fields: [consultationId], references: [id], onDelete: Cascade)
+  patientId      String
+  patient        PlatformUser @relation("PatientRatingForPatient", fields: [patientId], references: [id], onDelete: Cascade)
+  doctorId       String
+  doctor         PlatformUser @relation("PatientRatingByDoctor", fields: [doctorId], references: [id], onDelete: Cascade)
+  score          Int
+  formAnswers    Json
+  signature      String?
+  status         RatingStatus @default(PENDING_VALIDATION)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  validations    RatingValidationRun[]
+
+  @@unique([consultationId, doctorId, patientId])
+  @@index([patientId, status])
+}
+
+model RatingValidationRun {
+  id               String       @id @default(cuid())
+  doctorRatingId   String?
+  doctorRating     DoctorRating? @relation(fields: [doctorRatingId], references: [id], onDelete: Cascade)
+  patientRatingId  String?
+  patientRating    PatientRating? @relation(fields: [patientRatingId], references: [id], onDelete: Cascade)
+  confidence       Float
+  flags            String[]     @default([])
+  evidenceSummary  String?      @db.Text
+  autoDecision     RatingStatus @default(PENDING_VALIDATION)
+  reviewedById     String?
+  reviewedBy       PlatformUser? @relation("RatingReviewedBy", fields: [reviewedById], references: [id], onDelete: SetNull)
+  reviewerDecision RatingStatus?
+  reviewerNote     String?      @db.Text
+  createdAt        DateTime     @default(now())
+  reviewedAt       DateTime?
+
+  @@index([doctorRatingId])
+  @@index([patientRatingId])
 }

@@ -1,7 +1,7 @@
 {
   "diseaseSlug": "bone-fracture",
   "displayName": "Bone fracture (X-ray)",
-  "trainedAt": "2026-05-23T03:53:42.350424+00:00",
+  "trainedAt": "2026-05-29T06:20:15.882378+00:00",
   "methodology": {
     "features": "RGB histogram + gradient bins + 8x8 gray + stats (Pillow/numpy)",
     "classifiers": [

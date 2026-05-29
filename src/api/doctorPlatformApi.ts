@@ -4,6 +4,7 @@
  */
 
 import type { IncomingMessage, ServerResponse } from "node:http";
+import type { Prisma } from "@prisma/client";
 import bcrypt from "bcryptjs";
 import { prisma } from "../lib/prisma.js";
 import {
@@ -17,8 +18,16 @@ import {
 import { generateTotpSecret, totpQrDataUrl, totpOtpauthUrl, verifyTotpCode } from "./platform2fa.js";
 import { verifyGoogleIdToken } from "./platformGoogleAuth.js";
 import { randomBytes } from "node:crypto";
+import {
+  createDigilockerStartUrl,
+  exchangeDigilockerCode,
+  fetchDigilockerDegreeCandidate,
+  hashDigilockerDocumentId
+} from "./digilocker.js";
+import { runRatingValidation } from "../rating/validation.js";
 
 const SALT_ROUNDS = 10;
+const digilockerStateToUser = new Map<string, string>();
 
 type PatientProfileFields = {
   age: number | null;
@@ -189,7 +198,8 @@ function issueAuthResponse(res: ServerResponse, status: number, user: PlatformUs
   });
 }
 
-function formatPost(post: {
+function formatPost(
+  post: {
   id: string;
   title: string;
   body: string;
@@ -201,9 +211,18 @@ function formatPost(post: {
     id: string;
     body: string;
     createdAt: Date;
-    doctor: { name: string; doctor?: { specialty: string | null } | null };
+    doctor: { id: string; name: string; doctor?: { specialty: string | null } | null };
   }>;
-}) {
+  comments?: Array<{
+    id: string;
+    body: string;
+    createdAt: Date;
+    author: { id: string; name: string; role: "DOCTOR" | "PATIENT" };
+  }>;
+  likes?: Array<{ userId: string }>;
+  },
+  viewerUserId?: string
+) {
   return {
     id: post.id,
     title: post.title,
@@ -213,8 +232,20 @@ function formatPost(post: {
     time: post.createdAt.toISOString(),
     author: post.author.name,
     replies: post.replies.length,
+    likes: post.likes?.length ?? 0,
+    likedByMe: viewerUserId ? (post.likes?.some((l) => l.userId === viewerUserId) ?? false) : false,
+    comments: post.comments?.map((c) => ({
+      id: c.id,
+      authorId: c.author.id,
+      author: c.author.name,
+      role: c.author.role.toLowerCase(),
+      initials: initials(c.author.name),
+      text: c.body,
+      time: c.createdAt.toLocaleString()
+    })) ?? [],
     doctorReplies: post.replies.map((r) => ({
       id: r.id,
+      doctorId: r.doctor.id,
       doctor: r.doctor.name,
       specialty: r.doctor.doctor?.specialty ?? "Physician",
       initials: initials(r.doctor.name),
@@ -518,18 +549,29 @@ export async function handleDoctorPlatformRequest(
       });
       sendJson(res, 200, {
         ok: true,
-        doctors: doctors.map((u) => ({
-          id: u.id,
-          name: u.name,
-          initials: initials(u.name),
-          specialty: u.doctor?.specialty ?? "Physician",
-          hospital: u.doctor?.hospital ?? "—",
-          exp: `${u.doctor?.experience ?? 0} yrs`,
-          rating: (u.doctor?.rating ?? 4.8).toFixed(1),
-          consults: u.doctor?.totalConsults ?? 0,
-          status: (u.doctor?.status ?? "ONLINE").toLowerCase(),
-          verified: u.doctor?.verified ?? false,
-        })),
+        doctors: await Promise.all(
+          doctors.map(async (u) => {
+            const agg = await prisma.doctorRating.aggregate({
+              where: { doctorId: u.id, status: "APPROVED" },
+              _avg: { score: true },
+              _count: { score: true }
+            });
+            return {
+              id: u.id,
+              name: u.name,
+              initials: initials(u.name),
+              specialty: u.doctor?.specialty ?? "Physician",
+              hospital: u.doctor?.hospital ?? "—",
+              exp: `${u.doctor?.experience ?? 0} yrs`,
+              rating: ((agg._avg.score ?? u.doctor?.rating ?? 0) / 1).toFixed(1),
+              ratingOutOf: 10,
+              ratingCount: agg._count.score ?? 0,
+              consults: u.doctor?.totalConsults ?? 0,
+              status: (u.doctor?.status ?? "ONLINE").toLowerCase(),
+              verified: u.doctor?.verified ?? false,
+            };
+          })
+        ),
       });
       return true;
     }
@@ -544,33 +586,57 @@ export async function handleDoctorPlatformRequest(
       });
       sendJson(res, 200, {
         ok: true,
-        patients: patients.map((u) => ({
-          id: u.id,
-          name: u.name,
-          initials: initials(u.name),
-          condition: u.patient?.conditions?.join(" · ") || "General consultation",
-          age: u.patient?.age ? `${u.patient.age}` : "—",
-          city: u.patient?.city ?? "—",
-          status: "Active",
-        })),
+        patients: await Promise.all(
+          patients.map(async (u) => {
+            const agg = await prisma.patientRating.aggregate({
+              where: { patientId: u.id, status: "APPROVED" },
+              _avg: { score: true },
+              _count: { score: true }
+            });
+            return {
+              id: u.id,
+              name: u.name,
+              initials: initials(u.name),
+              condition: u.patient?.conditions?.join(" · ") || "General consultation",
+              age: u.patient?.age ? `${u.patient.age}` : "—",
+              city: u.patient?.city ?? "—",
+              status: "Active",
+              rating: (agg._avg.score ?? 0).toFixed(1),
+              ratingOutOf: 10,
+              ratingCount: agg._count.score ?? 0
+            };
+          })
+        ),
       });
       return true;
     }
 
     // ── GET /posts ────────────────────────────────────────────────────
     if (req.method === "GET" && path === "/posts") {
+      const auth = requireAuth(req, res);
+      if (!auth) return true;
       const posts = await prisma.diseasePost.findMany({
+        // Doctors can review every patient post; a patient only sees their own threads.
+        where:
+          auth.role === "DOCTOR"
+            ? {}
+            : { authorId: auth.userId },
         include: {
           author: { select: { name: true } },
           replies: {
-            include: { doctor: { select: { name: true, doctor: { select: { specialty: true } } } } },
+            include: { doctor: { select: { id: true, name: true, doctor: { select: { specialty: true } } } } },
             orderBy: { createdAt: "asc" },
           },
+          comments: {
+            include: { author: { select: { id: true, name: true, role: true } } },
+            orderBy: { createdAt: "asc" }
+          },
+          likes: { select: { userId: true } }
         },
         orderBy: { createdAt: "desc" },
         take: 40,
       });
-      sendJson(res, 200, { ok: true, posts: posts.map(formatPost) });
+      sendJson(res, 200, { ok: true, posts: posts.map((p) => formatPost(p, auth.userId)) });
       return true;
     }
 
@@ -594,17 +660,72 @@ export async function handleDoctorPlatformRequest(
           title: body.title,
           body: body.body,
           tags: body.tags ?? [],
+          visibility: "DOCTORS_ONLY",
           authorId: auth.userId,
         },
         include: {
           author: { select: { name: true } },
           replies: {
-            include: { doctor: { select: { name: true, doctor: { select: { specialty: true } } } } },
+            include: { doctor: { select: { id: true, name: true, doctor: { select: { specialty: true } } } } },
           },
+          comments: {
+            include: { author: { select: { id: true, name: true, role: true } } },
+            orderBy: { createdAt: "asc" }
+          },
+          likes: { select: { userId: true } }
         },
       });
 
       sendJson(res, 201, { ok: true, post: formatPost(post) });
+      return true;
+    }
+
+    // ── POST /posts/:id/comment ───────────────────────────────────────
+    const commentMatch = path.match(/^\/posts\/([^/]+)\/comment$/);
+    if (req.method === "POST" && commentMatch) {
+      const auth = requireAuth(req, res);
+      if (!auth) return true;
+      const postId = commentMatch[1]!;
+      const body = await readBody<{ body: string }>(req);
+      if (!body?.body?.trim()) {
+        sendJson(res, 400, { ok: false, error: "comment body required" });
+        return true;
+      }
+      const comment = await prisma.postComment.create({
+        data: { postId, authorId: auth.userId, body: body.body.trim() },
+        include: { author: { select: { id: true, name: true, role: true } } }
+      });
+      sendJson(res, 201, {
+        ok: true,
+        comment: {
+          id: comment.id,
+          authorId: comment.author.id,
+          author: comment.author.name,
+          role: comment.author.role.toLowerCase(),
+          initials: initials(comment.author.name),
+          text: comment.body,
+          time: comment.createdAt.toLocaleString()
+        }
+      });
+      return true;
+    }
+
+    // ── POST /posts/:id/like ──────────────────────────────────────────
+    const likeMatch = path.match(/^\/posts\/([^/]+)\/like$/);
+    if (req.method === "POST" && likeMatch) {
+      const auth = requireAuth(req, res);
+      if (!auth) return true;
+      const postId = likeMatch[1]!;
+      const existing = await prisma.postLike.findUnique({
+        where: { postId_userId: { postId, userId: auth.userId } }
+      });
+      if (existing) {
+        await prisma.postLike.delete({ where: { id: existing.id } });
+      } else {
+        await prisma.postLike.create({ data: { postId, userId: auth.userId } });
+      }
+      const likes = await prisma.postLike.count({ where: { postId } });
+      sendJson(res, 200, { ok: true, liked: !existing, likes });
       return true;
     }
 
@@ -639,6 +760,7 @@ export async function handleDoctorPlatformRequest(
         ok: true,
         reply: {
           id: reply.id,
+          doctorId: reply.doctorId,
           doctor: reply.doctor.name,
           specialty: reply.doctor.doctor?.specialty ?? "Physician",
           initials: initials(reply.doctor.name),
@@ -712,10 +834,36 @@ export async function handleDoctorPlatformRequest(
       const auth = requireAuth(req, res);
       if (!auth) return true;
 
-      const body = await readBody<{ otherUserId: string }>(req);
+      const body = await readBody<{ otherUserId: string; postId?: string; replyId?: string }>(req);
       if (!body?.otherUserId) {
         sendJson(res, 400, { ok: false, error: "otherUserId required" });
         return true;
+      }
+
+      if (auth.role === "PATIENT") {
+        const other = await prisma.platformUser.findUnique({
+          where: { id: body.otherUserId },
+          select: { role: true }
+        });
+        if (other?.role !== "DOCTOR") {
+          sendJson(res, 403, { ok: false, error: "Patient can start consultation only with a doctor." });
+          return true;
+        }
+        const allowedReply = await prisma.doctorReply.findFirst({
+          where: {
+            doctorId: body.otherUserId,
+            ...(body.postId ? { postId: body.postId } : {}),
+            post: { authorId: auth.userId }
+          },
+          select: { id: true, postId: true }
+        });
+        if (!allowedReply) {
+          sendJson(res, 403, {
+            ok: false,
+            error: "Consultation can start after the doctor replies to your post."
+          });
+          return true;
+        }
       }
 
       let consult = await prisma.consultation.findFirst({
@@ -734,7 +882,14 @@ export async function handleDoctorPlatformRequest(
 
       if (!consult) {
         consult = await prisma.consultation.create({
-          data: { user1Id: auth.userId, user2Id: body.otherUserId },
+          data: {
+            user1Id: auth.userId,
+            user2Id: body.otherUserId,
+            status: "REQUESTED",
+            requestedById: auth.userId,
+            requestPostId: body.postId,
+            requestReplyId: body.replyId
+          },
           include: {
             messages: true,
             user1: { select: { id: true, name: true, role: true, doctor: true, patient: true } },
@@ -760,6 +915,25 @@ export async function handleDoctorPlatformRequest(
         return true;
       }
 
+      const consult = await prisma.consultation.findFirst({
+        where: { id: consultationId, OR: [{ user1Id: auth.userId }, { user2Id: auth.userId }] }
+      });
+      if (!consult) {
+        sendJson(res, 404, { ok: false, error: "Consultation not found" });
+        return true;
+      }
+      if (consult.status === "REJECTED" || consult.status === "CLOSED") {
+        sendJson(res, 403, { ok: false, error: `Consultation is ${consult.status.toLowerCase()}.` });
+        return true;
+      }
+      if (consult.status === "REQUESTED" && auth.userId !== consult.requestedById) {
+        sendJson(res, 403, {
+          ok: false,
+          error: "Doctor must approve this consultation before replying."
+        });
+        return true;
+      }
+
       const message = await prisma.consultMessage.create({
         data: {
           consultationId,
@@ -769,6 +943,374 @@ export async function handleDoctorPlatformRequest(
       });
 
       sendJson(res, 201, { ok: true, message });
+      return true;
+    }
+
+    // ── POST /consultations/:id/respond — doctor approves/rejects request ──
+    const respondMatch = path.match(/^\/consultations\/([^/]+)\/respond$/);
+    if (req.method === "POST" && respondMatch) {
+      const auth = requireAuth(req, res);
+      if (!auth) return true;
+      if (auth.role !== "DOCTOR") {
+        sendJson(res, 403, { ok: false, error: "Only the doctor can approve/decline a consultation." });
+        return true;
+      }
+      const consultationId = respondMatch[1]!;
+      const body = await readBody<{ decision: "ACCEPT" | "REJECT" }>(req);
+      const decision = body?.decision;
+      if (decision !== "ACCEPT" && decision !== "REJECT") {
+        sendJson(res, 400, { ok: false, error: 'decision must be "ACCEPT" or "REJECT".' });
+        return true;
+      }
+      const consult = await prisma.consultation.findFirst({
+        where: { id: consultationId, OR: [{ user1Id: auth.userId }, { user2Id: auth.userId }] }
+      });
+      if (!consult) {
+        sendJson(res, 404, { ok: false, error: "Consultation not found" });
+        return true;
+      }
+      if (consult.requestedById === auth.userId) {
+        sendJson(res, 403, { ok: false, error: "Requester cannot approve their own consultation." });
+        return true;
+      }
+      if (consult.status !== "REQUESTED") {
+        sendJson(res, 409, { ok: false, error: `Consultation already ${consult.status.toLowerCase()}.` });
+        return true;
+      }
+      const updated = await prisma.consultation.update({
+        where: { id: consultationId },
+        data: { status: decision === "ACCEPT" ? "ACTIVE" : "REJECTED" }
+      });
+      sendJson(res, 200, { ok: true, consultation: updated });
+      return true;
+    }
+
+    // ── GET /consultations ────────────────────────────────────────────────
+    if (req.method === "GET" && path === "/consultations") {
+      const auth = requireAuth(req, res);
+      if (!auth) return true;
+      const rows = await prisma.consultation.findMany({
+        where: { OR: [{ user1Id: auth.userId }, { user2Id: auth.userId }] },
+        include: {
+          user1: { select: { id: true, name: true, role: true, doctor: true } },
+          user2: { select: { id: true, name: true, role: true, doctor: true } },
+          _count: { select: { messages: true, doctorRatings: true, patientRatings: true } }
+        },
+        orderBy: { updatedAt: "desc" },
+        take: 100
+      });
+      sendJson(res, 200, {
+        ok: true,
+        consultations: rows.map((r) => ({
+          id: r.id,
+          status: r.status,
+          startedAt: r.startedAt,
+          updatedAt: r.updatedAt,
+          patientConsentedRecording: r.patientConsentedRecording,
+          doctorConsentedRecording: r.doctorConsentedRecording,
+          participants: [r.user1, r.user2],
+          messageCount: r._count.messages,
+          doctorRatingCount: r._count.doctorRatings,
+          patientRatingCount: r._count.patientRatings
+        }))
+      });
+      return true;
+    }
+
+    // ── GET /consultations/:id ────────────────────────────────────────────
+    const consultGetMatch = path.match(/^\/consultations\/([^/]+)$/);
+    if (req.method === "GET" && consultGetMatch) {
+      const auth = requireAuth(req, res);
+      if (!auth) return true;
+      const consultationId = consultGetMatch[1]!;
+      const consult = await prisma.consultation.findFirst({
+        where: {
+          id: consultationId,
+          OR: [{ user1Id: auth.userId }, { user2Id: auth.userId }]
+        },
+        include: {
+          user1: { select: { id: true, name: true, role: true, doctor: true, patient: true } },
+          user2: { select: { id: true, name: true, role: true, doctor: true, patient: true } },
+          messages: { orderBy: { sentAt: "asc" }, take: 500 },
+          callRecordings: { orderBy: { createdAt: "desc" }, take: 50 },
+          doctorRatings: { orderBy: { createdAt: "desc" } },
+          patientRatings: { orderBy: { createdAt: "desc" } }
+        }
+      });
+      if (!consult) {
+        sendJson(res, 404, { ok: false, error: "Consultation not found" });
+        return true;
+      }
+      sendJson(res, 200, { ok: true, consultation: consult });
+      return true;
+    }
+
+    // ── POST /consultations/:id/consent-recording ────────────────────────
+    const consentMatch = path.match(/^\/consultations\/([^/]+)\/consent-recording$/);
+    if (req.method === "POST" && consentMatch) {
+      const auth = requireAuth(req, res);
+      if (!auth) return true;
+      const consultationId = consentMatch[1]!;
+      const consult = await prisma.consultation.findFirst({
+        where: { id: consultationId, OR: [{ user1Id: auth.userId }, { user2Id: auth.userId }] }
+      });
+      if (!consult) {
+        sendJson(res, 404, { ok: false, error: "Consultation not found" });
+        return true;
+      }
+      const data =
+        auth.role === "PATIENT"
+          ? { patientConsentedRecording: true }
+          : { doctorConsentedRecording: true };
+      const updated = await prisma.consultation.update({ where: { id: consultationId }, data });
+      sendJson(res, 200, { ok: true, consultation: updated });
+      return true;
+    }
+
+    // ── POST /consultations/:id/recording ────────────────────────────────
+    const recMatch = path.match(/^\/consultations\/([^/]+)\/recording$/);
+    if (req.method === "POST" && recMatch) {
+      const auth = requireAuth(req, res);
+      if (!auth) return true;
+      const consultationId = recMatch[1]!;
+      const consult = await prisma.consultation.findFirst({
+        where: { id: consultationId, OR: [{ user1Id: auth.userId }, { user2Id: auth.userId }] }
+      });
+      if (!consult) {
+        sendJson(res, 404, { ok: false, error: "Consultation not found" });
+        return true;
+      }
+      if (!consult.patientConsentedRecording || !consult.doctorConsentedRecording) {
+        sendJson(res, 400, { ok: false, error: "Both parties must consent before recording ingestion." });
+        return true;
+      }
+      const body = await readBody<{
+        provider: string;
+        recordingUrl?: string;
+        storageKey?: string;
+        durationSeconds?: number;
+        transcript?: string;
+        callStartedAt?: string;
+        callEndedAt?: string;
+        meta?: Record<string, unknown>;
+      }>(req);
+      if (!body?.provider) {
+        sendJson(res, 400, { ok: false, error: "provider required" });
+        return true;
+      }
+      const recording = await prisma.consultationCallRecording.create({
+        data: {
+          consultationId,
+          provider: body.provider,
+          recordingUrl: body.recordingUrl,
+          storageKey: body.storageKey,
+          durationSeconds: body.durationSeconds ? Math.max(0, Math.floor(body.durationSeconds)) : undefined,
+          transcript: body.transcript,
+          callStartedAt: body.callStartedAt ? new Date(body.callStartedAt) : undefined,
+          callEndedAt: body.callEndedAt ? new Date(body.callEndedAt) : undefined,
+          patientConsented: consult.patientConsentedRecording,
+          doctorConsented: consult.doctorConsentedRecording,
+          meta: body.meta as Prisma.InputJsonValue | undefined
+        }
+      });
+      sendJson(res, 201, { ok: true, recording });
+      return true;
+    }
+
+    // ── POST /ratings/doctor ───────────────────────────────────────────────
+    if (req.method === "POST" && path === "/ratings/doctor") {
+      const auth = requireAuth(req, res);
+      if (!auth) return true;
+      if (auth.role !== "PATIENT") {
+        sendJson(res, 403, { ok: false, error: "Only patients can rate doctors." });
+        return true;
+      }
+      const body = await readBody<{
+        consultationId: string;
+        doctorId: string;
+        score: number;
+        formAnswers: Record<string, unknown>;
+        signature?: string;
+      }>(req);
+      if (!body?.consultationId || !body?.doctorId || !Number.isFinite(body.score)) {
+        sendJson(res, 400, { ok: false, error: "consultationId, doctorId, score required." });
+        return true;
+      }
+      const score = Math.max(0, Math.min(10, Math.round(body.score)));
+      if (!body.formAnswers || Object.keys(body.formAnswers).length < 10) {
+        sendJson(res, 400, { ok: false, error: "10-form answers are required." });
+        return true;
+      }
+      const consult = await prisma.consultation.findFirst({
+        where: {
+          id: body.consultationId,
+          AND: [
+            { OR: [{ user1Id: auth.userId }, { user2Id: auth.userId }] },
+            { OR: [{ user1Id: body.doctorId }, { user2Id: body.doctorId }] }
+          ]
+        }
+      });
+      if (!consult) {
+        sendJson(res, 404, { ok: false, error: "Consultation/doctor relation not found." });
+        return true;
+      }
+      const rating = await prisma.doctorRating.upsert({
+        where: {
+          consultationId_patientId_doctorId: {
+            consultationId: body.consultationId,
+            patientId: auth.userId,
+            doctorId: body.doctorId
+          }
+        },
+        update: {
+          score,
+          formAnswers: body.formAnswers as Prisma.InputJsonValue,
+          signature: body.signature,
+          status: "PENDING_VALIDATION"
+        },
+        create: {
+          consultationId: body.consultationId,
+          doctorId: body.doctorId,
+          patientId: auth.userId,
+          score,
+          formAnswers: body.formAnswers as Prisma.InputJsonValue,
+          signature: body.signature,
+          status: "PENDING_VALIDATION"
+        }
+      });
+      const validation = await runRatingValidation({
+        consultationId: body.consultationId,
+        doctorRatingId: rating.id,
+        score,
+        formAnswers: body.formAnswers
+      });
+      await prisma.doctorRating.update({
+        where: { id: rating.id },
+        data: { status: validation.autoDecision === "APPROVED" ? "APPROVED" : "FLAGGED" }
+      });
+      const agg = await prisma.doctorRating.aggregate({
+        where: { doctorId: body.doctorId, status: "APPROVED" },
+        _avg: { score: true },
+        _count: { score: true }
+      });
+      await prisma.platformDoctor.updateMany({
+        where: { userId: body.doctorId },
+        data: { rating: agg._avg.score ?? 0 }
+      });
+      sendJson(res, 201, { ok: true, ratingId: rating.id, validation });
+      return true;
+    }
+
+    // ── POST /ratings/patient ──────────────────────────────────────────────
+    if (req.method === "POST" && path === "/ratings/patient") {
+      const auth = requireAuth(req, res);
+      if (!auth) return true;
+      if (auth.role !== "DOCTOR") {
+        sendJson(res, 403, { ok: false, error: "Only doctors can rate patients." });
+        return true;
+      }
+      const body = await readBody<{
+        consultationId: string;
+        patientId: string;
+        score: number;
+        formAnswers: Record<string, unknown>;
+        signature?: string;
+      }>(req);
+      if (!body?.consultationId || !body?.patientId || !Number.isFinite(body.score)) {
+        sendJson(res, 400, { ok: false, error: "consultationId, patientId, score required." });
+        return true;
+      }
+      const score = Math.max(0, Math.min(10, Math.round(body.score)));
+      if (!body.formAnswers || Object.keys(body.formAnswers).length < 10) {
+        sendJson(res, 400, { ok: false, error: "10-form answers are required." });
+        return true;
+      }
+      const rating = await prisma.patientRating.upsert({
+        where: {
+          consultationId_doctorId_patientId: {
+            consultationId: body.consultationId,
+            doctorId: auth.userId,
+            patientId: body.patientId
+          }
+        },
+        update: {
+          score,
+          formAnswers: body.formAnswers as Prisma.InputJsonValue,
+          signature: body.signature,
+          status: "PENDING_VALIDATION"
+        },
+        create: {
+          consultationId: body.consultationId,
+          doctorId: auth.userId,
+          patientId: body.patientId,
+          score,
+          formAnswers: body.formAnswers as Prisma.InputJsonValue,
+          signature: body.signature,
+          status: "PENDING_VALIDATION"
+        }
+      });
+      const validation = await runRatingValidation({
+        consultationId: body.consultationId,
+        patientRatingId: rating.id,
+        score,
+        formAnswers: body.formAnswers
+      });
+      await prisma.patientRating.update({
+        where: { id: rating.id },
+        data: { status: validation.autoDecision === "APPROVED" ? "APPROVED" : "FLAGGED" }
+      });
+      sendJson(res, 201, { ok: true, ratingId: rating.id, validation });
+      return true;
+    }
+
+    // ── GET /ratings/review-queue ──────────────────────────────────────────
+    if (req.method === "GET" && path === "/ratings/review-queue") {
+      const auth = requireAuth(req, res);
+      if (!auth) return true;
+      if (auth.role !== "DOCTOR") {
+        sendJson(res, 403, { ok: false, error: "Doctors only review queue (admin-lite)." });
+        return true;
+      }
+      const runs = await prisma.ratingValidationRun.findMany({
+        where: { autoDecision: { in: ["FLAGGED", "PENDING_VALIDATION"] }, reviewerDecision: null },
+        orderBy: { createdAt: "desc" },
+        take: 100
+      });
+      sendJson(res, 200, { ok: true, runs });
+      return true;
+    }
+
+    // ── POST /ratings/review/:id ───────────────────────────────────────────
+    const reviewMatch = path.match(/^\/ratings\/review\/([^/]+)$/);
+    if (req.method === "POST" && reviewMatch) {
+      const auth = requireAuth(req, res);
+      if (!auth) return true;
+      if (auth.role !== "DOCTOR") {
+        sendJson(res, 403, { ok: false, error: "Doctors only review endpoint." });
+        return true;
+      }
+      const id = reviewMatch[1]!;
+      const body = await readBody<{ decision: "APPROVED" | "REJECTED" | "FLAGGED"; note?: string }>(req);
+      if (!body?.decision) {
+        sendJson(res, 400, { ok: false, error: "decision required." });
+        return true;
+      }
+      const updated = await prisma.ratingValidationRun.update({
+        where: { id },
+        data: {
+          reviewedById: auth.userId,
+          reviewerDecision: body.decision,
+          reviewerNote: body.note,
+          reviewedAt: new Date()
+        }
+      });
+      if (updated.doctorRatingId) {
+        await prisma.doctorRating.update({ where: { id: updated.doctorRatingId }, data: { status: body.decision } });
+      }
+      if (updated.patientRatingId) {
+        await prisma.patientRating.update({ where: { id: updated.patientRatingId }, data: { status: body.decision } });
+      }
+      sendJson(res, 200, { ok: true, run: updated });
       return true;
     }
 
@@ -805,6 +1347,93 @@ export async function handleDoctorPlatformRequest(
         ok: true,
         message: "Degree uploaded. Pending admin verification.",
         doctor,
+      });
+      return true;
+    }
+
+    // ── GET /doctors/digilocker/start ─────────────────────────────────
+    if (req.method === "GET" && path === "/doctors/digilocker/start") {
+      const auth = requireAuth(req, res);
+      if (!auth) return true;
+      if (auth.role !== "DOCTOR") {
+        sendJson(res, 403, { ok: false, error: "Doctors only" });
+        return true;
+      }
+      const requestedState = url.searchParams.get("state") || undefined;
+      const start = createDigilockerStartUrl(requestedState);
+      digilockerStateToUser.set(start.state, auth.userId);
+      sendJson(res, 200, { ok: true, authUrl: start.url, state: start.state });
+      return true;
+    }
+
+    // ── GET /doctors/digilocker/callback ──────────────────────────────
+    if (req.method === "GET" && path === "/doctors/digilocker/callback") {
+      const code = url.searchParams.get("code") || "";
+      const state = url.searchParams.get("state") || "";
+      if (!code || !state) {
+        sendJson(res, 400, { ok: false, error: "code and state required" });
+        return true;
+      }
+      const userId = digilockerStateToUser.get(state);
+      if (!userId) {
+        sendJson(res, 400, { ok: false, error: "Invalid or expired DigiLocker state" });
+        return true;
+      }
+      digilockerStateToUser.delete(state);
+      const doctor = await prisma.platformDoctor.findUnique({ where: { userId } });
+      if (!doctor) {
+        sendJson(res, 404, { ok: false, error: "Doctor profile not found" });
+        return true;
+      }
+      const accessToken = await exchangeDigilockerCode(code);
+      const profile = await fetchDigilockerDegreeCandidate(accessToken);
+      const hash = hashDigilockerDocumentId(profile.documentUri);
+      const verification = await prisma.doctorVerification.create({
+        data: {
+          doctorId: doctor.id,
+          provider: "digilocker",
+          digilockerUserId: profile.digilockerUserId,
+          documentUri: profile.documentUri,
+          documentHash: hash,
+          status: profile.documentUri ? "VERIFIED" : "PENDING",
+          rawMeta: (profile.rawMeta ?? undefined) as Prisma.InputJsonValue | undefined
+        }
+      });
+      const verified = verification.status === "VERIFIED";
+      await prisma.platformDoctor.update({
+        where: { id: doctor.id },
+        data: { verified, degreeFiles: profile.documentUri ? [...doctor.degreeFiles, profile.documentUri] : doctor.degreeFiles }
+      });
+      sendJson(res, 200, {
+        ok: true,
+        verified,
+        verificationId: verification.id,
+        documentUri: profile.documentUri
+      });
+      return true;
+    }
+
+    // ── GET /doctors/verification-status ───────────────────────────────
+    if (req.method === "GET" && path === "/doctors/verification-status") {
+      const auth = requireAuth(req, res);
+      if (!auth) return true;
+      if (auth.role !== "DOCTOR") {
+        sendJson(res, 403, { ok: false, error: "Doctors only" });
+        return true;
+      }
+      const doctor = await prisma.platformDoctor.findUnique({
+        where: { userId: auth.userId },
+        include: { verifications: { orderBy: { createdAt: "desc" }, take: 10 } }
+      });
+      if (!doctor) {
+        sendJson(res, 404, { ok: false, error: "Doctor profile not found" });
+        return true;
+      }
+      sendJson(res, 200, {
+        ok: true,
+        verified: doctor.verified,
+        degreeFiles: doctor.degreeFiles,
+        verifications: doctor.verifications
       });
       return true;
     }

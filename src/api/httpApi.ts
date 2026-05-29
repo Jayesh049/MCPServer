@@ -25,6 +25,7 @@ import { handleHealerApiRequest } from "./healerApi.js";
 import { handleDoctorPlatformRequest } from "./doctorPlatformApi.js";
 import { getTbLexiconMeta, loadTbLexicon } from "../report/tbLexicon.js";
 import { isTbSklearnModelAvailable, loadTbSklearnMeta } from "../diseases/predictors/tuberculosisSklearn.js";
+import { suggestAyurvedaYogaForDisease } from "../ayurveda/recommend.js";
 
 function setCors(res: ServerResponse) {
   res.setHeader("Access-Control-Allow-Origin", "*");
@@ -132,6 +133,21 @@ export async function handleApiRequest(
 
   if (req.method === "GET" && url.pathname === "/api/rag/catalog") {
     sendJson(res, 200, getFullRagCatalog());
+    return true;
+  }
+
+  if (req.method === "GET" && url.pathname === "/api/ayurveda/yoga") {
+    const diseaseSlug = String(url.searchParams.get("disease") ?? "").trim();
+    if (!diseaseSlug) {
+      sendJson(res, 400, { ok: false, error: 'Missing query param "disease" (use a known diseaseSlug).' });
+      return true;
+    }
+    try {
+      const result = await suggestAyurvedaYogaForDisease(diseaseSlug);
+      sendJson(res, 200, { ok: true, result });
+    } catch (e: any) {
+      sendJson(res, 400, { ok: false, error: e?.message ? String(e.message) : "Ayurveda suggestion failed." });
+    }
     return true;
   }
 

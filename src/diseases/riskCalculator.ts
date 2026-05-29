@@ -192,12 +192,15 @@ export function calcKidneyDiseaseRisk(form: FormFields): RiskResult {
   const kappa = sex === "female" ? 0.7 : 0.9;
   const alpha = sex === "female" ? -0.241 : -0.302;
   const creatRatio = creatinine / kappa;
-  const eGFR =
+  const computedEgfr =
     142 *
     Math.pow(Math.min(creatRatio, 1), alpha) *
     Math.pow(Math.max(creatRatio, 1), -1.200) *
     Math.pow(0.9938, age) *
     (sex === "female" ? 1.012 : 1.0);
+  // Honor a directly-provided eGFR (registry exposes it); otherwise derive from creatinine.
+  const providedEgfr = Number(form.egfr ?? form.eGFR ?? 0);
+  const eGFR = providedEgfr > 0 ? providedEgfr : computedEgfr;
 
   // KDIGO risk: eGFR + proteinuria
   let score: number;
@@ -287,7 +290,9 @@ export function calcHypertensionRisk(form: FormFields): RiskResult {
     form.systolicBP ?? form.systolicBp ?? form.systolic ?? form.sbp ?? 125
   );
   const dbp = Number(form.diastolicBP ?? form.diastolic ?? form.dbp ?? 82);
-  const age = Number(form.age ?? 50);
+  // Accept the registry's `ageOver60` boolean as an alias for a numeric age band.
+  const ageOver60 = form.ageOver60 === true || form.ageOver60 === 1 || form.ageOver60 === "yes";
+  const age = Number(form.age ?? (ageOver60 ? 65 : 50));
   const smoker = form.smoker ? 1 : 0;
   const diabetic = form.diabetic ? 1 : 0;
   const familyHistory = form.familyHistory ? 1 : 0;
@@ -332,18 +337,22 @@ export function calcStrokeRisk(form: FormFields): RiskResult {
   const age = Number(form.age ?? 60);
   const sex = String(form.sex ?? "male").toLowerCase();
   const heartFailure = form.heartFailure ? 1 : 0;
+  // Registry stroke form exposes afib/diabetes/smoker — honor them additively so toggling them
+  // actually changes the score (previously afib/diabetes/smoker were silently ignored).
+  const afib = form.afib ? 1 : 0;
   const hypertension = form.hypertension ? 1 : 0;
-  const diabetic = form.diabetic ? 1 : 0;
+  const diabetic = form.diabetic || form.diabetes ? 1 : 0;
   const priorStroke = form.priorStroke ? 2 : 0;
   const vascularDisease = form.vascularDisease ? 1 : 0;
+  const smoker = form.smoker ? 1 : 0;
 
   let score = 0;
   if (age >= 75) score += 2;
   else if (age >= 65) score += 1;
   if (sex === "female") score += 1;
-  score += heartFailure + hypertension + diabetic + priorStroke + vascularDisease;
+  score += heartFailure + afib + hypertension + diabetic + priorStroke + vascularDisease + smoker;
 
-  const maxScore = 9;
+  const maxScore = 11;
   const normalized = score / maxScore;
 
   return {

@@ -24,6 +24,7 @@ import {
   diseaseCorpusTrain,
   isDiseaseMlEnabled
 } from "../ml/flaskDiseaseClient.js";
+import { suggestAyurvedaYogaForDisease } from "../ayurveda/recommend.js";
 
 export type ToolCallInput = {
   toolName: string;
@@ -228,6 +229,13 @@ export async function handleToolCall(input: ToolCallInput) {
       const { table } = args as any;
       const validated = CareGapTableSchema.parse(table);
       return { content: [{ type: "text", text: JSON.stringify(validated, null, 2) }] };
+    }
+
+    // ---------- Ayurveda yoga/pranayama ----------
+    if (input.toolName === "suggest_ayurveda_yoga") {
+      const { diseaseSlug } = args as { diseaseSlug: string };
+      const result = await suggestAyurvedaYogaForDisease(diseaseSlug);
+      return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
     }
 
     // ---------- Disease tools ----------

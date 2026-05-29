@@ -1,7 +1,7 @@
 {
   "diseaseSlug": "skin-cancer",
   "displayName": "Skin lesion",
-  "trainedAt": "2026-05-23T03:53:02.158867+00:00",
+  "trainedAt": "2026-05-29T06:19:34.333980+00:00",
   "methodology": {
     "features": "RGB histogram + gradient bins + 8x8 gray + stats (Pillow/numpy)",
     "classifiers": [
